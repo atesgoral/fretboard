@@ -70,9 +70,10 @@ function StringLines() {
 type FretMarkersProps = {
   fretPositions: number[]
   frets: number
+  stringYPositions: number[]
 }
 
-function FretMarkers({ fretPositions, frets }: FretMarkersProps) {
+function FretMarkers({ fretPositions, frets, stringYPositions }: FretMarkersProps) {
   const singleMarkerFrets = Array.from({ length: frets - 1 }, (_, i) => i + 1).filter(
     (fret) => MARKER_FRETS.has(fret % 12),
   )
@@ -99,15 +100,18 @@ function FretMarkers({ fretPositions, frets }: FretMarkersProps) {
 
         const midpoint = (fretPositions[octaveFret] + fretPositions[octaveFret + 1]) / 2
 
+        const upperTop = (stringYPositions[1] + stringYPositions[2]) / 2
+        const lowerTop = (stringYPositions[3] + stringYPositions[4]) / 2
+
         return (
           <div key={`double-marker-${octaveFret}`}>
             <div
-              className="absolute h-3 w-3 rounded-full border border-zinc-300 bg-zinc-200"
-              style={{ left: `calc(${midpoint * 100}% - 6px)`, top: '38%' }}
+              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200"
+              style={{ left: `calc(${midpoint * 100}% - 6px)`, top: `${upperTop}%` }}
             />
             <div
-              className="absolute h-3 w-3 rounded-full border border-zinc-300 bg-zinc-200"
-              style={{ left: `calc(${midpoint * 100}% - 6px)`, top: '62%' }}
+              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200"
+              style={{ left: `calc(${midpoint * 100}% - 6px)`, top: `${lowerTop}%` }}
             />
           </div>
         )
@@ -132,37 +136,40 @@ type NoteGridProps = {
 
 function NoteGrid({ fretPositions, frets, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
   return (
-    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <div className="absolute inset-0">
       {Array.from({ length: STRINGS }, (_, stringIndex) => {
-        const y = 10 + (stringIndex / (STRINGS - 1)) * 80
+        const top = `${10 + (stringIndex / (STRINGS - 1)) * 80}%`
 
         return Array.from({ length: frets }, (_, fret) => {
-          const x = ((fretPositions[fret] + fretPositions[fret + 1]) / 2) * 100
+          const left = `${((fretPositions[fret] + fretPositions[fret + 1]) / 2) * 100}%`
           const isHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
 
           return (
-            <g key={`note-${stringIndex}-${fret}`}>
-              <circle
-                cx={x}
-                cy={y}
-                r={3.8}
-                fill="transparent"
-                onMouseEnter={() => onHover(stringIndex, fret)}
-                onMouseLeave={onLeave}
-                onMouseDown={() => onPlay(stringIndex, fret)}
-              />
-              {isHovered ? <circle cx={x} cy={y} r={2.4} fill="#3f3f46" fillOpacity={0.7} /> : null}
-            </g>
+            <button
+              key={`note-${stringIndex}-${fret}`}
+              type="button"
+              className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left, top }}
+              onMouseEnter={() => onHover(stringIndex, fret)}
+              onMouseLeave={onLeave}
+              onMouseDown={() => onPlay(stringIndex, fret)}
+            >
+              {isHovered ? <span className="block h-full w-full rounded-full bg-zinc-700/70" /> : null}
+            </button>
           )
         })
       })}
-    </svg>
+    </div>
   )
 }
 
 export default function Fretboard({ linear, frets = DEFAULT_FRETS }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
+  const stringYPositions = useMemo(
+    () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
+    [],
+  )
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
@@ -214,7 +221,7 @@ export default function Fretboard({ linear, frets = DEFAULT_FRETS }: FretboardPr
         <div className="absolute inset-0 border border-zinc-200" />
         <FretLines fretPositions={fretPositions} />
         <StringLines />
-        <FretMarkers fretPositions={fretPositions} frets={frets} />
+        <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />
         <NoteGrid
           fretPositions={fretPositions}
           frets={frets}

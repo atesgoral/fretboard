@@ -27,6 +27,7 @@ export const CHORD_PRESETS: ChordPreset[] = [
   { id: 'minor-9', label: 'Minor 9', aliases: ['min9', 'm9', '-9'], qualityId: 'min', extensionIds: ['b7', '9'] },
   { id: 'dom-7', label: 'Dominant 7', aliases: ['7', 'dom7'], qualityId: 'maj', extensionIds: ['b7'] },
   { id: 'dom-9', label: 'Dominant 9', aliases: ['9', 'dom9'], qualityId: 'maj', extensionIds: ['b7', '9'] },
+  { id: 'dom-13', label: 'Dominant 13', aliases: ['13', 'dom13'], qualityId: 'maj', extensionIds: ['b7', '9', '13'] },
   { id: 'dim', label: 'Diminished', aliases: ['dim', 'o'], qualityId: 'dim', extensionIds: [] },
   { id: 'half-dim', label: 'Half Diminished', aliases: ['m7b5', 'ø', 'ø7'], qualityId: 'dim', extensionIds: ['b7'] },
   { id: 'aug', label: 'Augmented', aliases: ['aug', '+'], qualityId: 'aug', extensionIds: [] },

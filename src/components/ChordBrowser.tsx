@@ -35,24 +35,15 @@ function SelectField({ label, value, options, onChange }: { label: string; value
 }
 
 function ChordAutocomplete({
-  root,
-  qualityId,
-  extensionIds,
-  onApply,
+  query,
+  hasError,
+  onInput,
 }: {
-  root: NoteName
-  qualityId: string
-  extensionIds: string[]
-  onApply: (query: string) => boolean
+  query: string
+  hasError: boolean
+  onInput: (value: string) => void
 }) {
   const autocompleteTokens = useMemo(() => getAutocompleteTokens(), [])
-  const [query, setQuery] = useState(() => getChordQueryForSelection(root, qualityId, extensionIds))
-  const [hasError, setHasError] = useState(false)
-
-  useEffect(() => {
-    setQuery(getChordQueryForSelection(root, qualityId, extensionIds))
-    setHasError(false)
-  }, [root, qualityId, extensionIds])
 
   return (
     <label className="flex min-w-[180px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
@@ -60,12 +51,7 @@ function ChordAutocomplete({
       <input
         value={query}
         list="chord-autocomplete"
-        onChange={(event) => {
-          const nextQuery = event.target.value
-          setQuery(nextQuery)
-          const resolved = onApply(nextQuery)
-          setHasError(!resolved)
-        }}
+        onChange={(event) => onInput(event.target.value)}
         placeholder="Cmaj7, F#m7, Bb7sus4"
         className={`rounded-md border bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 ${
           hasError ? 'border-red-500 dark:border-red-400' : 'border-zinc-300 dark:border-zinc-700'
@@ -84,24 +70,32 @@ function ChordAutocomplete({
 export default function ChordBrowser({ root, qualityId, extensionIds, onRootChange, onQualityChange, onExtensionsChange, onToggleExtension }: ChordBrowserProps) {
   const presetOptions = CHORD_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))
   const selectedPresetId = getPresetIdForSelection(qualityId, extensionIds) ?? 'major-triad'
+  const [query, setQuery] = useState(() => getChordQueryForSelection(root, qualityId, extensionIds))
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    setQuery(getChordQueryForSelection(root, qualityId, extensionIds))
+    setHasError(false)
+  }, [root, qualityId, extensionIds])
 
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex flex-wrap items-end gap-3">
         <ChordAutocomplete
-          root={root}
-          qualityId={qualityId}
-          extensionIds={extensionIds}
-          onApply={(query) => {
-            const parsed = parseChordQuery(query, { root, qualityId, extensionIds })
+          query={query}
+          hasError={hasError}
+          onInput={(nextQuery) => {
+            setQuery(nextQuery)
+            const parsed = parseChordQuery(nextQuery, { root, qualityId, extensionIds })
             const unchanged = parsed.root === root && parsed.qualityId === qualityId && JSON.stringify(parsed.extensionIds) === JSON.stringify(extensionIds)
-            if (unchanged && query.trim().toLowerCase() !== getChordQueryForSelection(root, qualityId, extensionIds).toLowerCase()) {
-              return false
+            if (unchanged && nextQuery.trim().toLowerCase() !== getChordQueryForSelection(root, qualityId, extensionIds).toLowerCase()) {
+              setHasError(true)
+              return
             }
+            setHasError(false)
             onRootChange(parsed.root)
             onQualityChange(parsed.qualityId)
             onExtensionsChange(parsed.extensionIds)
-            return true
           }}
         />
         <SelectField label="Root" value={root} options={NOTE_NAMES.map((note) => ({ value: note, label: note }))} onChange={(value) => onRootChange(value as NoteName)} />

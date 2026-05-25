@@ -93,7 +93,7 @@ function FretMarkers({ fretPositions, frets }: FretMarkersProps) {
           return null
         }
 
-        const midpoint = (fretPositions[octaveFret] + fretPositions[octaveFret - 1]) / 2
+        const midpoint = (fretPositions[octaveFret] + fretPositions[octaveFret + 1]) / 2
 
         return (
           <div key={`double-marker-${octaveFret}`}>

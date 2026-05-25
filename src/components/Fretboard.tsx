@@ -135,6 +135,13 @@ type ActivePosition = {
   fret: number
 }
 
+type ExcitationState = {
+  level: number
+  timestampMs: number
+}
+
+type TriggerType = 'pick' | 'slide'
+
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
@@ -279,6 +286,9 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
   const isPointerDownRef = useRef(false)
   const lastPlayedRef = useRef<string | null>(null)
   const [playedPosition, setPlayedPosition] = useState<ActivePosition | null>(null)
+  const excitationByStringRef = useRef<ExcitationState[]>(
+    Array.from({ length: STRINGS }, () => ({ level: 0, timestampMs: 0 })),
+  )
 
   const clearPointerPress = useCallback(() => {
     isPointerDownRef.current = false
@@ -318,7 +328,7 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
   }, [])
 
   const playNote = useCallback(
-    async (stringIndex: number, fret: number) => {
+    async (stringIndex: number, fret: number, triggerType: TriggerType) => {
       setPlayedPosition({ stringIndex, fret })
       const instrument = await getInstrument()
       const context = audioContextRef.current
@@ -327,8 +337,27 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
       }
 
       const midiNote = OPEN_STRING_MIDI[stringIndex] + fret
-      const attackVelocity = naturalDecay ? Math.round(70 + Math.random() * 35) : 110
-      const durationSeconds = naturalDecay ? 2.4 : 1.0
+
+      let attackVelocity = 110
+      let durationSeconds = 1.0
+
+      if (naturalDecay) {
+        const now = performance.now()
+        const previous = excitationByStringRef.current[stringIndex]
+        const elapsedSeconds = (now - previous.timestampMs) / 1000
+        const timeDecay = Math.exp(-elapsedSeconds / 1.9)
+        const residualExcitation = previous.level * timeDecay
+        const pickedExcitation = triggerType === 'pick' ? 1 : residualExcitation * 0.74
+        const clampedExcitation = Math.max(0.08, Math.min(1, pickedExcitation))
+
+        excitationByStringRef.current[stringIndex] = {
+          level: clampedExcitation,
+          timestampMs: now,
+        }
+
+        attackVelocity = Math.round(38 + clampedExcitation * 72)
+        durationSeconds = 0.3 + clampedExcitation * 2.3
+      }
 
       instrument.start({ note: midiNote, velocity: attackVelocity, duration: durationSeconds })
     },
@@ -340,7 +369,7 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
       isPointerDownRef.current = true
       const positionKey = `${stringIndex}:${fret}`
       lastPlayedRef.current = positionKey
-      void playNote(stringIndex, fret)
+      void playNote(stringIndex, fret, 'pick')
     },
     [playNote],
   )
@@ -357,7 +386,7 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
       }
 
       lastPlayedRef.current = positionKey
-      void playNote(stringIndex, fret)
+      void playNote(stringIndex, fret, 'slide')
     },
     [playNote],
   )

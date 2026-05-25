@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
 import { buildChordRoles, type NoteName } from './components/chords'
@@ -6,16 +6,63 @@ import SettingsMenu from './components/controls/SettingsMenu'
 import ChordPalette from './components/ChordPalette'
 import { useThemePreference } from './hooks/useThemePreference'
 
+const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
+
+type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
+
+type StoredPreferences = {
+  linear?: boolean
+  lowEAtBottom?: boolean
+  naturalDecay?: boolean
+  root?: NoteName
+  qualityId?: string
+  extensionIds?: string[]
+  swatches?: ChordSelection[]
+  activeSwatchIndex?: number | null
+}
+
+const getInitialPreferences = (): StoredPreferences => {
+  if (typeof window === 'undefined') return {}
+
+  const raw = window.localStorage.getItem(APP_PREFERENCES_STORAGE_KEY)
+  if (!raw) return {}
+
+  try {
+    const parsed = JSON.parse(raw) as StoredPreferences
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const initialPreferences = getInitialPreferences()
+
 export default function App() {
-  const [linear, setLinear] = useState(false)
-  const [lowEAtBottom, setLowEAtBottom] = useState(true)
-  const [naturalDecay, setNaturalDecay] = useState(true)
+  const [linear, setLinear] = useState(initialPreferences.linear ?? true)
+  const [lowEAtBottom, setLowEAtBottom] = useState(initialPreferences.lowEAtBottom ?? true)
+  const [naturalDecay, setNaturalDecay] = useState(initialPreferences.naturalDecay ?? true)
   const { preference, cyclePreference } = useThemePreference()
-  const [root, setRoot] = useState<NoteName>('C')
-  const [qualityId, setQualityId] = useState('maj')
-  const [extensionIds, setExtensionIds] = useState<string[]>([])
-  const [swatches, setSwatches] = useState<Array<{ root: NoteName; qualityId: string; extensionIds: string[] }>>([])
-  const [activeSwatchIndex, setActiveSwatchIndex] = useState<number | null>(null)
+  const [root, setRoot] = useState<NoteName>(initialPreferences.root ?? 'C')
+  const [qualityId, setQualityId] = useState(initialPreferences.qualityId ?? 'maj')
+  const [extensionIds, setExtensionIds] = useState<string[]>(initialPreferences.extensionIds ?? [])
+  const [swatches, setSwatches] = useState<Array<{ root: NoteName; qualityId: string; extensionIds: string[] }>>(initialPreferences.swatches ?? [])
+  const [activeSwatchIndex, setActiveSwatchIndex] = useState<number | null>(initialPreferences.activeSwatchIndex ?? null)
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      APP_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        linear,
+        lowEAtBottom,
+        naturalDecay,
+        root,
+        qualityId,
+        extensionIds,
+        swatches,
+        activeSwatchIndex,
+      } satisfies StoredPreferences),
+    )
+  }, [linear, lowEAtBottom, naturalDecay, root, qualityId, extensionIds, swatches, activeSwatchIndex])
 
   const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
@@ -71,7 +118,6 @@ export default function App() {
             })
           }}
         />
-
 
         <ChordPalette
           selectedChord={selectedChord}

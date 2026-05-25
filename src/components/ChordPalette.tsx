@@ -1,4 +1,5 @@
-import { CHORD_QUALITIES, type NoteName } from './chords'
+import { type NoteName } from './chords'
+import { getChordQueryForSelection } from './chordSearch'
 
 type ChordSelection = {
   root: NoteName
@@ -16,9 +17,7 @@ type ChordPaletteProps = {
 }
 
 function getChordLabel(chord: ChordSelection) {
-  const qualityLabel = CHORD_QUALITIES.find((quality) => quality.id === chord.qualityId)?.label ?? 'Chord'
-  const extensionsLabel = chord.extensionIds.length > 0 ? ` ${chord.extensionIds.join(' ')}` : ''
-  return `${chord.root} ${qualityLabel}${extensionsLabel}`
+  return getChordQueryForSelection(chord.root, chord.qualityId, chord.extensionIds)
 }
 
 function ChordCard({ chord, active, onClick }: { chord: ChordSelection; active: boolean; onClick: () => void }) {

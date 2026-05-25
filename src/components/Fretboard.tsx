@@ -92,6 +92,37 @@ type FretMarkersProps = {
   stringYPositions: number[]
 }
 
+type FretLabelsProps = {
+  fretPositions: number[]
+  frets: number
+}
+
+function FretLabels({ fretPositions, frets }: FretLabelsProps) {
+  return (
+    <div className="relative mx-auto mt-2 h-5 min-w-[1200px]">
+      <span
+        className="absolute -translate-x-1/2 text-xs font-medium tracking-wide text-zinc-600 dark:text-zinc-300"
+        style={{ left: `${((fretPositions[0] + fretPositions[1]) / 2) * 100}%` }}
+      >
+        O
+      </span>
+      {Array.from({ length: frets - 1 }, (_, index) => index + 1).map((fret) => {
+        const labelCenter = (fretPositions[fret] + fretPositions[fret + 1]) / 2
+
+        return (
+          <span
+            key={`fret-label-${fret}`}
+            className="absolute -translate-x-1/2 text-xs font-medium text-zinc-600 dark:text-zinc-300"
+            style={{ left: `${labelCenter * 100}%` }}
+          >
+            {fret}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 function FretMarkers({ fretPositions, frets, stringYPositions }: FretMarkersProps) {
   const singleMarkerFrets = Array.from({ length: frets - 1 }, (_, i) => i + 1).filter(
     (fret) => MARKER_FRETS.has(fret % 12),
@@ -444,6 +475,7 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
           chordRoles={chordRoles}
         />
       </div>
+      <FretLabels fretPositions={fretPositions} frets={frets} />
       <NoteReadout activeNote={activeNote} />
     </section>
   )

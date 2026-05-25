@@ -139,14 +139,37 @@ type NoteGridProps = {
   onPlay: (stringIndex: number, fret: number) => void
 }
 
+function getStringBandBounds(stringYPositions: number[]) {
+  return stringYPositions.map((position, index) => {
+    if (index === 0) {
+      const nextMidpoint = (position + stringYPositions[index + 1]) / 2
+      return { top: 0, bottom: nextMidpoint }
+    }
+
+    if (index === stringYPositions.length - 1) {
+      const previousMidpoint = (stringYPositions[index - 1] + position) / 2
+      return { top: previousMidpoint, bottom: 100 }
+    }
+
+    const top = (stringYPositions[index - 1] + position) / 2
+    const bottom = (position + stringYPositions[index + 1]) / 2
+    return { top, bottom }
+  })
+}
+
 function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
+  const stringBandBounds = getStringBandBounds(stringYPositions)
+
   return (
     <div className="absolute inset-0">
       {stringOrder.map((stringIndex, visualIndex) => {
-        const top = `${stringYPositions[visualIndex]}%`
+        const band = stringBandBounds[visualIndex]
+        const top = `${band.top}%`
+        const height = `${band.bottom - band.top}%`
 
         return Array.from({ length: frets }, (_, fret) => {
-          const left = `${((fretPositions[fret] + fretPositions[fret + 1]) / 2) * 100}%`
+          const left = `${fretPositions[fret] * 100}%`
+          const width = `${(fretPositions[fret + 1] - fretPositions[fret]) * 100}%`
           const isHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
 
@@ -154,13 +177,15 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
-              className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ left, top }}
+              className="absolute border-0 bg-transparent p-0"
+              style={{ left, top, width, height }}
               onMouseEnter={() => onHover(stringIndex, fret)}
               onMouseLeave={onLeave}
               onMouseDown={() => onPlay(stringIndex, fret)}
             >
-              {isHovered ? <span className="block h-full w-full rounded-full bg-zinc-700/70 dark:bg-zinc-100/70" /> : null}
+              {isHovered ? (
+                <span className="pointer-events-none block h-full w-full bg-zinc-600/15 ring-1 ring-inset ring-zinc-600/45 dark:bg-zinc-100/15 dark:ring-zinc-100/45" />
+              ) : null}
             </button>
           )
         })

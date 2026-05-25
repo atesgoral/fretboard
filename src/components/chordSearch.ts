@@ -1,3 +1,4 @@
+import * as TonalChord from '@tonaljs/chord'
 import { CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './chords'
 
 export type ChordSelection = {
@@ -47,6 +48,46 @@ const FLAT_TO_SHARP: Record<string, NoteName> = {
   bb: 'A#',
 }
 
+function resolveRoot(root: string | undefined, fallback: NoteName): NoteName {
+  if (!root) return fallback
+  const normalized = root.replace('♯', '#').replace('♭', 'b').toLowerCase()
+  const flatRoot = FLAT_TO_SHARP[normalized]
+  if (flatRoot) return flatRoot
+  const chromaticRoot = NOTE_NAMES.find((note) => note.toLowerCase() === normalized)
+  return chromaticRoot ?? fallback
+}
+
+function parseWithTonal(query: string, fallback: ChordSelection): ChordSelection | null {
+  const parsed = TonalChord.get(query)
+  if (parsed.empty) return null
+
+  const root = resolveRoot(parsed.tonic ?? parsed.root, fallback.root)
+  const intervals = new Set(parsed.intervals)
+
+  let qualityId: string = 'maj'
+  if (intervals.has('2P') && intervals.has('5P') && !intervals.has('3M') && !intervals.has('3m')) {
+    qualityId = 'sus2'
+  } else if (intervals.has('4P') && intervals.has('5P') && !intervals.has('3M') && !intervals.has('3m')) {
+    qualityId = 'sus4'
+  } else if (intervals.has('3m') && intervals.has('5d')) {
+    qualityId = 'dim'
+  } else if (intervals.has('3M') && intervals.has('5A')) {
+    qualityId = 'aug'
+  } else if (intervals.has('3m')) {
+    qualityId = 'min'
+  }
+
+  const extensionIds: string[] = []
+  if (intervals.has('7m')) extensionIds.push('b7')
+  if (intervals.has('7M')) extensionIds.push('7')
+  if (intervals.has('9M') || intervals.has('2M')) extensionIds.push('9')
+  if (intervals.has('11P') || intervals.has('4P')) extensionIds.push('11')
+  if (intervals.has('11A') || intervals.has('4A')) extensionIds.push('#11')
+  if (intervals.has('13M') || intervals.has('6M')) extensionIds.push('13')
+
+  return { root, qualityId, extensionIds: sanitizeExtensions(extensionIds) }
+}
+
 export function getAutocompleteTokens(): string[] {
   return [...new Set([...CHORD_PRESETS.map((preset) => preset.label), ...knownAliases])]
 }
@@ -65,10 +106,7 @@ export function getChordQueryForSelection(root: NoteName, qualityId: string, ext
   return `${root}${alias}`
 }
 
-export function parseChordQuery(query: string, fallback: ChordSelection): ChordSelection {
-  const normalized = normalizeQuery(query)
-  if (!normalized) return fallback
-
+function parsePresetAlias(normalized: string, fallback: ChordSelection): ChordSelection | null {
   const chromaticRoot =
     [...NOTE_NAMES]
       .sort((a, b) => b.length - a.length)
@@ -76,18 +114,27 @@ export function parseChordQuery(query: string, fallback: ChordSelection): ChordS
   const flatRoot = Object.entries(FLAT_TO_SHARP).find(([flat]) => normalized.startsWith(flat))
   const root = flatRoot ? flatRoot[1] : chromaticRoot
   const consumedRootLength = flatRoot ? flatRoot[0].length : root.length
-  const suffix = root === fallback.root && !normalized.startsWith(root.toLowerCase())
-    ? normalized
-    : normalized.slice(consumedRootLength)
+  const suffix = root === fallback.root && !normalized.startsWith(root.toLowerCase()) ? normalized : normalized.slice(consumedRootLength)
 
   const preset = CHORD_PRESETS.find((item) => item.aliases.some((alias) => alias.toLowerCase() === suffix) || item.label.toLowerCase() === suffix)
-  if (!preset) return fallback
+  if (!preset) return null
 
   return {
     root,
     qualityId: preset.qualityId,
     extensionIds: preset.extensionIds,
   }
+}
+
+export function parseChordQuery(query: string, fallback: ChordSelection): ChordSelection {
+  const normalized = normalizeQuery(query)
+  if (!normalized) return fallback
+
+  const presetSelection = parsePresetAlias(normalized, fallback)
+  if (presetSelection) return presetSelection
+
+  const tonalSelection = parseWithTonal(query, fallback)
+  return tonalSelection ?? fallback
 }
 
 export function sanitizeExtensions(extensionIds: string[]) {

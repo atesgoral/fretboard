@@ -23,6 +23,7 @@ function getFretPositions(linear: boolean, frets: number) {
 
 type FretboardProps = {
   linear: boolean
+  lowEAtBottom: boolean
   frets?: number
 }
 
@@ -49,7 +50,9 @@ function FretLines({ fretPositions }: FretLinesProps) {
   })
 }
 
-function StringLines() {
+function StringLines({ lowEAtBottom }: { lowEAtBottom: boolean }) {
+  const stringThicknesses = lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES
+
   return Array.from({ length: STRINGS }, (_, index) => {
     const top = `${10 + (index / (STRINGS - 1)) * 80}%`
 
@@ -59,8 +62,8 @@ function StringLines() {
         className="absolute left-0 right-0 bg-zinc-600"
         style={{
           top,
-          height: `${STRING_THICKNESSES[index]}px`,
-          transform: `translateY(-${STRING_THICKNESSES[index] / 2}px)`,
+          height: `${stringThicknesses[index]}px`,
+          transform: `translateY(-${stringThicknesses[index] / 2}px)`,
         }}
       />
     )
@@ -128,17 +131,19 @@ type HoveredPosition = {
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
+  stringOrder: number[]
+  stringYPositions: number[]
   hoveredPosition: HoveredPosition
   onHover: (stringIndex: number, fret: number) => void
   onLeave: () => void
   onPlay: (stringIndex: number, fret: number) => void
 }
 
-function NoteGrid({ fretPositions, frets, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
   return (
     <div className="absolute inset-0">
-      {Array.from({ length: STRINGS }, (_, stringIndex) => {
-        const top = `${10 + (stringIndex / (STRINGS - 1)) * 80}%`
+      {stringOrder.map((stringIndex, visualIndex) => {
+        const top = `${stringYPositions[visualIndex]}%`
 
         return Array.from({ length: frets }, (_, fret) => {
           const left = `${((fretPositions[fret] + fretPositions[fret + 1]) / 2) * 100}%`
@@ -164,11 +169,15 @@ function NoteGrid({ fretPositions, frets, hoveredPosition, onHover, onLeave, onP
   )
 }
 
-export default function Fretboard({ linear, frets = DEFAULT_FRETS }: FretboardProps) {
+export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
     [],
+  )
+  const stringOrder = useMemo(
+    () => (lowEAtBottom ? Array.from({ length: STRINGS }, (_, index) => STRINGS - 1 - index) : Array.from({ length: STRINGS }, (_, index) => index)),
+    [lowEAtBottom],
   )
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
@@ -220,11 +229,13 @@ export default function Fretboard({ linear, frets = DEFAULT_FRETS }: FretboardPr
       <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50">
         <div className="absolute inset-0 border border-zinc-200" />
         <FretLines fretPositions={fretPositions} />
-        <StringLines />
+        <StringLines lowEAtBottom={lowEAtBottom} />
         <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />
         <NoteGrid
           fretPositions={fretPositions}
           frets={frets}
+          stringOrder={stringOrder}
+          stringYPositions={stringYPositions}
           hoveredPosition={hoveredPosition}
           onHover={(stringIndex, fret) => setHoveredPosition({ stringIndex, fret })}
           onLeave={() => setHoveredPosition(null)}

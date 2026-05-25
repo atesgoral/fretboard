@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
 import { buildChordRoles, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
+import ChordPalette from './components/ChordPalette'
 import { useThemePreference } from './hooks/useThemePreference'
 
 export default function App() {
@@ -13,7 +14,10 @@ export default function App() {
   const [root, setRoot] = useState<NoteName>('C')
   const [qualityId, setQualityId] = useState('maj')
   const [extensionIds, setExtensionIds] = useState<string[]>([])
+  const [swatches, setSwatches] = useState<Array<{ root: NoteName; qualityId: string; extensionIds: string[] }>>([])
+  const [activeSwatchIndex, setActiveSwatchIndex] = useState<number | null>(null)
 
+  const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
 
   return (
@@ -37,12 +41,57 @@ export default function App() {
           root={root}
           qualityId={qualityId}
           extensionIds={extensionIds}
-          onRootChange={setRoot}
-          onQualityChange={setQualityId}
-          onExtensionsChange={setExtensionIds}
-          onToggleExtension={(id) =>
-            setExtensionIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
-          }
+          onRootChange={(next) => {
+            setRoot(next)
+            if (activeSwatchIndex !== null) {
+              setSwatches((current) => current.map((swatch, index) => (index === activeSwatchIndex ? { ...swatch, root: next } : swatch)))
+            }
+          }}
+          onQualityChange={(next) => {
+            setQualityId(next)
+            if (activeSwatchIndex !== null) {
+              setSwatches((current) => current.map((swatch, index) => (index === activeSwatchIndex ? { ...swatch, qualityId: next } : swatch)))
+            }
+          }}
+          onExtensionsChange={(ids) => {
+            setExtensionIds(ids)
+            if (activeSwatchIndex !== null) {
+              setSwatches((current) => current.map((swatch, index) => (index === activeSwatchIndex ? { ...swatch, extensionIds: ids } : swatch)))
+            }
+          }}
+          onToggleExtension={(id) => {
+            setExtensionIds((current) => {
+              const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+              if (activeSwatchIndex !== null) {
+                setSwatches((swatchesCurrent) =>
+                  swatchesCurrent.map((swatch, index) => (index === activeSwatchIndex ? { ...swatch, extensionIds: next } : swatch)),
+                )
+              }
+              return next
+            })
+          }}
+        />
+
+
+        <ChordPalette
+          selectedChord={selectedChord}
+          swatches={swatches}
+          activeSwatchIndex={activeSwatchIndex}
+          onAddSwatch={() => {
+            setSwatches((current) => [...current, { ...selectedChord, extensionIds: [...selectedChord.extensionIds] }])
+            setActiveSwatchIndex(swatches.length)
+          }}
+          onSelectCurrentChord={() => {
+            setActiveSwatchIndex(null)
+          }}
+          onSelectSwatch={(index) => {
+            const swatch = swatches[index]
+            if (!swatch) return
+            setRoot(swatch.root)
+            setQualityId(swatch.qualityId)
+            setExtensionIds(swatch.extensionIds)
+            setActiveSwatchIndex(index)
+          }}
         />
 
         <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} naturalDecay={naturalDecay} chordRoles={chordRoles} />

@@ -1,6 +1,13 @@
-import { useMemo } from 'react'
-import { CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './chords'
-import { CHORD_PRESETS, getAutocompleteTokens, getChordPresetById, parseChordQuery } from './chordSearch'
+import { useEffect, useMemo, useState } from 'react'
+import { CHORD_EXTENSIONS, NOTE_NAMES, type NoteName } from './chords'
+import {
+  CHORD_PRESETS,
+  getAutocompleteTokens,
+  getChordPresetById,
+  getChordQueryForSelection,
+  getPresetIdForSelection,
+  parseChordQuery,
+} from './chordSearch'
 
 type ChordBrowserProps = {
   root: NoteName
@@ -27,20 +34,44 @@ function SelectField({ label, value, options, onChange }: { label: string; value
   )
 }
 
-function ChordAutocomplete({ root, qualityId, extensionIds, onApply }: { root: NoteName; qualityId: string; extensionIds: string[]; onApply: (query: string) => void }) {
+function ChordAutocomplete({
+  root,
+  qualityId,
+  extensionIds,
+  onApply,
+}: {
+  root: NoteName
+  qualityId: string
+  extensionIds: string[]
+  onApply: (query: string) => boolean
+}) {
   const autocompleteTokens = useMemo(() => getAutocompleteTokens(), [])
-  const defaultValue = `${root}${getChordPresetById('major-triad').aliases[0]}`
+  const [query, setQuery] = useState(() => getChordQueryForSelection(root, qualityId, extensionIds))
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    setQuery(getChordQueryForSelection(root, qualityId, extensionIds))
+    setHasError(false)
+  }, [root, qualityId, extensionIds])
 
   return (
     <label className="flex min-w-[180px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
       Chord Search
       <input
-        defaultValue={`${root}${CHORD_QUALITIES.find((q) => q.id === qualityId)?.label === 'Major' && extensionIds.length === 0 ? 'maj' : ''}` || defaultValue}
+        value={query}
         list="chord-autocomplete"
-        onChange={(event) => onApply(event.target.value)}
+        onChange={(event) => {
+          const nextQuery = event.target.value
+          setQuery(nextQuery)
+          const resolved = onApply(nextQuery)
+          setHasError(!resolved)
+        }}
         placeholder="Cmaj7, F#m7, Bb7sus4"
-        className="rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+        className={`rounded-md border bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 ${
+          hasError ? 'border-red-500 dark:border-red-400' : 'border-zinc-300 dark:border-zinc-700'
+        }`}
       />
+      {hasError ? <span className="text-[11px] normal-case tracking-normal text-red-600 dark:text-red-400">Unrecognized chord name.</span> : null}
       <datalist id="chord-autocomplete">
         {autocompleteTokens.map((token) => (
           <option key={token} value={token} />
@@ -52,6 +83,7 @@ function ChordAutocomplete({ root, qualityId, extensionIds, onApply }: { root: N
 
 export default function ChordBrowser({ root, qualityId, extensionIds, onRootChange, onQualityChange, onExtensionsChange, onToggleExtension }: ChordBrowserProps) {
   const presetOptions = CHORD_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))
+  const selectedPresetId = getPresetIdForSelection(qualityId, extensionIds) ?? 'major-triad'
 
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
@@ -62,15 +94,20 @@ export default function ChordBrowser({ root, qualityId, extensionIds, onRootChan
           extensionIds={extensionIds}
           onApply={(query) => {
             const parsed = parseChordQuery(query, { root, qualityId, extensionIds })
+            const unchanged = parsed.root === root && parsed.qualityId === qualityId && JSON.stringify(parsed.extensionIds) === JSON.stringify(extensionIds)
+            if (unchanged && query.trim().toLowerCase() !== getChordQueryForSelection(root, qualityId, extensionIds).toLowerCase()) {
+              return false
+            }
             onRootChange(parsed.root)
             onQualityChange(parsed.qualityId)
             onExtensionsChange(parsed.extensionIds)
+            return true
           }}
         />
         <SelectField label="Root" value={root} options={NOTE_NAMES.map((note) => ({ value: note, label: note }))} onChange={(value) => onRootChange(value as NoteName)} />
         <SelectField
           label="Chord Type"
-          value={CHORD_PRESETS.find((preset) => preset.qualityId === qualityId && JSON.stringify(preset.extensionIds) === JSON.stringify(extensionIds))?.id ?? 'major-triad'}
+          value={selectedPresetId}
           options={presetOptions}
           onChange={(presetId) => {
             const preset = getChordPresetById(presetId)

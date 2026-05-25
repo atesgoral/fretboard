@@ -55,6 +55,16 @@ export function getChordPresetById(id: string) {
   return CHORD_PRESETS.find((preset) => preset.id === id) ?? CHORD_PRESETS[0]
 }
 
+export function getPresetIdForSelection(qualityId: string, extensionIds: string[]) {
+  return CHORD_PRESETS.find((preset) => preset.qualityId === qualityId && JSON.stringify(preset.extensionIds) === JSON.stringify(extensionIds))?.id
+}
+
+export function getChordQueryForSelection(root: NoteName, qualityId: string, extensionIds: string[]) {
+  const presetId = getPresetIdForSelection(qualityId, extensionIds) ?? 'major-triad'
+  const alias = getChordPresetById(presetId).aliases[0] ?? 'maj'
+  return `${root}${alias}`
+}
+
 export function parseChordQuery(query: string, fallback: ChordSelection): ChordSelection {
   const normalized = normalizeQuery(query)
   if (!normalized) return fallback

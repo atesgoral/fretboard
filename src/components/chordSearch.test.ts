@@ -17,6 +17,11 @@ describe('parseChordQuery', () => {
     expect(parseChordQuery('Cmaj13', fallback)).toEqual({ root: 'C', qualityId: 'maj', extensionIds: ['7', '9', '#11', '13'] })
   })
 
+
+  it('parses dominant 13 aliases from freeform input', () => {
+    expect(parseChordQuery('G13', fallback)).toEqual({ root: 'G', qualityId: 'maj', extensionIds: ['b7', '9', '13'] })
+  })
+
   it('uses tonal fallback for non-preset chord spellings', () => {
     expect(parseChordQuery('Cadd9', fallback)).toEqual({ root: 'C', qualityId: 'maj', extensionIds: ['9'] })
   })

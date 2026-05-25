@@ -1,14 +1,27 @@
+import { useState } from 'react'
+import { Ruler, Waves } from 'lucide-react'
+import Fretboard from './components/Fretboard'
+
 export default function App() {
+  const [linear, setLinear] = useState(false)
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100">
-      <section className="mx-auto flex max-w-4xl flex-col items-center gap-8 px-6 py-24 text-center">
-        <p className="rounded-full border border-violet-400/50 bg-violet-500/10 px-4 py-1 text-sm font-medium text-violet-200">
-          Vite + React + Tailwind
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Ready for GitHub Pages</h1>
-        <p className="max-w-2xl text-lg text-slate-300">
-          This starter is configured for local development and automated deployment with GitHub Actions.
-        </p>
+    <main className="min-h-screen bg-zinc-100 px-4 py-6 text-zinc-900 sm:px-8">
+      <section className="mx-auto flex w-full max-w-screen-2xl flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500">Fretboard</h1>
+          <button
+            type="button"
+            onClick={() => setLinear((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-400"
+            aria-label="Toggle fret spacing"
+          >
+            {linear ? <Ruler className="h-4 w-4" aria-hidden="true" /> : <Waves className="h-4 w-4" aria-hidden="true" />}
+            {linear ? 'Linear spacing' : 'Realistic spacing'}
+          </button>
+        </div>
+
+        <Fretboard linear={linear} />
       </section>
     </main>
   )

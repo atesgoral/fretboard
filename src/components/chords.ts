@@ -30,6 +30,7 @@ export const CHORD_EXTENSIONS: ChordExtension[] = [
   { id: '7', label: '7', interval: 11, role: '7' },
   { id: '9', label: '9', interval: 2, role: '9' },
   { id: '11', label: '11', interval: 5, role: '11' },
+  { id: '#11', label: '#11', interval: 6, role: '#11' },
   { id: '13', label: '13', interval: 9, role: '13' },
 ]
 

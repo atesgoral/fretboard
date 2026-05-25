@@ -39,6 +39,7 @@ export default function App() {
           extensionIds={extensionIds}
           onRootChange={setRoot}
           onQualityChange={setQualityId}
+          onExtensionsChange={setExtensionIds}
           onToggleExtension={(id) =>
             setExtensionIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
           }

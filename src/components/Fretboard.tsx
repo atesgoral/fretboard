@@ -320,15 +320,15 @@ function NoteReadout({ activeNote }: NoteReadoutProps) {
   const frequencyLabel = activeNote?.frequencyHz ?? '0.00 Hz'
 
   return (
-    <div className="flex min-h-10 items-center justify-center py-2">
-      <div className="flex items-center gap-3">
+    <div className="relative flex min-h-10 items-center py-2">
+      <div className="absolute left-1/2 -translate-x-1/2">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
           {noteName}
         </span>
-        <span className="min-w-16 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {activeNote ? frequencyLabel : <span className="invisible">{frequencyLabel}</span>}
-        </span>
       </div>
+      <span className="pointer-events-none absolute left-1/2 ml-7 min-w-16 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        {activeNote ? frequencyLabel : <span className="invisible">{frequencyLabel}</span>}
+      </span>
     </div>
   )
 }

@@ -128,6 +128,11 @@ type HoveredPosition = {
   fret: number
 } | null
 
+type ActivePosition = {
+  stringIndex: number
+  fret: number
+}
+
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
@@ -177,7 +182,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
-              className="absolute border-0 bg-transparent p-0"
+              className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
               onMouseEnter={() => onHover(stringIndex, fret)}
               onMouseLeave={onLeave}
@@ -190,6 +195,44 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
+    </div>
+  )
+}
+
+type NoteReadoutProps = {
+  activePosition: ActivePosition | null
+}
+
+function getNoteName(midiNote: number) {
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+  const octave = Math.floor(midiNote / 12) - 1
+  return `${noteNames[midiNote % 12]}${octave}`
+}
+
+function getFrequency(midiNote: number) {
+  return 440 * 2 ** ((midiNote - 69) / 12)
+}
+
+function NoteReadout({ activePosition }: NoteReadoutProps) {
+  if (!activePosition) {
+    return (
+      <div className="absolute inset-x-0 bottom-1 flex justify-center">
+        <p className="rounded bg-zinc-900/75 px-2 py-1 text-xs font-medium tracking-wide text-zinc-100">Hover or play a note</p>
+      </div>
+    )
+  }
+
+  const midiNote = OPEN_STRING_MIDI[activePosition.stringIndex] + activePosition.fret
+  const noteName = getNoteName(midiNote)
+  const frequency = getFrequency(midiNote).toFixed(2)
+
+  return (
+    <div className="absolute inset-x-0 bottom-1 flex justify-center">
+      <p className="rounded bg-zinc-900/75 px-2 py-1 text-xs font-medium tracking-wide text-zinc-100">
+        <span>{noteName}</span>
+        <span className="mx-1 text-zinc-300">•</span>
+        <span>{frequency} Hz</span>
+      </p>
     </div>
   )
 }
@@ -207,6 +250,7 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
+  const [playedPosition, setPlayedPosition] = useState<ActivePosition | null>(null)
 
   useEffect(() => {
     return () => {
@@ -237,6 +281,7 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
 
   const playNote = useCallback(
     async (stringIndex: number, fret: number) => {
+      setPlayedPosition({ stringIndex, fret })
       const instrument = await getInstrument()
       const context = audioContextRef.current
       if (context && context.state !== 'running') {
@@ -248,6 +293,8 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
     },
     [getInstrument],
   )
+
+  const activePosition = hoveredPosition ?? playedPosition
 
   return (
     <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
@@ -266,6 +313,7 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
           onLeave={() => setHoveredPosition(null)}
           onPlay={playNote}
         />
+        <NoteReadout activePosition={activePosition} />
       </div>
     </section>
   )

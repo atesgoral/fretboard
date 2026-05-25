@@ -31,25 +31,39 @@ type FretboardProps = {
 
 type FretLinesProps = {
   fretPositions: number[]
+  frets: number
 }
 
-function FretLines({ fretPositions }: FretLinesProps) {
-  return fretPositions.map((position, fret) => {
-    const left = `${position * 100}%`
-    const isNut = fret === 0
+function FretLines({ fretPositions, frets }: FretLinesProps) {
+  const nutLeft = `${fretPositions[1] * 100}%`
 
-    return (
+  return (
+    <>
       <div
-        key={`fret-${fret}`}
-        className={`absolute top-0 h-full ${isNut ? 'bg-zinc-700 dark:bg-zinc-200' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+        className="absolute top-0 h-full bg-zinc-700 dark:bg-zinc-200"
         style={{
-          left,
-          width: isNut ? '4px' : '2px',
-          transform: isNut ? 'translateX(0)' : 'translateX(-1px)',
+          left: nutLeft,
+          width: '5px',
+          transform: 'translateX(-2px)',
         }}
       />
-    )
-  })
+      {Array.from({ length: frets - 1 }, (_, index) => index + 2).map((fret) => {
+        const left = `${fretPositions[fret] * 100}%`
+
+        return (
+          <div
+            key={`fret-${fret}`}
+            className="absolute top-0 h-full bg-zinc-300 dark:bg-zinc-600"
+            style={{
+              left,
+              width: '2px',
+              transform: 'translateX(-1px)',
+            }}
+          />
+        )
+      })}
+    </>
+  )
 }
 
 function StringLines({ lowEAtBottom }: { lowEAtBottom: boolean }) {
@@ -156,6 +170,20 @@ type NoteGridProps = {
   chordRoles: Map<number, string>
 }
 
+type StringHoverOverlayProps = {
+  isVisible: boolean
+}
+
+function StringHoverOverlay({ isVisible }: StringHoverOverlayProps) {
+  if (!isVisible) {
+    return null
+  }
+
+  return (
+    <span className="pointer-events-none block h-full w-full bg-zinc-600/10 ring-1 ring-inset ring-zinc-600/35 dark:bg-zinc-100/10 dark:ring-zinc-100/35" />
+  )
+}
+
 function getStringBandBounds(stringYPositions: number[]) {
   return stringYPositions.map((position, index) => {
     if (index === 0) {
@@ -176,6 +204,7 @@ function getStringBandBounds(stringYPositions: number[]) {
 
 function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
+  const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
 
   return (
     <div className="absolute inset-0">
@@ -189,6 +218,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const width = `${(fretPositions[fret + 1] - fretPositions[fret]) * 100}%`
           const isHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
+          const shouldHighlightWholeString = isHovered && fret === 0
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
           const role = chordRoles.get(noteClass)
 
@@ -204,9 +234,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
               onMouseDown={() => onPressStart(stringIndex, fret)}
               onMouseUp={onPressEnd}
             >
-              {isHovered ? (
-                <span className="pointer-events-none block h-full w-full bg-zinc-600/15 ring-1 ring-inset ring-zinc-600/45 dark:bg-zinc-100/15 dark:ring-zinc-100/45" />
-              ) : null}
+              <StringHoverOverlay isVisible={isHovered && !shouldHighlightWholeString} />
               {role ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-900/20 bg-amber-500 text-[11px] font-semibold text-zinc-900 shadow-sm dark:border-amber-200/30 dark:bg-amber-300">
                   {role}
@@ -216,6 +244,16 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
+      {hoveredPosition ? (
+        <div
+          className="pointer-events-none absolute left-0 right-0 bg-zinc-600/10 ring-1 ring-inset ring-zinc-600/35 dark:bg-zinc-100/10 dark:ring-zinc-100/35"
+          style={{
+            top: `${stringBandBounds[hoveredVisualIndex].top}%`,
+            height: `${stringBandBounds[hoveredVisualIndex].bottom - stringBandBounds[hoveredVisualIndex].top}%`,
+            opacity: hoveredPosition.fret === 0 ? 1 : 0,
+          }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -389,7 +427,7 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
     <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
-        <FretLines fretPositions={fretPositions} />
+        <FretLines fretPositions={fretPositions} frets={frets} />
         <StringLines lowEAtBottom={lowEAtBottom} />
         <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />
         <NoteGrid

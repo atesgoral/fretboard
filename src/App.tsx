@@ -138,6 +138,15 @@ export default function App() {
             setExtensionIds(swatch.extensionIds)
             setActiveSwatchIndex(index)
           }}
+          onRemoveSwatch={(index) => {
+            setSwatches((current) => current.filter((_, currentIndex) => currentIndex !== index))
+            setActiveSwatchIndex((currentIndex) => {
+              if (currentIndex === null) return currentIndex
+              if (currentIndex === index) return null
+              if (currentIndex > index) return currentIndex - 1
+              return currentIndex
+            })
+          }}
         />
 
         <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} naturalDecay={naturalDecay} chordRoles={chordRoles} />

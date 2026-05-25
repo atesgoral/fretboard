@@ -6,3 +6,5 @@
 - Optimize for single responsibility.
 - Prefer dumb presentation children.
 - Prefer rendering performance.
+- If you encounter an issue, do not waive it as "found it like this"; fix it.
+- Every clickable element must show `cursor: pointer`.

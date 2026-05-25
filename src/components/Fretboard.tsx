@@ -318,7 +318,10 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
       }
 
       const midiNote = OPEN_STRING_MIDI[stringIndex] + fret
-      instrument.start({ note: midiNote, velocity: 110, duration: naturalDecay ? 2.4 : 1.0 })
+      const attackVelocity = naturalDecay ? Math.round(70 + Math.random() * 35) : 110
+      const durationSeconds = naturalDecay ? 2.4 : 1.0
+
+      instrument.start({ note: midiNote, velocity: attackVelocity, duration: durationSeconds })
     },
     [getInstrument, naturalDecay],
   )

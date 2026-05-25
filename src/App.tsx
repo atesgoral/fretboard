@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import Fretboard from './components/Fretboard'
+import ChordBrowser from './components/ChordBrowser'
+import { buildChordRoles, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
 import { useThemePreference } from './hooks/useThemePreference'
 
@@ -7,6 +9,11 @@ export default function App() {
   const [linear, setLinear] = useState(false)
   const [lowEAtBottom, setLowEAtBottom] = useState(true)
   const { preference, cyclePreference } = useThemePreference()
+  const [root, setRoot] = useState<NoteName>('C')
+  const [qualityId, setQualityId] = useState('maj')
+  const [extensionIds, setExtensionIds] = useState<string[]>([])
+
+  const chordRoles = buildChordRoles(root, qualityId, extensionIds)
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-6 text-zinc-900 transition-colors sm:px-8 dark:bg-zinc-900 dark:text-zinc-100">
@@ -23,7 +30,18 @@ export default function App() {
           />
         </div>
 
-        <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} />
+        <ChordBrowser
+          root={root}
+          qualityId={qualityId}
+          extensionIds={extensionIds}
+          onRootChange={setRoot}
+          onQualityChange={setQualityId}
+          onToggleExtension={(id) =>
+            setExtensionIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+          }
+        />
+
+        <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} chordRoles={chordRoles} />
       </section>
     </main>
   )

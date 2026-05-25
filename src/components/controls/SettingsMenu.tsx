@@ -85,7 +85,7 @@ const ThemeIcon = ({ preference }: { preference: ThemePreference }) => {
 
 function MenuItem({ children }: { children: ReactNode }) {
   return (
-    <div className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-zinc-700 outline-none transition data-[highlighted]:bg-zinc-100 dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800">
+    <div className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-zinc-700 outline-none transition data-[highlighted]:bg-zinc-100 data-[highlighted]:cursor-pointer dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800">
       {children}
     </div>
   )
@@ -104,7 +104,7 @@ export default function SettingsMenu({
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
+          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
           aria-label="Open settings menu"
         >
           <MenuIcon className="h-5 w-5" />

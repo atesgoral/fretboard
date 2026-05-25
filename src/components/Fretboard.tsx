@@ -25,6 +25,7 @@ type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
   frets?: number
+  chordRoles: Map<number, string>
 }
 
 type FretLinesProps = {
@@ -137,6 +138,7 @@ type NoteGridProps = {
   onHover: (stringIndex: number, fret: number) => void
   onLeave: () => void
   onPlay: (stringIndex: number, fret: number) => void
+  chordRoles: Map<number, string>
 }
 
 function getStringBandBounds(stringYPositions: number[]) {
@@ -157,7 +159,7 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPlay, chordRoles }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
 
   return (
@@ -172,12 +174,14 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const width = `${(fretPositions[fret + 1] - fretPositions[fret]) * 100}%`
           const isHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
+          const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
+          const role = chordRoles.get(noteClass)
 
           return (
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
-              className="absolute border-0 bg-transparent p-0"
+              className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
               onMouseEnter={() => onHover(stringIndex, fret)}
               onMouseLeave={onLeave}
@@ -185,6 +189,11 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             >
               {isHovered ? (
                 <span className="pointer-events-none block h-full w-full bg-zinc-600/15 ring-1 ring-inset ring-zinc-600/45 dark:bg-zinc-100/15 dark:ring-zinc-100/45" />
+              ) : null}
+              {role ? (
+                <span className="pointer-events-none absolute left-1/2 top-1/2 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-900/20 bg-amber-500 text-[11px] font-semibold text-zinc-900 shadow-sm dark:border-amber-200/30 dark:bg-amber-300">
+                  {role}
+                </span>
               ) : null}
             </button>
           )
@@ -194,7 +203,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   )
 }
 
-export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS }: FretboardProps) {
+export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS, chordRoles }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
@@ -265,6 +274,7 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
           onHover={(stringIndex, fret) => setHoveredPosition({ stringIndex, fret })}
           onLeave={() => setHoveredPosition(null)}
           onPlay={playNote}
+          chordRoles={chordRoles}
         />
       </div>
     </section>

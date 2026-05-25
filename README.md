@@ -1,10 +1,17 @@
-# Vite + React + Tailwind GitHub Pages Starter
+# Vite + React + TypeScript + Tailwind GitHub Pages Starter
 
 ## Local development
 
 ```bash
 npm install
 npm run dev
+```
+
+## Quality checks
+
+```bash
+npm run typecheck
+npm test
 ```
 
 ## Build
@@ -14,9 +21,12 @@ npm run build
 npm run preview
 ```
 
-## GitHub Pages deployment
+## GitHub Actions
 
-This repository includes `.github/workflows/deploy.yml` that builds on pushes to `main` and deploys `dist/` to GitHub Pages.
+- `.github/workflows/ci.yml` runs type checking, unit tests, and build on pushes to `main` and pull requests.
+- `.github/workflows/deploy.yml` runs type checking, unit tests, build, and deploys `dist/` to GitHub Pages.
+
+## GitHub Pages deployment
 
 ### Required repository settings
 

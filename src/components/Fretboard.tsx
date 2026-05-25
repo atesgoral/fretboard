@@ -38,7 +38,7 @@ function FretLines({ fretPositions }: FretLinesProps) {
     return (
       <div
         key={`fret-${fret}`}
-        className={`absolute top-0 h-full ${isNut ? 'bg-zinc-700' : 'bg-zinc-300'}`}
+        className={`absolute top-0 h-full ${isNut ? 'bg-zinc-700 dark:bg-zinc-200' : 'bg-zinc-300 dark:bg-zinc-600'}`}
         style={{
           left,
           width: isNut ? '4px' : '2px',
@@ -56,7 +56,7 @@ function StringLines() {
     return (
       <div
         key={`string-${index}`}
-        className="absolute left-0 right-0 bg-zinc-600"
+        className="absolute left-0 right-0 bg-zinc-600 dark:bg-zinc-300"
         style={{
           top,
           height: `${STRING_THICKNESSES[index]}px`,
@@ -86,7 +86,7 @@ function FretMarkers({ fretPositions, frets, stringYPositions }: FretMarkersProp
         return (
           <div
             key={`marker-${fret}`}
-            className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200"
+            className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700"
             style={{ left: `calc(${midpoint * 100}% - 8px)` }}
           />
         )
@@ -106,11 +106,11 @@ function FretMarkers({ fretPositions, frets, stringYPositions }: FretMarkersProp
         return (
           <div key={`double-marker-${octaveFret}`}>
             <div
-              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200"
+              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700"
               style={{ left: `calc(${midpoint * 100}% - 6px)`, top: `${upperTop}%` }}
             />
             <div
-              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200"
+              className="absolute h-3 w-3 -translate-y-1/2 rounded-full border border-zinc-300 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-700"
               style={{ left: `calc(${midpoint * 100}% - 6px)`, top: `${lowerTop}%` }}
             />
           </div>
@@ -155,7 +155,7 @@ function NoteGrid({ fretPositions, frets, hoveredPosition, onHover, onLeave, onP
               onMouseLeave={onLeave}
               onMouseDown={() => onPlay(stringIndex, fret)}
             >
-              {isHovered ? <span className="block h-full w-full rounded-full bg-zinc-700/70" /> : null}
+              {isHovered ? <span className="block h-full w-full rounded-full bg-zinc-700/70 dark:bg-zinc-100/70" /> : null}
             </button>
           )
         })
@@ -216,9 +216,9 @@ export default function Fretboard({ linear, frets = DEFAULT_FRETS }: FretboardPr
   )
 
   return (
-    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50">
-        <div className="absolute inset-0 border border-zinc-200" />
+    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
+        <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
         <FretLines fretPositions={fretPositions} />
         <StringLines />
         <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />

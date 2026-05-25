@@ -24,6 +24,7 @@ function getFretPositions(linear: boolean, frets: number) {
 type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
+  naturalDecay: boolean
   frets?: number
 }
 
@@ -136,7 +137,9 @@ type NoteGridProps = {
   hoveredPosition: HoveredPosition
   onHover: (stringIndex: number, fret: number) => void
   onLeave: () => void
-  onPlay: (stringIndex: number, fret: number) => void
+  onPressStart: (stringIndex: number, fret: number) => void
+  onPressEnter: (stringIndex: number, fret: number) => void
+  onPressEnd: () => void
 }
 
 function getStringBandBounds(stringYPositions: number[]) {
@@ -157,7 +160,7 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPlay }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
 
   return (
@@ -177,11 +180,13 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
-              className="absolute border-0 bg-transparent p-0"
+              className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
               onMouseEnter={() => onHover(stringIndex, fret)}
+              onMouseMove={() => onPressEnter(stringIndex, fret)}
               onMouseLeave={onLeave}
-              onMouseDown={() => onPlay(stringIndex, fret)}
+              onMouseDown={() => onPressStart(stringIndex, fret)}
+              onMouseUp={onPressEnd}
             >
               {isHovered ? (
                 <span className="pointer-events-none block h-full w-full bg-zinc-600/15 ring-1 ring-inset ring-zinc-600/45 dark:bg-zinc-100/15 dark:ring-zinc-100/45" />
@@ -194,7 +199,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   )
 }
 
-export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS }: FretboardProps) {
+export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = DEFAULT_FRETS }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
@@ -207,6 +212,18 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
+  const isPointerDownRef = useRef(false)
+  const lastPlayedRef = useRef<string | null>(null)
+
+  const clearPointerPress = useCallback(() => {
+    isPointerDownRef.current = false
+    lastPlayedRef.current = null
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('mouseup', clearPointerPress)
+    return () => window.removeEventListener('mouseup', clearPointerPress)
+  }, [clearPointerPress])
 
   useEffect(() => {
     return () => {
@@ -244,9 +261,37 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
       }
 
       const midiNote = OPEN_STRING_MIDI[stringIndex] + fret
-      instrument.start({ note: midiNote, velocity: 110, duration: 1.6 })
+      instrument.start({ note: midiNote, velocity: 110, duration: naturalDecay ? 2.4 : 1.0 })
     },
-    [getInstrument],
+    [getInstrument, naturalDecay],
+  )
+
+
+  const handlePressStart = useCallback(
+    (stringIndex: number, fret: number) => {
+      isPointerDownRef.current = true
+      const positionKey = `${stringIndex}:${fret}`
+      lastPlayedRef.current = positionKey
+      void playNote(stringIndex, fret)
+    },
+    [playNote],
+  )
+
+  const handlePressEnter = useCallback(
+    (stringIndex: number, fret: number) => {
+      if (!isPointerDownRef.current) {
+        return
+      }
+
+      const positionKey = `${stringIndex}:${fret}`
+      if (lastPlayedRef.current === positionKey) {
+        return
+      }
+
+      lastPlayedRef.current = positionKey
+      void playNote(stringIndex, fret)
+    },
+    [playNote],
   )
 
   return (
@@ -264,7 +309,9 @@ export default function Fretboard({ linear, lowEAtBottom, frets = DEFAULT_FRETS 
           hoveredPosition={hoveredPosition}
           onHover={(stringIndex, fret) => setHoveredPosition({ stringIndex, fret })}
           onLeave={() => setHoveredPosition(null)}
-          onPlay={playNote}
+          onPressStart={handlePressStart}
+          onPressEnter={handlePressEnter}
+          onPressEnd={clearPointerPress}
         />
       </div>
     </section>

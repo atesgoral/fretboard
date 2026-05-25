@@ -6,6 +6,7 @@ import { useThemePreference } from './hooks/useThemePreference'
 export default function App() {
   const [linear, setLinear] = useState(false)
   const [lowEAtBottom, setLowEAtBottom] = useState(true)
+  const [naturalDecay, setNaturalDecay] = useState(true)
   const { preference, cyclePreference } = useThemePreference()
 
   return (
@@ -20,10 +21,12 @@ export default function App() {
             onToggleLinear={() => setLinear((current) => !current)}
             lowEAtBottom={lowEAtBottom}
             onToggleLowEPosition={() => setLowEAtBottom((current) => !current)}
+            naturalDecay={naturalDecay}
+            onToggleNaturalDecay={() => setNaturalDecay((current) => !current)}
           />
         </div>
 
-        <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} />
+        <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} naturalDecay={naturalDecay} />
       </section>
     </main>
   )

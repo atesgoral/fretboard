@@ -9,6 +9,8 @@ type SettingsMenuProps = {
   onToggleLinear: () => void
   lowEAtBottom: boolean
   onToggleLowEPosition: () => void
+  naturalDecay: boolean
+  onToggleNaturalDecay: () => void
 }
 
 type IconProps = {
@@ -70,6 +72,13 @@ const CheckIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+const DecayIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <path d="M4 18c2.8-5.3 5.5-7.8 8-7.8 2.1 0 4 .8 8 3.8" {...ICON_STROKE_PROPS} />
+    <path d="M16 9.5h4v4" {...ICON_STROKE_PROPS} />
+  </svg>
+)
+
 const getThemeLabel = (preference: ThemePreference) => {
   if (preference === 'system') return 'System'
   if (preference === 'light') return 'Light'
@@ -85,7 +94,7 @@ const ThemeIcon = ({ preference }: { preference: ThemePreference }) => {
 
 function MenuItem({ children }: { children: ReactNode }) {
   return (
-    <div className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-zinc-700 outline-none transition data-[highlighted]:bg-zinc-100 dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800">
+    <div className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-zinc-700 outline-none transition data-[highlighted]:bg-zinc-100 dark:text-zinc-100 dark:data-[highlighted]:bg-zinc-800">
       {children}
     </div>
   )
@@ -98,13 +107,15 @@ export default function SettingsMenu({
   onToggleLinear,
   lowEAtBottom,
   onToggleLowEPosition,
+  naturalDecay,
+  onToggleNaturalDecay,
 }: SettingsMenuProps) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
+          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
           aria-label="Open settings menu"
         >
           <MenuIcon className="h-5 w-5" />
@@ -138,6 +149,17 @@ export default function SettingsMenu({
           <MenuItem>
             <span className="inline-flex items-center gap-2">
               <StringOrderIcon className="h-4 w-4" /> Show low E on top
+            </span>
+            <DropdownMenu.ItemIndicator>
+              <CheckIcon className="h-4 w-4" />
+            </DropdownMenu.ItemIndicator>
+          </MenuItem>
+        </DropdownMenu.CheckboxItem>
+
+        <DropdownMenu.CheckboxItem checked={naturalDecay} onCheckedChange={onToggleNaturalDecay}>
+          <MenuItem>
+            <span className="inline-flex items-center gap-2">
+              <DecayIcon className="h-4 w-4" /> Natural decay
             </span>
             <DropdownMenu.ItemIndicator>
               <CheckIcon className="h-4 w-4" />

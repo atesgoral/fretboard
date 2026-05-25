@@ -316,16 +316,19 @@ function getNoteIdentity(position: ActivePosition): NoteIdentity {
 }
 
 function NoteReadout({ activeNote }: NoteReadoutProps) {
+  const noteName = activeNote?.name ?? '–'
+  const frequencyLabel = activeNote?.frequencyHz ?? '0.00 Hz'
+
   return (
     <div className="flex min-h-10 items-center justify-center py-2">
-      {activeNote ? (
-        <div className="flex items-center gap-3">
-          <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 px-3 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
-            {activeNote.name}
-          </span>
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{activeNote.frequencyHz}</span>
-        </div>
-      ) : null}
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
+          {noteName}
+        </span>
+        <span className="min-w-16 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {activeNote ? frequencyLabel : <span className="invisible">{frequencyLabel}</span>}
+        </span>
+      </div>
     </div>
   )
 }

@@ -37,10 +37,12 @@ function SelectField({ label, value, options, onChange }: { label: string; value
 function ChordAutocomplete({
   query,
   hasError,
+  onBlur,
   onInput,
 }: {
   query: string
   hasError: boolean
+  onBlur: () => void
   onInput: (value: string) => void
 }) {
   const autocompleteTokens = useMemo(() => getAutocompleteTokens(), [])
@@ -48,16 +50,36 @@ function ChordAutocomplete({
   return (
     <label className="flex min-w-[180px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
       Chord Search
-      <input
-        value={query}
-        list="chord-autocomplete"
-        onChange={(event) => onInput(event.target.value)}
-        placeholder="Cmaj7, F#m7, Bb7sus4"
-        className={`rounded-md border bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 ${
-          hasError ? 'border-red-500 dark:border-red-400' : 'border-zinc-300 dark:border-zinc-700'
-        }`}
-      />
-      {hasError ? <span className="text-[11px] normal-case tracking-normal text-red-600 dark:text-red-400">Unrecognized chord name.</span> : null}
+      <div className="relative">
+        <input
+          value={query}
+          list="chord-autocomplete"
+          onBlur={onBlur}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              onBlur()
+            }
+          }}
+          onChange={(event) => onInput(event.target.value)}
+          placeholder="Cmaj7, F#m7, Bb7sus4"
+          className={`w-full rounded-md border bg-white px-2 py-2 pr-8 text-sm font-normal tracking-normal text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 ${
+            hasError ? 'border-red-500 dark:border-red-400' : 'border-zinc-300 dark:border-zinc-700'
+          }`}
+        />
+        <button
+          type="button"
+          tabIndex={hasError ? 0 : -1}
+          aria-label={hasError ? 'Chord name could not be recognized' : 'Chord name recognized'}
+          title={hasError ? 'Unrecognized chord name.' : ''}
+          className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
+        >
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={`h-4 w-4 ${hasError ? 'text-red-600 dark:text-red-400' : 'text-transparent'}`}>
+            <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10 8V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="10" cy="5.5" r="1" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
       <datalist id="chord-autocomplete">
         {autocompleteTokens.map((token) => (
           <option key={token} value={token} />
@@ -73,6 +95,20 @@ export default function ChordBrowser({ root, qualityId, extensionIds, onRootChan
   const [query, setQuery] = useState(() => getChordQueryForSelection(root, qualityId, extensionIds))
   const [hasError, setHasError] = useState(false)
 
+  const applyQueryToSelection = (nextQuery: string) => {
+    const parsed = parseChordQuery(nextQuery, { root, qualityId, extensionIds })
+    const unchanged = parsed.root === root && parsed.qualityId === qualityId && JSON.stringify(parsed.extensionIds) === JSON.stringify(extensionIds)
+    if (unchanged && nextQuery.trim().toLowerCase() !== getChordQueryForSelection(root, qualityId, extensionIds).toLowerCase()) {
+      setHasError(true)
+      return
+    }
+
+    setHasError(false)
+    onRootChange(parsed.root)
+    onQualityChange(parsed.qualityId)
+    onExtensionsChange(parsed.extensionIds)
+  }
+
   useEffect(() => {
     setQuery(getChordQueryForSelection(root, qualityId, extensionIds))
     setHasError(false)
@@ -84,19 +120,8 @@ export default function ChordBrowser({ root, qualityId, extensionIds, onRootChan
         <ChordAutocomplete
           query={query}
           hasError={hasError}
-          onInput={(nextQuery) => {
-            setQuery(nextQuery)
-            const parsed = parseChordQuery(nextQuery, { root, qualityId, extensionIds })
-            const unchanged = parsed.root === root && parsed.qualityId === qualityId && JSON.stringify(parsed.extensionIds) === JSON.stringify(extensionIds)
-            if (unchanged && nextQuery.trim().toLowerCase() !== getChordQueryForSelection(root, qualityId, extensionIds).toLowerCase()) {
-              setHasError(true)
-              return
-            }
-            setHasError(false)
-            onRootChange(parsed.root)
-            onQualityChange(parsed.qualityId)
-            onExtensionsChange(parsed.extensionIds)
-          }}
+          onBlur={() => applyQueryToSelection(query)}
+          onInput={(nextQuery) => setQuery(nextQuery)}
         />
         <SelectField label="Root" value={root} options={NOTE_NAMES.map((note) => ({ value: note, label: note }))} onChange={(value) => onRootChange(value as NoteName)} />
         <SelectField

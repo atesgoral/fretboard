@@ -11,6 +11,8 @@ type SettingsMenuProps = {
   onToggleLowEPosition: () => void
   naturalDecay: boolean
   onToggleNaturalDecay: () => void
+  reverbEnabled: boolean
+  onToggleReverb: () => void
 }
 
 type IconProps = {
@@ -79,6 +81,14 @@ const DecayIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+const ReverbIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <path d="M5 12h2m2 0h2m2 0h2m2 0h2" {...ICON_STROKE_PROPS} />
+    <path d="M8 8.5c1.2-1 2.5-1.5 4-1.5 1.4 0 2.8.5 4 1.5" {...ICON_STROKE_PROPS} />
+    <path d="M8 15.5c1.2 1 2.5 1.5 4 1.5 1.4 0 2.8-.5 4-1.5" {...ICON_STROKE_PROPS} />
+  </svg>
+)
+
 const getThemeLabel = (preference: ThemePreference) => {
   if (preference === 'system') return 'System'
   if (preference === 'light') return 'Light'
@@ -109,6 +119,8 @@ export default function SettingsMenu({
   onToggleLowEPosition,
   naturalDecay,
   onToggleNaturalDecay,
+  reverbEnabled,
+  onToggleReverb,
 }: SettingsMenuProps) {
   return (
     <DropdownMenu.Root>
@@ -160,6 +172,17 @@ export default function SettingsMenu({
           <MenuItem>
             <span className="inline-flex items-center gap-2">
               <DecayIcon className="h-4 w-4" /> Natural decay
+            </span>
+            <DropdownMenu.ItemIndicator>
+              <CheckIcon className="h-4 w-4" />
+            </DropdownMenu.ItemIndicator>
+          </MenuItem>
+        </DropdownMenu.CheckboxItem>
+
+        <DropdownMenu.CheckboxItem checked={reverbEnabled} onCheckedChange={onToggleReverb}>
+          <MenuItem>
+            <span className="inline-flex items-center gap-2">
+              <ReverbIcon className="h-4 w-4" /> Reverb
             </span>
             <DropdownMenu.ItemIndicator>
               <CheckIcon className="h-4 w-4" />

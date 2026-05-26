@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Soundfont } from 'smplr'
+import { Reverb, Soundfont } from 'smplr'
 
 const STRINGS = 6
 const DEFAULT_FRETS = 18
@@ -8,6 +8,8 @@ const STRING_THICKNESSES = [4, 3.5, 3, 2.5, 2, 1.5]
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 const GUITAR_SOUNDFONT = 'acoustic_guitar_nylon'
 const FALLBACK_SOUNDFONT = 'acoustic_guitar_steel'
+const REVERB_STORAGE_KEY = 'cadence_reverb'
+const DEFAULT_REVERB_LEVEL = 0.15
 
 function getFretPositions(linear: boolean, frets: number) {
   if (linear) {
@@ -25,10 +27,18 @@ type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
   naturalDecay: boolean
+  reverbEnabled: boolean
   frets?: number
   chordRoles: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
+}
+
+function getStoredReverbLevel() {
+  if (typeof window === 'undefined') return DEFAULT_REVERB_LEVEL
+  const stored = Number.parseFloat(window.localStorage.getItem(REVERB_STORAGE_KEY) ?? '')
+  if (Number.isNaN(stored)) return DEFAULT_REVERB_LEVEL
+  return Math.max(0, Math.min(1, stored))
 }
 
 type FretLinesProps = {
@@ -328,7 +338,16 @@ function NoteReadout({ activeNotes }: NoteReadoutProps) {
   )
 }
 
-export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = DEFAULT_FRETS, chordRoles, playedPositions, playSequence }: FretboardProps) {
+export default function Fretboard({
+  linear,
+  lowEAtBottom,
+  naturalDecay,
+  reverbEnabled,
+  frets = DEFAULT_FRETS,
+  chordRoles,
+  playedPositions,
+  playSequence,
+}: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
@@ -340,6 +359,8 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
   )
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
+  const dryGainRef = useRef<GainNode | null>(null)
+  const wetGainRef = useRef<GainNode | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
   const isPointerDownRef = useRef(false)
   const lastPlayedRef = useRef<string | null>(null)
@@ -385,6 +406,12 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
     }
   }, [])
 
+  useEffect(() => {
+    const mix = reverbEnabled ? getStoredReverbLevel() : 0
+    if (dryGainRef.current) dryGainRef.current.gain.value = 1 - mix
+    if (wetGainRef.current) wetGainRef.current.gain.value = mix
+  }, [reverbEnabled])
+
   const getInstrument = useCallback(async () => {
     if (instrumentRef.current) {
       return instrumentRef.current
@@ -393,18 +420,40 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
     const context = audioContextRef.current ?? new AudioContext()
     audioContextRef.current = context
 
-    let instrument = Soundfont(context, { instrument: GUITAR_SOUNDFONT })
+    const reverbMix = reverbEnabled ? getStoredReverbLevel() : 0
+    const highpassFilter = context.createBiquadFilter()
+    highpassFilter.type = 'highpass'
+    highpassFilter.frequency.value = 80
+    const lowpassFilter = context.createBiquadFilter()
+    lowpassFilter.type = 'lowpass'
+    lowpassFilter.frequency.value = 7200
+    const dryGain = context.createGain()
+    const wetGain = context.createGain()
+    dryGain.gain.value = 1 - reverbMix
+    wetGain.gain.value = reverbMix
+    const reverb = Reverb(context)
+
+    highpassFilter.connect(lowpassFilter)
+    lowpassFilter.connect(dryGain)
+    dryGain.connect(context.destination)
+    lowpassFilter.connect(wetGain)
+    wetGain.connect(reverb.input)
+    reverb.connect(context.destination)
+    dryGainRef.current = dryGain
+    wetGainRef.current = wetGain
+
+    let instrument = Soundfont(context, { instrument: GUITAR_SOUNDFONT, destination: highpassFilter })
 
     try {
       await instrument.ready
     } catch {
-      instrument = Soundfont(context, { instrument: FALLBACK_SOUNDFONT })
+      instrument = Soundfont(context, { instrument: FALLBACK_SOUNDFONT, destination: highpassFilter })
       await instrument.ready
     }
 
     instrumentRef.current = instrument
     return instrument
-  }, [])
+  }, [reverbEnabled])
 
   const playNote = useCallback(
     async (stringIndex: number, fret: number, triggerType: TriggerType) => {

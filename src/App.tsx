@@ -17,6 +17,7 @@ type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[
 type PlayedPosition = { stringIndex: number; fret: number }
 type VoicingMode = 'strum' | 'finger' | 'shell'
 type DisplayMode = 'fretboard' | 'shape'
+type BrowserMode = 'now' | 'build' | 'explore'
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 
@@ -65,6 +66,7 @@ export default function App() {
   const [voicingMode, setVoicingMode] = useState<VoicingMode>('strum')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('fretboard')
   const [inversion, setInversion] = useState<0 | 1 | 2>(0)
+  const [browserMode, setBrowserMode] = useState<BrowserMode>('now')
 
   useEffect(() => {
     window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
@@ -140,6 +142,30 @@ export default function App() {
           </div>
         </div>
 
+
+        <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+          <span className="px-2 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">Workspace</span>
+          {[
+            { id: 'now', label: 'Now', title: 'Focus on fretboard with minimal controls' },
+            { id: 'build', label: 'Build', title: 'Build a specific chord' },
+            { id: 'explore', label: 'Explore', title: 'Browse in-key chord options' },
+          ].map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              title={mode.title}
+              onClick={() => setBrowserMode(mode.id as BrowserMode)}
+              className={`cursor-pointer rounded-md px-3 py-1.5 text-sm transition ${
+                browserMode === mode.id
+                  ? 'bg-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
+                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
+              }`}
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+
         <ChordBrowser
           root={root}
           qualityId={qualityId}
@@ -159,9 +185,10 @@ export default function App() {
           onInversionChange={setInversion}
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
+          mode={browserMode}
         />
 
-        <ChordPalette
+        {browserMode !== 'now' ? <ChordPalette
           selectedChord={selectedChord}
           swatches={swatches}
           activeSwatchIndex={activeSwatchIndex}
@@ -173,7 +200,7 @@ export default function App() {
             setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
             setPlaySequence((current) => current + 1)
           }}
-        />
+        /> : null}
 
         <Fretboard
           linear={linear}

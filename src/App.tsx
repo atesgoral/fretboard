@@ -41,6 +41,7 @@ type StoredPreferences = {
   linear?: boolean
   lowEAtBottom?: boolean
   naturalDecay?: boolean
+  reverbEnabled?: boolean
   root?: NoteName
   qualityId?: string
   extensionIds?: string[]
@@ -68,6 +69,7 @@ export default function App() {
   const [linear, setLinear] = useState(initialPreferences.linear ?? true)
   const [lowEAtBottom, setLowEAtBottom] = useState(initialPreferences.lowEAtBottom ?? true)
   const [naturalDecay, setNaturalDecay] = useState(initialPreferences.naturalDecay ?? true)
+  const [reverbEnabled, setReverbEnabled] = useState(initialPreferences.reverbEnabled ?? true)
   const { preference, cyclePreference } = useThemePreference()
   const [root, setRoot] = useState<NoteName>(initialPreferences.root ?? 'C')
   const [qualityId, setQualityId] = useState(initialPreferences.qualityId ?? 'maj')
@@ -84,6 +86,7 @@ export default function App() {
         linear,
         lowEAtBottom,
         naturalDecay,
+        reverbEnabled,
         root,
         qualityId,
         extensionIds,
@@ -91,7 +94,7 @@ export default function App() {
         activeSwatchIndex,
       } satisfies StoredPreferences),
     )
-  }, [linear, lowEAtBottom, naturalDecay, root, qualityId, extensionIds, swatches, activeSwatchIndex])
+  }, [linear, lowEAtBottom, naturalDecay, reverbEnabled, root, qualityId, extensionIds, swatches, activeSwatchIndex])
 
   const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
@@ -110,6 +113,8 @@ export default function App() {
             onToggleLowEPosition={() => setLowEAtBottom((current) => !current)}
             naturalDecay={naturalDecay}
             onToggleNaturalDecay={() => setNaturalDecay((current) => !current)}
+            reverbEnabled={reverbEnabled}
+            onToggleReverb={() => setReverbEnabled((current) => !current)}
           />
         </div>
 
@@ -186,6 +191,7 @@ export default function App() {
           linear={linear}
           lowEAtBottom={lowEAtBottom}
           naturalDecay={naturalDecay}
+          reverbEnabled={reverbEnabled}
           chordRoles={chordRoles}
           playedPositions={playedPositions}
           playSequence={playSequence}

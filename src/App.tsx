@@ -15,6 +15,8 @@ import {
 } from './state/appState'
 type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
 type PlayedPosition = { stringIndex: number; fret: number }
+type VoicingMode = 'strum' | 'finger' | 'shell'
+type DisplayMode = 'fretboard' | 'shape'
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 
@@ -32,14 +34,23 @@ function getChordPitchClasses(chord: ChordSelection) {
   return Array.from(new Set(intervals.map((interval) => (rootIndex + interval) % 12)))
 }
 
-function buildCommonVoicing(chord: ChordSelection): PlayedPosition[] {
+function buildCommonVoicing(chord: ChordSelection, voicingMode: VoicingMode, inversion: 0 | 1 | 2): PlayedPosition[] {
   const pitchClasses = getChordPitchClasses(chord)
+  const playableFrets = voicingMode === 'strum' ? 6 : 9
   const positions = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
     const fret = Array.from({ length: 6 }, (_, index) => index).find((candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12))
-    return fret === undefined ? null : { stringIndex, fret }
+    const boundedFret = Array.from({ length: playableFrets + 1 }, (_, index) => index).find((candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12))
+    const selectedFret = voicingMode === 'strum' ? fret : boundedFret
+    return selectedFret === undefined ? null : { stringIndex, fret: selectedFret }
   }).filter((position): position is PlayedPosition => position !== null)
 
-  return positions.length >= 4 ? positions : positions.slice(0, 3)
+  const filteredByMode = voicingMode === 'shell' ? positions.filter((position) => position.stringIndex >= 1 && position.stringIndex <= 4).slice(0, 3) : positions
+  const inversionOffset = inversion % Math.max(filteredByMode.length, 1)
+  const rotated = filteredByMode.slice(inversionOffset).concat(filteredByMode.slice(0, inversionOffset))
+
+  if (voicingMode === 'finger') return rotated.slice(0, 4)
+  if (voicingMode === 'shell') return rotated
+  return rotated.length >= 4 ? rotated : rotated.slice(0, 3)
 }
 
 const initialPreferences = getInitialPreferences()
@@ -51,6 +62,9 @@ export default function App() {
   const { root, qualityId, extensionIds, swatches, activeSwatchIndex } = getCurrentTimelineState(appState)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
+  const [voicingMode, setVoicingMode] = useState<VoicingMode>('strum')
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('fretboard')
+  const [inversion, setInversion] = useState<0 | 1 | 2>(0)
 
   useEffect(() => {
     window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
@@ -58,6 +72,7 @@ export default function App() {
 
   const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
+  const focusedVoicing = useMemo(() => buildCommonVoicing(selectedChord, voicingMode, inversion), [selectedChord, voicingMode, inversion])
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -133,6 +148,12 @@ export default function App() {
           onQualityChange={(next) => dispatch({ type: 'setQuality', qualityId: next })}
           onExtensionsChange={(ids) => dispatch({ type: 'setExtensions', extensionIds: ids })}
           onToggleExtension={(id) => dispatch({ type: 'toggleExtension', extensionId: id })}
+          voicingMode={voicingMode}
+          onVoicingModeChange={setVoicingMode}
+          inversion={inversion}
+          onInversionChange={setInversion}
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
         />
 
         <ChordPalette
@@ -144,7 +165,7 @@ export default function App() {
           onSelectSwatch={(index) => dispatch({ type: 'selectSwatch', index })}
           onRemoveSwatch={(index) => dispatch({ type: 'removeSwatch', index })}
           onPlayChord={(chord) => {
-            setPlayedPositions(buildCommonVoicing(chord))
+            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
             setPlaySequence((current) => current + 1)
           }}
         />
@@ -155,8 +176,8 @@ export default function App() {
           naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           muted={muted}
-          chordRoles={chordRoles}
-          playedPositions={playedPositions}
+          chordRoles={displayMode === 'shape' ? new Map() : chordRoles}
+          playedPositions={displayMode === 'shape' ? focusedVoicing : playedPositions}
           playSequence={playSequence}
         />
       </section>

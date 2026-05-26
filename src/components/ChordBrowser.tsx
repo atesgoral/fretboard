@@ -17,13 +17,36 @@ type ChordBrowserProps = {
   onQualityChange: (next: string) => void
   onExtensionsChange: (ids: string[]) => void
   onToggleExtension: (id: string) => void
+  voicingMode: 'strum' | 'finger' | 'shell'
+  onVoicingModeChange: (mode: 'strum' | 'finger' | 'shell') => void
+  inversion: 0 | 1 | 2
+  onInversionChange: (inversion: 0 | 1 | 2) => void
+  displayMode: 'fretboard' | 'shape'
+  onDisplayModeChange: (mode: 'fretboard' | 'shape') => void
 }
 
-function SelectField({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  title,
+}: {
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (value: string) => void
+  title?: string
+}) {
   return (
     <label className="flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
       {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+      <select
+        value={value}
+        title={title}
+        onChange={(event) => onChange(event.target.value)}
+        className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -89,7 +112,21 @@ function ChordAutocomplete({
   )
 }
 
-export default function ChordBrowser({ root, qualityId, extensionIds, onRootChange, onQualityChange, onExtensionsChange, onToggleExtension }: ChordBrowserProps) {
+export default function ChordBrowser({
+  root,
+  qualityId,
+  extensionIds,
+  onRootChange,
+  onQualityChange,
+  onExtensionsChange,
+  onToggleExtension,
+  voicingMode,
+  onVoicingModeChange,
+  inversion,
+  onInversionChange,
+  displayMode,
+  onDisplayModeChange,
+}: ChordBrowserProps) {
   const presetOptions = CHORD_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))
   const selectedPresetId = getPresetIdForSelection(qualityId, extensionIds) ?? 'major-triad'
   const [query, setQuery] = useState(() => getChordQueryForSelection(root, qualityId, extensionIds))
@@ -145,6 +182,36 @@ export default function ChordBrowser({ root, qualityId, extensionIds, onRootChan
             )
           })}
         </fieldset>
+        <SelectField
+          label="Play Style"
+          value={voicingMode}
+          options={[
+            { value: 'strum', label: 'Strum' },
+            { value: 'finger', label: 'Fingerpicking' },
+            { value: 'shell', label: 'Shell' },
+          ]}
+          title="Select a chord play style: Strum for broad rhythm, Fingerpicking for separated tones, or Shell for compact core tones"
+          onChange={(value) => onVoicingModeChange(value as 'strum' | 'finger' | 'shell')}
+        />
+        <SelectField
+          label="Inversion"
+          value={String(inversion)}
+          options={[
+            { value: '0', label: 'Root position' },
+            { value: '1', label: '1st inversion' },
+            { value: '2', label: '2nd inversion' },
+          ]}
+          onChange={(value) => onInversionChange(Number(value) as 0 | 1 | 2)}
+        />
+        <SelectField
+          label="Display"
+          value={displayMode}
+          options={[
+            { value: 'fretboard', label: 'Full fretboard notes' },
+            { value: 'shape', label: 'Single-position shape' },
+          ]}
+          onChange={(value) => onDisplayModeChange(value as 'fretboard' | 'shape')}
+        />
       </div>
     </section>
   )

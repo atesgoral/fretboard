@@ -9,3 +9,27 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 }
+
+.note-burst-wave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid rgb(56 189 248 / 0.85);
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  animation: note-burst-wave 260ms ease-out forwards;
+}
+
+@keyframes note-burst-wave {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+}

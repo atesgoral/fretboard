@@ -3,7 +3,6 @@ import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
 import { buildChordRoles, CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
-import ChordPalette from './components/ChordPalette'
 import { useThemePreference } from './hooks/useThemePreference'
 import {
   APP_PREFERENCES_STORAGE_KEY,
@@ -17,6 +16,7 @@ type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[
 type PlayedPosition = { stringIndex: number; fret: number }
 type VoicingMode = 'strum' | 'finger' | 'shell'
 type DisplayMode = 'fretboard' | 'shape'
+type ScaleId = 'major' | 'minor'
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 
@@ -59,20 +59,20 @@ export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const { root, qualityId, extensionIds, swatches, activeSwatchIndex } = getCurrentTimelineState(appState)
+  const { root, qualityId, extensionIds } = getCurrentTimelineState(appState)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
   const [voicingMode, setVoicingMode] = useState<VoicingMode>('strum')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('fretboard')
   const [inversion, setInversion] = useState<0 | 1 | 2>(0)
+  const [scaleId, setScaleId] = useState<ScaleId>('major')
 
   useEffect(() => {
     window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
   }, [appState])
 
-  const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
-  const focusedVoicing = useMemo(() => buildCommonVoicing(selectedChord, voicingMode, inversion), [selectedChord, voicingMode, inversion])
+  const focusedVoicing = useMemo(() => buildCommonVoicing({ root, qualityId, extensionIds }, voicingMode, inversion), [root, qualityId, extensionIds, voicingMode, inversion])
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -140,39 +140,12 @@ export default function App() {
           </div>
         </div>
 
-        <ChordBrowser
-          root={root}
-          qualityId={qualityId}
-          extensionIds={extensionIds}
-          onRootChange={(next) => dispatch({ type: 'setRoot', root: next })}
-          onQualityChange={(next) => dispatch({ type: 'setQuality', qualityId: next })}
-          onExtensionsChange={(ids) => dispatch({ type: 'setExtensions', extensionIds: ids })}
-          onToggleExtension={(id) => dispatch({ type: 'toggleExtension', extensionId: id })}
-          onAddChordToPalette={(chord) => dispatch({ type: 'addSwatchChord', chord })}
-          onPlayChord={(chord) => {
-            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
-            setPlaySequence((current) => current + 1)
-          }}
-          voicingMode={voicingMode}
-          onVoicingModeChange={setVoicingMode}
-          inversion={inversion}
-          onInversionChange={setInversion}
-          displayMode={displayMode}
-          onDisplayModeChange={setDisplayMode}
-        />
 
-        <ChordPalette
-          selectedChord={selectedChord}
-          swatches={swatches}
-          activeSwatchIndex={activeSwatchIndex}
-          onAddSwatch={() => dispatch({ type: 'addSwatch' })}
-          onSelectCurrentChord={() => dispatch({ type: 'selectCurrentChord' })}
-          onSelectSwatch={(index) => dispatch({ type: 'selectSwatch', index })}
-          onRemoveSwatch={(index) => dispatch({ type: 'removeSwatch', index })}
-          onPlayChord={(chord) => {
-            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
-            setPlaySequence((current) => current + 1)
-          }}
+        <ChordBrowser
+          scaleRoot={root}
+          scaleId={scaleId}
+          onScaleRootChange={(next) => dispatch({ type: 'setRoot', root: next })}
+          onScaleIdChange={setScaleId}
         />
 
         <Fretboard

@@ -3,7 +3,6 @@ import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
 import { buildChordRoles, CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
-import ChordPalette from './components/ChordPalette'
 import { useThemePreference } from './hooks/useThemePreference'
 import {
   APP_PREFERENCES_STORAGE_KEY,
@@ -17,7 +16,7 @@ type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[
 type PlayedPosition = { stringIndex: number; fret: number }
 type VoicingMode = 'strum' | 'finger' | 'shell'
 type DisplayMode = 'fretboard' | 'shape'
-type BrowserMode = 'now' | 'build' | 'explore'
+type ScaleId = 'major' | 'minor'
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 
@@ -60,21 +59,20 @@ export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const { root, qualityId, extensionIds, swatches, activeSwatchIndex } = getCurrentTimelineState(appState)
+  const { root, qualityId, extensionIds } = getCurrentTimelineState(appState)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
   const [voicingMode, setVoicingMode] = useState<VoicingMode>('strum')
   const [displayMode, setDisplayMode] = useState<DisplayMode>('fretboard')
   const [inversion, setInversion] = useState<0 | 1 | 2>(0)
-  const [browserMode, setBrowserMode] = useState<BrowserMode>('now')
+  const [scaleId, setScaleId] = useState<ScaleId>('major')
 
   useEffect(() => {
     window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
   }, [appState])
 
-  const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
-  const focusedVoicing = useMemo(() => buildCommonVoicing(selectedChord, voicingMode, inversion), [selectedChord, voicingMode, inversion])
+  const focusedVoicing = useMemo(() => buildCommonVoicing({ root, qualityId, extensionIds }, voicingMode, inversion), [root, qualityId, extensionIds, voicingMode, inversion])
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -143,64 +141,12 @@ export default function App() {
         </div>
 
 
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-          <span className="px-2 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">Workspace</span>
-          {[
-            { id: 'now', label: 'Now', title: 'Focus on fretboard with minimal controls' },
-            { id: 'build', label: 'Build', title: 'Build a specific chord' },
-            { id: 'explore', label: 'Explore', title: 'Browse in-key chord options' },
-          ].map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              title={mode.title}
-              onClick={() => setBrowserMode(mode.id as BrowserMode)}
-              className={`cursor-pointer rounded-md px-3 py-1.5 text-sm transition ${
-                browserMode === mode.id
-                  ? 'bg-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
-              }`}
-            >
-              {mode.label}
-            </button>
-          ))}
-        </div>
-
         <ChordBrowser
-          root={root}
-          qualityId={qualityId}
-          extensionIds={extensionIds}
-          onRootChange={(next) => dispatch({ type: 'setRoot', root: next })}
-          onQualityChange={(next) => dispatch({ type: 'setQuality', qualityId: next })}
-          onExtensionsChange={(ids) => dispatch({ type: 'setExtensions', extensionIds: ids })}
-          onToggleExtension={(id) => dispatch({ type: 'toggleExtension', extensionId: id })}
-          onAddChordToPalette={(chord) => dispatch({ type: 'addSwatchChord', chord })}
-          onPlayChord={(chord) => {
-            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
-            setPlaySequence((current) => current + 1)
-          }}
-          voicingMode={voicingMode}
-          onVoicingModeChange={setVoicingMode}
-          inversion={inversion}
-          onInversionChange={setInversion}
-          displayMode={displayMode}
-          onDisplayModeChange={setDisplayMode}
-          mode={browserMode}
+          scaleRoot={root}
+          scaleId={scaleId}
+          onScaleRootChange={(next) => dispatch({ type: 'setRoot', root: next })}
+          onScaleIdChange={setScaleId}
         />
-
-        {browserMode !== 'now' ? <ChordPalette
-          selectedChord={selectedChord}
-          swatches={swatches}
-          activeSwatchIndex={activeSwatchIndex}
-          onAddSwatch={() => dispatch({ type: 'addSwatch' })}
-          onSelectCurrentChord={() => dispatch({ type: 'selectCurrentChord' })}
-          onSelectSwatch={(index) => dispatch({ type: 'selectSwatch', index })}
-          onRemoveSwatch={(index) => dispatch({ type: 'removeSwatch', index })}
-          onPlayChord={(chord) => {
-            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
-            setPlaySequence((current) => current + 1)
-          }}
-        /> : null}
 
         <Fretboard
           linear={linear}

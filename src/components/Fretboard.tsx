@@ -224,7 +224,7 @@ type OpenStringHighlightOverlayProps = {
 function OpenStringHighlightOverlay({ top, bottom }: OpenStringHighlightOverlayProps) {
   return (
     <div
-      className="open-string-highlight pointer-events-none absolute left-0 right-0"
+      className="open-string-highlight pointer-events-none absolute left-0 right-0 z-20"
       style={{
         top: `${top}%`,
         height: `${bottom - top}%`,
@@ -327,7 +327,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
       })}
       {hoveredPosition ? (
         <div
-          className="open-string-highlight pointer-events-none absolute left-0 right-0"
+          className="open-string-highlight pointer-events-none absolute left-0 right-0 z-20"
           style={{
             top: `${stringBandBounds[hoveredVisualIndex].top}%`,
             height: `${stringBandBounds[hoveredVisualIndex].bottom - stringBandBounds[hoveredVisualIndex].top}%`,

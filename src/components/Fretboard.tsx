@@ -27,6 +27,8 @@ type FretboardProps = {
   naturalDecay: boolean
   frets?: number
   chordRoles: Map<number, string>
+  playedPositions: ActivePosition[]
+  playSequence: number
 }
 
 type FretLinesProps = {
@@ -199,6 +201,7 @@ type NoteGridProps = {
   onPressEnter: (stringIndex: number, fret: number) => void
   onPressEnd: () => void
   chordRoles: Map<number, string>
+  activePositions: ActivePosition[]
 }
 
 type StringHoverOverlayProps = {
@@ -233,9 +236,10 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
+  const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
 
   return (
     <div className="absolute inset-0">
@@ -252,6 +256,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const shouldHighlightWholeString = isHovered && fret === 0
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
           const role = chordRoles.get(noteClass)
+          const isActive = activePositionSet.has(`${stringIndex}:${fret}`)
 
           return (
             <button
@@ -267,7 +272,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             >
               <StringHoverOverlay isVisible={isHovered && !shouldHighlightWholeString} />
               {role ? (
-                <span className="pointer-events-none absolute left-1/2 top-1/2 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-900/20 bg-amber-500 text-[11px] font-semibold text-zinc-900 shadow-sm dark:border-amber-200/30 dark:bg-amber-300">
+                <span className={`pointer-events-none absolute left-1/2 top-1/2 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] font-semibold text-zinc-900 shadow-sm ${isActive ? 'border-blue-900/30 bg-blue-500 dark:border-blue-200/40 dark:bg-blue-300' : 'border-amber-900/20 bg-amber-500 dark:border-amber-200/30 dark:bg-amber-300'}`}>
                   {role}
                 </span>
               ) : null}
@@ -289,13 +294,10 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   )
 }
 
-type NoteIdentity = {
-  name: string
-  frequencyHz: string
-}
+type NoteIdentity = { name: string }
 
 type NoteReadoutProps = {
-  activeNote: NoteIdentity | null
+  activeNotes: NoteIdentity[]
 }
 
 function getNoteName(midiNote: number) {
@@ -303,39 +305,30 @@ function getNoteName(midiNote: number) {
   return noteNames[midiNote % 12]
 }
 
-function getFrequency(midiNote: number) {
-  return 440 * 2 ** ((midiNote - 69) / 12)
-}
-
 function getNoteIdentity(position: ActivePosition): NoteIdentity {
   const midiNote = OPEN_STRING_MIDI[position.stringIndex] + position.fret
   return {
     name: getNoteName(midiNote),
-    frequencyHz: `${getFrequency(midiNote).toFixed(2)} Hz`,
   }
 }
 
-function NoteReadout({ activeNote }: NoteReadoutProps) {
-  const noteName = activeNote?.name ?? ''
-  const frequencyLabel = activeNote?.frequencyHz ?? '0.00 Hz'
+function NoteReadout({ activeNotes }: NoteReadoutProps) {
+  const noteNames = activeNotes.map((note) => note.name)
 
   return (
     <div className="relative flex min-h-10 items-center py-2">
       <div className="absolute left-1/2 -translate-x-1/2">
         <span
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 ${activeNote ? 'visible' : 'invisible'}`}
+          className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 px-3 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 ${noteNames.length > 0 ? 'visible' : 'invisible'}`}
         >
-          {noteName}
+          {noteNames.join(' · ')}
         </span>
       </div>
-      <span className="pointer-events-none absolute left-1/2 ml-7 min-w-16 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        {activeNote ? frequencyLabel : <span className="invisible">{frequencyLabel}</span>}
-      </span>
     </div>
   )
 }
 
-export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = DEFAULT_FRETS, chordRoles }: FretboardProps) {
+export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = DEFAULT_FRETS, chordRoles, playedPositions, playSequence }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
@@ -351,12 +344,30 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
   const isPointerDownRef = useRef(false)
   const lastPlayedRef = useRef<string | null>(null)
   const [playedPosition, setPlayedPosition] = useState<ActivePosition | null>(null)
+  const [playedChordPositions, setPlayedChordPositions] = useState<ActivePosition[]>([])
   const excitationByStringRef = useRef<ExcitationState[]>(
     Array.from({ length: STRINGS }, () => ({ level: 0, timestampMs: 0 })),
   )
 
   const activePosition = hoveredPosition ?? playedPosition
-  const activeNote = activePosition ? getNoteIdentity(activePosition) : null
+  const activeNotes = hoveredPosition
+    ? activePosition
+      ? [getNoteIdentity(activePosition)]
+      : []
+    : playedChordPositions.length > 0
+      ? playedChordPositions.map(getNoteIdentity)
+      : activePosition
+        ? [getNoteIdentity(activePosition)]
+        : []
+  const activePositions = hoveredPosition
+    ? activePosition
+      ? [activePosition]
+      : []
+    : playedChordPositions.length > 0
+      ? playedChordPositions
+      : activePosition
+        ? [activePosition]
+        : []
 
   const clearPointerPress = useCallback(() => {
     isPointerDownRef.current = false
@@ -442,6 +453,18 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
     [playNote],
   )
 
+  useEffect(() => {
+    if (playSequence === 0 || playedPositions.length === 0) {
+      return
+    }
+
+    setPlayedChordPositions(playedPositions)
+    setPlayedPosition(playedPositions[playedPositions.length - 1])
+    playedPositions.forEach((position) => {
+      void playNote(position.stringIndex, position.fret, 'pick')
+    })
+  }, [playNote, playSequence, playedPositions])
+
   const handlePressEnter = useCallback(
     (stringIndex: number, fret: number) => {
       if (!isPointerDownRef.current) {
@@ -478,10 +501,11 @@ export default function Fretboard({ linear, lowEAtBottom, naturalDecay, frets = 
           onPressEnter={handlePressEnter}
           onPressEnd={clearPointerPress}
           chordRoles={chordRoles}
+          activePositions={activePositions}
         />
       </div>
       <FretLabels fretPositions={fretPositions} frets={frets} />
-      <NoteReadout activeNote={activeNote} />
+      <NoteReadout activeNotes={activeNotes} />
     </section>
   )
 }

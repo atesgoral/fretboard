@@ -271,7 +271,6 @@ function getStringBandBounds(stringYPositions: number[]) {
 
 function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, burstActivePositions, animatedPositionBursts }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
-  const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const activeOpenStringVisualIndexes = stringOrder.reduce<number[]>((indexes, stringIndex, visualIndex) => {
@@ -283,6 +282,11 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
     }
     return indexes
   }, [])
+
+  const hoveredOpenStringBand =
+    hoveredPosition && hoveredPosition.fret === 0
+      ? stringBandBounds[stringOrder.indexOf(hoveredPosition.stringIndex)]
+      : null
 
   return (
     <div className="absolute inset-0">
@@ -334,15 +338,16 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
         const band = stringBandBounds[visualIndex]
         return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} />
       })}
-      {hoveredPosition ? (
+      {hoveredOpenStringBand ? (
         <div
-          className="open-string-highlight pointer-events-none absolute left-0 right-0 z-20"
+          className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20"
           style={{
-            top: `${stringBandBounds[hoveredVisualIndex].top}%`,
-            height: `${stringBandBounds[hoveredVisualIndex].bottom - stringBandBounds[hoveredVisualIndex].top}%`,
-            opacity: hoveredPosition.fret === 0 ? 1 : 0,
+            top: `${hoveredOpenStringBand.top}%`,
+            height: `${hoveredOpenStringBand.bottom - hoveredOpenStringBand.top}%`,
           }}
-        />
+        >
+          <StringHoverOverlay isVisible />
+        </div>
       ) : null}
     </div>
   )

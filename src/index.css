@@ -33,3 +33,36 @@
     transform: translate(-50%, -50%) scale(1.7);
   }
 }
+
+.open-string-highlight {
+  background-color: rgb(82 82 91 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(82 82 91 / 0.35);
+}
+
+.open-string-highlight::before,
+.open-string-highlight::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgb(82 82 91 / 0.35);
+}
+
+.open-string-highlight::before {
+  top: 0;
+}
+
+.open-string-highlight::after {
+  bottom: 0;
+}
+
+:root[data-theme='dark'] .open-string-highlight {
+  background-color: rgb(244 244 245 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(244 244 245 / 0.35);
+}
+
+:root[data-theme='dark'] .open-string-highlight::before,
+:root[data-theme='dark'] .open-string-highlight::after {
+  background-color: rgb(244 244 245 / 0.35);
+}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
-import { buildChordRoles, type NoteName } from './components/chords'
+import { buildChordRoles, CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
 import ChordPalette from './components/ChordPalette'
 import { useThemePreference } from './hooks/useThemePreference'
@@ -9,6 +9,33 @@ import { useThemePreference } from './hooks/useThemePreference'
 const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
 type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
+type PlayedPosition = { stringIndex: number; fret: number }
+
+const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
+
+function getChordPitchClasses(chord: ChordSelection) {
+  const rootIndex = NOTE_NAMES.indexOf(chord.root)
+  const quality = CHORD_QUALITIES.find((item) => item.id === chord.qualityId) ?? CHORD_QUALITIES[0]
+  const intervals = [...quality.intervals]
+  chord.extensionIds.forEach((id) => {
+    const extension = CHORD_EXTENSIONS.find((item) => item.id === id)
+    if (extension) {
+      intervals.push(extension.interval)
+    }
+  })
+
+  return Array.from(new Set(intervals.map((interval) => (rootIndex + interval) % 12)))
+}
+
+function buildCommonVoicing(chord: ChordSelection): PlayedPosition[] {
+  const pitchClasses = getChordPitchClasses(chord)
+  const positions = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
+    const fret = Array.from({ length: 6 }, (_, index) => index).find((candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12))
+    return fret === undefined ? null : { stringIndex, fret }
+  }).filter((position): position is PlayedPosition => position !== null)
+
+  return positions.length >= 4 ? positions : positions.slice(0, 3)
+}
 
 type StoredPreferences = {
   linear?: boolean
@@ -47,6 +74,8 @@ export default function App() {
   const [extensionIds, setExtensionIds] = useState<string[]>(initialPreferences.extensionIds ?? [])
   const [swatches, setSwatches] = useState<Array<{ root: NoteName; qualityId: string; extensionIds: string[] }>>(initialPreferences.swatches ?? [])
   const [activeSwatchIndex, setActiveSwatchIndex] = useState<number | null>(initialPreferences.activeSwatchIndex ?? null)
+  const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
+  const [playSequence, setPlaySequence] = useState(0)
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -147,9 +176,20 @@ export default function App() {
               return currentIndex
             })
           }}
+          onPlayChord={(chord) => {
+            setPlayedPositions(buildCommonVoicing(chord))
+            setPlaySequence((current) => current + 1)
+          }}
         />
 
-        <Fretboard linear={linear} lowEAtBottom={lowEAtBottom} naturalDecay={naturalDecay} chordRoles={chordRoles} />
+        <Fretboard
+          linear={linear}
+          lowEAtBottom={lowEAtBottom}
+          naturalDecay={naturalDecay}
+          chordRoles={chordRoles}
+          playedPositions={playedPositions}
+          playSequence={playSequence}
+        />
       </section>
     </main>
   )

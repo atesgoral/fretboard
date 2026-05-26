@@ -15,6 +15,7 @@ type ChordPaletteProps = {
   onSelectCurrentChord: () => void
   onSelectSwatch: (index: number) => void
   onRemoveSwatch: (index: number) => void
+  onPlayChord: (chord: ChordSelection) => void
 }
 
 function getChordLabel(chord: ChordSelection) {
@@ -73,18 +74,18 @@ function AddSwatchButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-export default function ChordPalette({ selectedChord, swatches, activeSwatchIndex, onAddSwatch, onSelectCurrentChord, onSelectSwatch, onRemoveSwatch }: ChordPaletteProps) {
+export default function ChordPalette({ selectedChord, swatches, activeSwatchIndex, onAddSwatch, onSelectCurrentChord, onSelectSwatch, onRemoveSwatch, onPlayChord }: ChordPaletteProps) {
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex items-center gap-3 overflow-x-auto pb-1">
-        <ChordCard chord={selectedChord} active={activeSwatchIndex === null} onClick={onSelectCurrentChord} />
+        <ChordCard chord={selectedChord} active={activeSwatchIndex === null} onClick={() => { onSelectCurrentChord(); onPlayChord(selectedChord) }} />
         <AddSwatchButton onClick={onAddSwatch} />
         {swatches.map((swatch, index) => (
           <ChordCard
             key={`${swatch.root}-${swatch.qualityId}-${swatch.extensionIds.join('-')}-${index}`}
             chord={swatch}
             active={activeSwatchIndex === index}
-            onClick={() => onSelectSwatch(index)}
+            onClick={() => { onSelectSwatch(index); onPlayChord(swatch) }}
             onRemove={() => onRemoveSwatch(index)}
           />
         ))}

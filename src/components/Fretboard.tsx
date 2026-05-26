@@ -216,6 +216,23 @@ type NoteGridProps = {
   animatedPositionBursts: Record<string, number>
 }
 
+type OpenStringHighlightOverlayProps = {
+  top: number
+  bottom: number
+}
+
+function OpenStringHighlightOverlay({ top, bottom }: OpenStringHighlightOverlayProps) {
+  return (
+    <div
+      className="open-string-highlight pointer-events-none absolute left-0 right-0"
+      style={{
+        top: `${top}%`,
+        height: `${bottom - top}%`,
+      }}
+    />
+  )
+}
+
 type StringHoverOverlayProps = {
   isVisible: boolean
 }
@@ -252,6 +269,12 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
+  const activeOpenStringVisualIndexes = stringOrder.reduce<number[]>((indexes, stringIndex, visualIndex) => {
+    if (activePositionSet.has(`${stringIndex}:0`)) {
+      indexes.push(visualIndex)
+    }
+    return indexes
+  }, [])
 
   return (
     <div className="absolute inset-0">
@@ -298,9 +321,13 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
+      {activeOpenStringVisualIndexes.map((visualIndex) => {
+        const band = stringBandBounds[visualIndex]
+        return <OpenStringHighlightOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} />
+      })}
       {hoveredPosition ? (
         <div
-          className="pointer-events-none absolute left-0 right-0 bg-zinc-600/10 ring-1 ring-inset ring-zinc-600/35 dark:bg-zinc-100/10 dark:ring-zinc-100/35"
+          className="open-string-highlight pointer-events-none absolute left-0 right-0"
           style={{
             top: `${stringBandBounds[hoveredVisualIndex].top}%`,
             height: `${stringBandBounds[hoveredVisualIndex].bottom - stringBandBounds[hoveredVisualIndex].top}%`,

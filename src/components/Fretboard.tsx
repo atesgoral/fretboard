@@ -222,15 +222,18 @@ type OpenStringHighlightOverlayProps = {
   bottom: number
 }
 
-function OpenStringHighlightOverlay({ top, bottom }: OpenStringHighlightOverlayProps) {
+function OpenStringPulseOverlay({ top, bottom }: OpenStringHighlightOverlayProps) {
   return (
     <div
-      className="open-string-highlight pointer-events-none absolute left-0 right-0 z-20"
+      className="pointer-events-none absolute left-0 right-0 z-20"
       style={{
         top: `${top}%`,
         height: `${bottom - top}%`,
       }}
-    />
+    >
+      <span className="open-string-burst-wave open-string-burst-wave-up" />
+      <span className="open-string-burst-wave open-string-burst-wave-down" />
+    </div>
   )
 }
 
@@ -272,7 +275,10 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const activeOpenStringVisualIndexes = stringOrder.reduce<number[]>((indexes, stringIndex, visualIndex) => {
-    if (activePositionSet.has(`${stringIndex}:0`)) {
+    const isOpenStringActive = activePositionSet.has(`${stringIndex}:0`)
+    const hasFrettedNoteOnString = activePositions.some((position) => position.stringIndex === stringIndex && position.fret > 0)
+
+    if (isOpenStringActive && !hasFrettedNoteOnString) {
       indexes.push(visualIndex)
     }
     return indexes
@@ -326,7 +332,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
       })}
       {activeOpenStringVisualIndexes.map((visualIndex) => {
         const band = stringBandBounds[visualIndex]
-        return <OpenStringHighlightOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} />
+        return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} />
       })}
       {hoveredPosition ? (
         <div

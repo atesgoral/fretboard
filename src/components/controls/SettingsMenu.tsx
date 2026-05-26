@@ -127,6 +127,7 @@ export default function SettingsMenu({
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
+          title="Open settings menu"
           className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
           aria-label="Open settings menu"
         >

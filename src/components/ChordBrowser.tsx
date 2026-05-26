@@ -139,7 +139,7 @@ export default function ChordBrowser({ root, qualityId, extensionIds, onRootChan
           {CHORD_EXTENSIONS.map((extension) => {
             const active = extensionIds.includes(extension.id)
             return (
-              <button key={extension.id} type="button" onClick={() => onToggleExtension(extension.id)} className={`cursor-pointer rounded-md border px-2 py-1 text-sm transition ${active ? 'border-zinc-800 bg-zinc-800 text-zinc-100 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900' : 'border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-100'}`}>
+              <button key={extension.id} type="button" title={`Toggle ${extension.label} extension`} onClick={() => onToggleExtension(extension.id)} className={`cursor-pointer rounded-md border px-2 py-1 text-sm transition ${active ? 'border-zinc-800 bg-zinc-800 text-zinc-100 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900' : 'border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-100'}`}>
                 {extension.label}
               </button>
             )

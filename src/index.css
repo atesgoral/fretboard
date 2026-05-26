@@ -57,6 +57,36 @@
   bottom: 0;
 }
 
+.open-string-burst-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgb(59 130 246 / 0.8);
+  transform-origin: center;
+  animation: open-string-burst-wave 260ms ease-out forwards;
+}
+
+.open-string-burst-wave-up {
+  top: 50%;
+}
+
+.open-string-burst-wave-down {
+  bottom: 50%;
+}
+
+@keyframes open-string-burst-wave {
+  from {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scaleY(6);
+  }
+}
+
 :root[data-theme='dark'] .open-string-highlight {
   background-color: rgb(56 189 248 / 0.22);
   box-shadow: inset 0 0 0 2px rgb(125 211 252 / 0.65);
@@ -65,4 +95,8 @@
 :root[data-theme='dark'] .open-string-highlight::before,
 :root[data-theme='dark'] .open-string-highlight::after {
   background-color: rgb(125 211 252 / 0.65);
+}
+
+:root[data-theme='dark'] .open-string-burst-wave {
+  background-color: rgb(125 211 252 / 0.85);
 }

@@ -50,11 +50,11 @@
 }
 
 .open-string-burst-wave-up {
-  top: calc(50% - 3px);
+  top: calc(50% - (var(--string-thickness, 2px) / 2));
 }
 
 .open-string-burst-wave-down {
-  top: calc(50% + 3px);
+  top: calc(50% + (var(--string-thickness, 2px) / 2));
 }
 
 @keyframes open-string-burst-wave {

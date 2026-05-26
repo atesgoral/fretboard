@@ -215,14 +215,16 @@ type NoteGridProps = {
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
   animatedPositionBursts: Record<string, number>
+  stringThicknesses: number[]
 }
 
 type OpenStringHighlightOverlayProps = {
   top: number
   bottom: number
+  stringThickness: number
 }
 
-function OpenStringPulseOverlay({ top, bottom }: OpenStringHighlightOverlayProps) {
+function OpenStringPulseOverlay({ top, bottom, stringThickness }: OpenStringHighlightOverlayProps) {
   return (
     <div
       className="pointer-events-none absolute left-0 right-0 z-20"
@@ -231,8 +233,8 @@ function OpenStringPulseOverlay({ top, bottom }: OpenStringHighlightOverlayProps
         height: `${bottom - top}%`,
       }}
     >
-      <span className="open-string-burst-wave open-string-burst-wave-up" />
-      <span className="open-string-burst-wave open-string-burst-wave-down" />
+      <span className="open-string-burst-wave open-string-burst-wave-up" style={{ '--string-thickness': `${stringThickness}px` } as React.CSSProperties} />
+      <span className="open-string-burst-wave open-string-burst-wave-down" style={{ '--string-thickness': `${stringThickness}px` } as React.CSSProperties} />
     </div>
   )
 }
@@ -269,24 +271,20 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, burstActivePositions, animatedPositionBursts }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, burstActivePositions, animatedPositionBursts, stringThicknesses }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
-  const activeOpenStringVisualIndexes = stringOrder.reduce<number[]>((indexes, stringIndex, visualIndex) => {
+  const activeOpenStringVisualIndexes = stringOrder.reduce<Array<{ visualIndex: number; stringThickness: number }>>((indexes, stringIndex, visualIndex) => {
     const isOpenStringActive = activePositionSet.has(`${stringIndex}:0`)
     const hasFrettedNoteOnString = activePositions.some((position) => position.stringIndex === stringIndex && position.fret > 0)
 
     if (isOpenStringActive && !hasFrettedNoteOnString) {
-      indexes.push(visualIndex)
+      indexes.push({ visualIndex, stringThickness: stringThicknesses[visualIndex] })
     }
     return indexes
   }, [])
 
-  const hoveredOpenStringBand =
-    hoveredPosition && hoveredPosition.fret === 0
-      ? stringBandBounds[stringOrder.indexOf(hoveredPosition.stringIndex)]
-      : null
 
   return (
     <div className="absolute inset-0">
@@ -334,21 +332,10 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
-      {activeOpenStringVisualIndexes.map((visualIndex) => {
+      {activeOpenStringVisualIndexes.map(({ visualIndex, stringThickness }) => {
         const band = stringBandBounds[visualIndex]
-        return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} />
+        return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} stringThickness={stringThickness} />
       })}
-      {hoveredOpenStringBand ? (
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20"
-          style={{
-            top: `${hoveredOpenStringBand.top}%`,
-            height: `${hoveredOpenStringBand.bottom - hoveredOpenStringBand.top}%`,
-          }}
-        >
-          <StringHoverOverlay isVisible />
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -402,6 +389,10 @@ export default function Fretboard({
   const stringYPositions = useMemo(
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
     [],
+  )
+  const stringThicknesses = useMemo(
+    () => (lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES),
+    [lowEAtBottom],
   )
   const stringOrder = useMemo(
     () => (lowEAtBottom ? Array.from({ length: STRINGS }, (_, index) => STRINGS - 1 - index) : Array.from({ length: STRINGS }, (_, index) => index)),
@@ -615,6 +606,7 @@ export default function Fretboard({
           activePositions={activePositions}
           burstActivePositions={burstActivePositions}
           animatedPositionBursts={animatedPositionBursts}
+          stringThicknesses={stringThicknesses}
         />
       </div>
       <FretLabels fretPositions={fretPositions} frets={frets} />

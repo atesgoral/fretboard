@@ -149,6 +149,10 @@ export default function App() {
           onExtensionsChange={(ids) => dispatch({ type: 'setExtensions', extensionIds: ids })}
           onToggleExtension={(id) => dispatch({ type: 'toggleExtension', extensionId: id })}
           onAddChordToPalette={(chord) => dispatch({ type: 'addSwatchChord', chord })}
+          onPlayChord={(chord) => {
+            setPlayedPositions(buildCommonVoicing(chord, voicingMode, inversion))
+            setPlaySequence((current) => current + 1)
+          }}
           voicingMode={voicingMode}
           onVoicingModeChange={setVoicingMode}
           inversion={inversion}

@@ -213,6 +213,7 @@ type NoteGridProps = {
   onPressEnd: () => void
   chordRoles: Map<number, string>
   activePositions: ActivePosition[]
+  animatedPositionBursts: Record<string, number>
 }
 
 type StringHoverOverlayProps = {
@@ -247,7 +248,7 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, animatedPositionBursts }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
@@ -267,7 +268,9 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const shouldHighlightWholeString = isHovered && fret === 0
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
           const role = chordRoles.get(noteClass)
-          const isActive = activePositionSet.has(`${stringIndex}:${fret}`)
+          const positionKey = `${stringIndex}:${fret}`
+          const isActive = activePositionSet.has(positionKey)
+          const burstKey = animatedPositionBursts[positionKey] ?? 0
 
           return (
             <button
@@ -284,8 +287,11 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             >
               <StringHoverOverlay isVisible={isHovered && !shouldHighlightWholeString} />
               {role ? (
-                <span className={`pointer-events-none absolute left-1/2 top-1/2 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] font-semibold text-zinc-900 shadow-sm ${isActive ? 'border-blue-900/30 bg-blue-500 dark:border-blue-200/40 dark:bg-blue-300' : 'border-amber-900/20 bg-amber-500 dark:border-amber-200/30 dark:bg-amber-300'}`}>
-                  {role}
+                <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  {isActive ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
+                  <span className={`relative z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold text-zinc-900 shadow-sm ${isActive ? 'border-blue-900/30 bg-blue-500 dark:border-blue-200/40 dark:bg-blue-300' : 'border-amber-900/20 bg-amber-500 dark:border-amber-200/30 dark:bg-amber-300'}`}>
+                    {role}
+                  </span>
                 </span>
               ) : null}
             </button>
@@ -368,31 +374,23 @@ export default function Fretboard({
   const reverbEnabledRef = useRef(reverbEnabled)
   const isPointerDownRef = useRef(false)
   const lastPlayedRef = useRef<string | null>(null)
-  const [playedPosition, setPlayedPosition] = useState<ActivePosition | null>(null)
-  const [playedChordPositions, setPlayedChordPositions] = useState<ActivePosition[]>([])
+  const [recentlyPlayedPositions, setRecentlyPlayedPositions] = useState<ActivePosition[]>([])
+  const [animatedPositionBursts, setAnimatedPositionBursts] = useState<Record<string, number>>({})
   const excitationByStringRef = useRef<ExcitationState[]>(
     Array.from({ length: STRINGS }, () => ({ level: 0, timestampMs: 0 })),
   )
 
-  const activePosition = hoveredPosition ?? playedPosition
+  const activePosition = hoveredPosition
   const activeNotes = hoveredPosition
     ? activePosition
       ? [getNoteIdentity(activePosition)]
       : []
-    : playedChordPositions.length > 0
-      ? playedChordPositions.map(getNoteIdentity)
-      : activePosition
-        ? [getNoteIdentity(activePosition)]
-        : []
+    : recentlyPlayedPositions.map(getNoteIdentity)
   const activePositions = hoveredPosition
     ? activePosition
       ? [activePosition]
       : []
-    : playedChordPositions.length > 0
-      ? playedChordPositions
-      : activePosition
-        ? [activePosition]
-        : []
+    : recentlyPlayedPositions
 
   const clearPointerPress = useCallback(() => {
     isPointerDownRef.current = false
@@ -460,9 +458,21 @@ export default function Fretboard({
     return instrument
   }, [])
 
+
+  const markRecentlyPlayed = useCallback((positions: ActivePosition[]) => {
+    setRecentlyPlayedPositions(positions)
+    setAnimatedPositionBursts((current) => {
+      const next = { ...current }
+      positions.forEach((position) => {
+        const key = `${position.stringIndex}:${position.fret}`
+        next[key] = (next[key] ?? 0) + 1
+      })
+      return next
+    })
+  }, [])
+
   const playNote = useCallback(
     async (stringIndex: number, fret: number, triggerType: TriggerType) => {
-      setPlayedPosition({ stringIndex, fret })
       if (muted) {
         return
       }
@@ -505,9 +515,10 @@ export default function Fretboard({
       isPointerDownRef.current = true
       const positionKey = `${stringIndex}:${fret}`
       lastPlayedRef.current = positionKey
+      markRecentlyPlayed([{ stringIndex, fret }])
       void playNote(stringIndex, fret, 'pick')
     },
-    [playNote],
+    [markRecentlyPlayed, playNote],
   )
 
   useEffect(() => {
@@ -515,12 +526,11 @@ export default function Fretboard({
       return
     }
 
-    setPlayedChordPositions(playedPositions)
-    setPlayedPosition(playedPositions[playedPositions.length - 1])
+    markRecentlyPlayed(playedPositions)
     playedPositions.forEach((position) => {
       void playNote(position.stringIndex, position.fret, 'pick')
     })
-  }, [playNote, playSequence, playedPositions])
+  }, [markRecentlyPlayed, playNote, playSequence, playedPositions])
 
   const handlePressEnter = useCallback(
     (stringIndex: number, fret: number) => {
@@ -534,9 +544,10 @@ export default function Fretboard({
       }
 
       lastPlayedRef.current = positionKey
+      markRecentlyPlayed([{ stringIndex, fret }])
       void playNote(stringIndex, fret, 'slide')
     },
-    [playNote],
+    [markRecentlyPlayed, playNote],
   )
 
   return (
@@ -559,6 +570,7 @@ export default function Fretboard({
           onPressEnd={clearPointerPress}
           chordRoles={chordRoles}
           activePositions={activePositions}
+          animatedPositionBursts={animatedPositionBursts}
         />
       </div>
       <FretLabels fretPositions={fretPositions} frets={frets} />

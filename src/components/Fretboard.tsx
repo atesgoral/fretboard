@@ -213,6 +213,7 @@ type NoteGridProps = {
   onPressEnd: () => void
   chordRoles: Map<number, string>
   activePositions: ActivePosition[]
+  burstActivePositions: ActivePosition[]
   animatedPositionBursts: Record<string, number>
 }
 
@@ -265,10 +266,11 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, animatedPositionBursts }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, burstActivePositions, animatedPositionBursts }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const hoveredVisualIndex = hoveredPosition ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
+  const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const activeOpenStringVisualIndexes = stringOrder.reduce<number[]>((indexes, stringIndex, visualIndex) => {
     if (activePositionSet.has(`${stringIndex}:0`)) {
       indexes.push(visualIndex)
@@ -294,7 +296,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
-          const shouldRenderBurst = isActive && burstKey > 0
+          const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0
 
           return (
             <button
@@ -419,6 +421,8 @@ export default function Fretboard({
       ? [activePosition]
       : []
     : recentlyPlayedPositions
+  const burstActivePositions = recentlyPlayedPositions
+
 
   const clearPointerPress = useCallback(() => {
     isPointerDownRef.current = false
@@ -598,6 +602,7 @@ export default function Fretboard({
           onPressEnd={clearPointerPress}
           chordRoles={chordRoles}
           activePositions={activePositions}
+          burstActivePositions={burstActivePositions}
           animatedPositionBursts={animatedPositionBursts}
         />
       </div>

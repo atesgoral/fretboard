@@ -390,6 +390,10 @@ export default function Fretboard({
     () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
     [],
   )
+  const stringThicknesses = useMemo(
+    () => (lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES),
+    [lowEAtBottom],
+  )
   const stringOrder = useMemo(
     () => (lowEAtBottom ? Array.from({ length: STRINGS }, (_, index) => STRINGS - 1 - index) : Array.from({ length: STRINGS }, (_, index) => index)),
     [lowEAtBottom],

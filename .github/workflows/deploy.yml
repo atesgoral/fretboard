@@ -54,3 +54,18 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      - name: Send ntfy notification
+        if: success()
+        env:
+          NTFY_TOPIC: fretboard-deploy
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          curl \
+            -H "Title: Fretboard deploy succeeded" \
+            -H "Priority: default" \
+            -H "Tags: white_check_mark,rocket" \
+            -d "GitHub Pages deploy succeeded for ${GITHUB_REPOSITORY} at ${GITHUB_SHA}. URL: ${PAGE_URL}" \
+            "https://ntfy.sh/${NTFY_TOPIC}"

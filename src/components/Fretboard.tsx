@@ -28,6 +28,7 @@ type FretboardProps = {
   lowEAtBottom: boolean
   naturalDecay: boolean
   reverbEnabled: boolean
+  muted: boolean
   frets?: number
   chordRoles: Map<number, string>
   playedPositions: ActivePosition[]
@@ -343,6 +344,7 @@ export default function Fretboard({
   lowEAtBottom,
   naturalDecay,
   reverbEnabled,
+  muted,
   frets = DEFAULT_FRETS,
   chordRoles,
   playedPositions,
@@ -458,6 +460,9 @@ export default function Fretboard({
   const playNote = useCallback(
     async (stringIndex: number, fret: number, triggerType: TriggerType) => {
       setPlayedPosition({ stringIndex, fret })
+      if (muted) {
+        return
+      }
       const instrument = await getInstrument()
       const context = audioContextRef.current
       if (context && context.state !== 'running') {
@@ -489,7 +494,7 @@ export default function Fretboard({
 
       instrument.start({ note: midiNote, velocity: attackVelocity, duration: durationSeconds })
     },
-    [getInstrument, naturalDecay],
+    [getInstrument, muted, naturalDecay],
   )
 
   const handlePressStart = useCallback(

@@ -38,7 +38,25 @@ function RemoveSwatchButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-function ChordCard({ chord, active, onClick, onRemove }: { chord: ChordSelection; active: boolean; onClick: () => void; onRemove?: () => void }) {
+function PlaySwatchButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Play chord swatch"
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
+      className="absolute bottom-1 right-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
+    >
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8 6v12l10-6-10-6Z" />
+      </svg>
+    </button>
+  )
+}
+
+function ChordCard({ chord, active, onClick, onPlay, onRemove }: { chord: ChordSelection; active: boolean; onClick: () => void; onPlay: () => void; onRemove?: () => void }) {
   return (
     <div className="group relative h-24 w-24">
       <button
@@ -53,6 +71,7 @@ function ChordCard({ chord, active, onClick, onRemove }: { chord: ChordSelection
         <span className="text-xs uppercase tracking-[0.12em]">{chord.root}</span>
         <span className="text-sm font-semibold leading-tight">{getChordLabel(chord)}</span>
       </button>
+      <PlaySwatchButton onClick={onPlay} />
       {onRemove ? <RemoveSwatchButton onClick={onRemove} /> : null}
     </div>
   )
@@ -78,14 +97,15 @@ export default function ChordPalette({ selectedChord, swatches, activeSwatchInde
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex items-center gap-3 overflow-x-auto pb-1">
-        <ChordCard chord={selectedChord} active={activeSwatchIndex === null} onClick={() => { onSelectCurrentChord(); onPlayChord(selectedChord) }} />
+        <ChordCard chord={selectedChord} active={activeSwatchIndex === null} onClick={onSelectCurrentChord} onPlay={() => onPlayChord(selectedChord)} />
         <AddSwatchButton onClick={onAddSwatch} />
         {swatches.map((swatch, index) => (
           <ChordCard
             key={`${swatch.root}-${swatch.qualityId}-${swatch.extensionIds.join('-')}-${index}`}
             chord={swatch}
             active={activeSwatchIndex === index}
-            onClick={() => { onSelectSwatch(index); onPlayChord(swatch) }}
+            onClick={() => { onSelectSwatch(index) }}
+            onPlay={() => onPlayChord(swatch)}
             onRemove={() => onRemoveSwatch(index)}
           />
         ))}

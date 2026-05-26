@@ -42,6 +42,7 @@ type StoredPreferences = {
   lowEAtBottom?: boolean
   naturalDecay?: boolean
   reverbEnabled?: boolean
+  muted?: boolean
   root?: NoteName
   qualityId?: string
   extensionIds?: string[]
@@ -70,6 +71,7 @@ export default function App() {
   const [lowEAtBottom, setLowEAtBottom] = useState(initialPreferences.lowEAtBottom ?? true)
   const [naturalDecay, setNaturalDecay] = useState(initialPreferences.naturalDecay ?? true)
   const [reverbEnabled, setReverbEnabled] = useState(initialPreferences.reverbEnabled ?? true)
+  const [muted, setMuted] = useState(initialPreferences.muted ?? false)
   const { preference, cyclePreference } = useThemePreference()
   const [root, setRoot] = useState<NoteName>(initialPreferences.root ?? 'C')
   const [qualityId, setQualityId] = useState(initialPreferences.qualityId ?? 'maj')
@@ -87,6 +89,7 @@ export default function App() {
         lowEAtBottom,
         naturalDecay,
         reverbEnabled,
+        muted,
         root,
         qualityId,
         extensionIds,
@@ -94,7 +97,7 @@ export default function App() {
         activeSwatchIndex,
       } satisfies StoredPreferences),
     )
-  }, [linear, lowEAtBottom, naturalDecay, reverbEnabled, root, qualityId, extensionIds, swatches, activeSwatchIndex])
+  }, [linear, lowEAtBottom, naturalDecay, reverbEnabled, muted, root, qualityId, extensionIds, swatches, activeSwatchIndex])
 
   const selectedChord = useMemo(() => ({ root, qualityId, extensionIds }), [root, qualityId, extensionIds])
   const chordRoles = buildChordRoles(root, qualityId, extensionIds)
@@ -104,18 +107,35 @@ export default function App() {
       <section className="mx-auto flex w-full max-w-screen-2xl flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">Fretboard</h1>
-          <SettingsMenu
-            preference={preference}
-            onCycleTheme={cyclePreference}
-            linear={linear}
-            onToggleLinear={() => setLinear((current) => !current)}
-            lowEAtBottom={lowEAtBottom}
-            onToggleLowEPosition={() => setLowEAtBottom((current) => !current)}
-            naturalDecay={naturalDecay}
-            onToggleNaturalDecay={() => setNaturalDecay((current) => !current)}
-            reverbEnabled={reverbEnabled}
-            onToggleReverb={() => setReverbEnabled((current) => !current)}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={muted ? 'Unmute playback' : 'Mute playback'}
+              onClick={() => setMuted((current) => !current)}
+              className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-zinc-700 transition dark:bg-zinc-800 dark:text-zinc-100 ${
+                muted
+                  ? 'border-zinc-800 dark:border-zinc-100'
+                  : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
+                <path d="M5 14v-4h4l5-4v12l-5-4H5Z" />
+                {muted ? <path d="m4 4 16 16" /> : null}
+              </svg>
+            </button>
+            <SettingsMenu
+              preference={preference}
+              onCycleTheme={cyclePreference}
+              linear={linear}
+              onToggleLinear={() => setLinear((current) => !current)}
+              lowEAtBottom={lowEAtBottom}
+              onToggleLowEPosition={() => setLowEAtBottom((current) => !current)}
+              naturalDecay={naturalDecay}
+              onToggleNaturalDecay={() => setNaturalDecay((current) => !current)}
+              reverbEnabled={reverbEnabled}
+              onToggleReverb={() => setReverbEnabled((current) => !current)}
+            />
+          </div>
         </div>
 
         <ChordBrowser
@@ -192,6 +212,7 @@ export default function App() {
           lowEAtBottom={lowEAtBottom}
           naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
+          muted={muted}
           chordRoles={chordRoles}
           playedPositions={playedPositions}
           playSequence={playSequence}

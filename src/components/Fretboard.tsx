@@ -273,6 +273,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
+              title={`Play string ${stringIndex + 1}, fret ${fret}`}
               className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
               onMouseEnter={() => onHover(stringIndex, fret)}

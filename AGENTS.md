@@ -8,3 +8,4 @@
 - Prefer rendering performance.
 - If you encounter an issue, do not waive it as "found it like this"; fix it.
 - Every clickable element must show `cursor: pointer`.
+- Every clickable button must include a descriptive `title` tooltip.

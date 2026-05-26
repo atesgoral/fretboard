@@ -27,6 +27,7 @@ function RemoveSwatchButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       aria-label="Remove chord swatch"
+      title="Remove chord swatch"
       onClick={onClick}
       className="absolute right-1 top-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
     >
@@ -43,6 +44,7 @@ function PlaySwatchButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       aria-label="Play chord swatch"
+      title="Play chord swatch"
       onClick={(event) => {
         event.stopPropagation()
         onClick()
@@ -61,6 +63,7 @@ function ChordCard({ chord, active, onClick, onPlay, onRemove }: { chord: ChordS
     <div className="group relative h-24 w-24">
       <button
         type="button"
+        title={`${active ? 'Selected' : 'Select'} chord ${getChordLabel(chord)}`}
         onClick={onClick}
         className={`flex h-full w-full cursor-pointer flex-col justify-between rounded-md border p-2 text-left transition ${
           active
@@ -82,6 +85,7 @@ function AddSwatchButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       aria-label="Add chord to swatch"
+      title="Add chord to swatch"
       onClick={onClick}
       className="flex h-24 w-14 cursor-pointer items-center justify-center rounded-md border border-dashed border-zinc-400 bg-white text-zinc-700 transition hover:border-zinc-600 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
     >

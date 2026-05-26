@@ -71,6 +71,7 @@ export default function App() {
             <button
               type="button"
               aria-label="Undo chord changes"
+              title="Undo chord changes"
               onClick={() => dispatch({ type: 'undo' })}
               disabled={!canUndo}
               className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
@@ -83,6 +84,7 @@ export default function App() {
             <button
               type="button"
               aria-label="Redo chord changes"
+              title="Redo chord changes"
               onClick={() => dispatch({ type: 'redo' })}
               disabled={!canRedo}
               className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
@@ -95,6 +97,7 @@ export default function App() {
             <button
               type="button"
               aria-label={muted ? 'Unmute playback' : 'Mute playback'}
+              title={muted ? 'Unmute playback' : 'Mute playback'}
               onClick={() => dispatch({ type: 'toggleMuted' })}
               className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-zinc-700 transition dark:bg-zinc-800 dark:text-zinc-100 ${
                 muted

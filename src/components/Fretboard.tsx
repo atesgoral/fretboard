@@ -362,6 +362,7 @@ export default function Fretboard({
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
+  const reverbEnabledRef = useRef(reverbEnabled)
   const isPointerDownRef = useRef(false)
   const lastPlayedRef = useRef<string | null>(null)
   const [playedPosition, setPlayedPosition] = useState<ActivePosition | null>(null)
@@ -407,6 +408,7 @@ export default function Fretboard({
   }, [])
 
   useEffect(() => {
+    reverbEnabledRef.current = reverbEnabled
     const mix = reverbEnabled ? getStoredReverbLevel() : 0
     if (dryGainRef.current) dryGainRef.current.gain.value = 1 - mix
     if (wetGainRef.current) wetGainRef.current.gain.value = mix
@@ -420,7 +422,7 @@ export default function Fretboard({
     const context = audioContextRef.current ?? new AudioContext()
     audioContextRef.current = context
 
-    const reverbMix = reverbEnabled ? getStoredReverbLevel() : 0
+    const reverbMix = reverbEnabledRef.current ? getStoredReverbLevel() : 0
     const highpassFilter = context.createBiquadFilter()
     highpassFilter.type = 'highpass'
     highpassFilter.frequency.value = 80
@@ -453,7 +455,7 @@ export default function Fretboard({
 
     instrumentRef.current = instrument
     return instrument
-  }, [reverbEnabled])
+  }, [])
 
   const playNote = useCallback(
     async (stringIndex: number, fret: number, triggerType: TriggerType) => {

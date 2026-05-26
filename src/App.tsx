@@ -148,6 +148,7 @@ export default function App() {
           onQualityChange={(next) => dispatch({ type: 'setQuality', qualityId: next })}
           onExtensionsChange={(ids) => dispatch({ type: 'setExtensions', extensionIds: ids })}
           onToggleExtension={(id) => dispatch({ type: 'toggleExtension', extensionId: id })}
+          onAddChordToPalette={(chord) => dispatch({ type: 'addSwatchChord', chord })}
           voicingMode={voicingMode}
           onVoicingModeChange={setVoicingMode}
           inversion={inversion}

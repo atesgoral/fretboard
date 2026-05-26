@@ -134,6 +134,7 @@ export type AppAction =
   | { type: 'setExtensions'; extensionIds: string[] }
   | { type: 'toggleExtension'; extensionId: string }
   | { type: 'addSwatch' }
+  | { type: 'addSwatchChord'; chord: ChordSelection }
   | { type: 'selectCurrentChord' }
   | { type: 'selectSwatch'; index: number }
   | { type: 'removeSwatch'; index: number }
@@ -192,6 +193,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     next = updateActiveSwatch({ ...current, extensionIds }, { extensionIds })
   } else if (action.type === 'addSwatch') {
     const selected = { root: current.root, qualityId: current.qualityId, extensionIds: [...current.extensionIds] }
+    next = { ...current, swatches: [...current.swatches, selected], activeSwatchIndex: current.swatches.length }
+  } else if (action.type === 'addSwatchChord') {
+    const selected = { root: action.chord.root, qualityId: action.chord.qualityId, extensionIds: [...action.chord.extensionIds] }
     next = { ...current, swatches: [...current.swatches, selected], activeSwatchIndex: current.swatches.length }
   } else if (action.type === 'selectCurrentChord') {
     return {

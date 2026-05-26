@@ -275,12 +275,17 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
-  const activeOpenStringVisualIndexes = stringOrder.reduce<Array<{ visualIndex: number; stringThickness: number }>>((indexes, stringIndex, visualIndex) => {
-    const isOpenStringActive = activePositionSet.has(`${stringIndex}:0`)
-    const hasFrettedNoteOnString = activePositions.some((position) => position.stringIndex === stringIndex && position.fret > 0)
+  const activeOpenStringVisualIndexes = stringOrder.reduce<Array<{ visualIndex: number; stringThickness: number; burstKey: number }>>((indexes, stringIndex, visualIndex) => {
+    const openStringPositionKey = `${stringIndex}:0`
+    const isOpenStringBurstActive = burstActivePositionSet.has(openStringPositionKey)
+    const hasFrettedNoteOnString = burstActivePositions.some((position) => position.stringIndex === stringIndex && position.fret > 0)
 
-    if (isOpenStringActive && !hasFrettedNoteOnString) {
-      indexes.push({ visualIndex, stringThickness: stringThicknesses[visualIndex] })
+    if (isOpenStringBurstActive && !hasFrettedNoteOnString) {
+      indexes.push({
+        visualIndex,
+        stringThickness: stringThicknesses[visualIndex],
+        burstKey: animatedPositionBursts[openStringPositionKey] ?? 0,
+      })
     }
     return indexes
   }, [])
@@ -332,9 +337,9 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
-      {activeOpenStringVisualIndexes.map(({ visualIndex, stringThickness }) => {
+      {activeOpenStringVisualIndexes.map(({ visualIndex, stringThickness, burstKey }) => {
         const band = stringBandBounds[visualIndex]
-        return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}`} top={band.top} bottom={band.bottom} stringThickness={stringThickness} />
+        return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}-${burstKey}`} top={band.top} bottom={band.bottom} stringThickness={stringThickness} />
       })}
     </div>
   )

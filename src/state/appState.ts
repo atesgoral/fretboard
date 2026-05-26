@@ -117,6 +117,12 @@ function currentTimelineState(timeline: TimelineHistory): TimelineState {
   return timeline.snapshots[timeline.currentIndex]
 }
 
+function replaceCurrentTimelineSnapshot(previous: TimelineHistory, nextState: TimelineState): TimelineHistory {
+  const snapshots = [...previous.snapshots]
+  snapshots[previous.currentIndex] = cloneTimelineState(nextState)
+  return { snapshots, currentIndex: previous.currentIndex }
+}
+
 export type AppAction =
   | { type: 'toggleLinear' }
   | { type: 'toggleLowEAtBottom' }
@@ -162,7 +168,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     if (!swatch) return state
     return {
       ...state,
-      timeline: commitTimeline(state.timeline, {
+      timeline: replaceCurrentTimelineSnapshot(state.timeline, {
         ...current,
         root: swatch.root,
         qualityId: swatch.qualityId,
@@ -188,7 +194,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     const selected = { root: current.root, qualityId: current.qualityId, extensionIds: [...current.extensionIds] }
     next = { ...current, swatches: [...current.swatches, selected], activeSwatchIndex: current.swatches.length }
   } else if (action.type === 'selectCurrentChord') {
-    next = { ...current, activeSwatchIndex: null }
+    return {
+      ...state,
+      timeline: replaceCurrentTimelineSnapshot(state.timeline, { ...current, activeSwatchIndex: null }),
+    }
   } else if (action.type === 'removeSwatch') {
     const swatches = current.swatches.filter((_, idx) => idx !== action.index)
     let activeSwatchIndex = current.activeSwatchIndex

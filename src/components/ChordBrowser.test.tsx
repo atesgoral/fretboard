@@ -36,4 +36,17 @@ describe('ChordBrowser scale selector', () => {
     expect(keySelect.value).toBe('')
     expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
   })
+
+  it('disables the scale selector when no key is selected', () => {
+    render(
+      <ChordBrowser
+        scaleRoot={null}
+        scaleId="major"
+        onScaleRootChange={vi.fn()}
+        onScaleIdChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByLabelText('Scale')).toBeDisabled()
+  })
 })

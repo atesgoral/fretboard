@@ -22,20 +22,25 @@ function SelectField({
   value,
   options,
   onChange,
+  disabled = false,
 }: {
   label: string
   value: string
   options: { value: string; label: string }[]
   onChange: (value: string) => void
+  disabled?: boolean
 }) {
   return (
-    <label className="flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+    <label
+      className={`flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400${disabled ? ' opacity-40' : ''}`}
+    >
       {label}
       <select
         value={value}
-        title={`Select ${label.toLowerCase()}`}
+        disabled={disabled}
+        title={disabled ? undefined : `Select ${label.toLowerCase()}`}
         onChange={(event) => onChange(event.target.value)}
-        className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+        className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 disabled:cursor-default dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -69,6 +74,7 @@ export default function ChordBrowser({
           value={scaleId}
           options={SCALE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
           onChange={(value) => onScaleIdChange(value as ScaleId)}
+          disabled={scaleRoot === null}
         />
       </div>
     </section>

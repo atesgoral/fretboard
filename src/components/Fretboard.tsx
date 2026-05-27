@@ -323,9 +323,13 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
                 <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
                   {shouldRenderBurst ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
                   <span
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold shadow-sm ${circleToneClass}`}
+                    className={`relative block h-7 w-7 rounded-full border shadow-sm ${circleToneClass}`}
                   >
-                    {role ?? ''}
+                    {role ? (
+                      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold">
+                        {role}
+                      </span>
+                    ) : null}
                   </span>
                 </span>
               ) : null}

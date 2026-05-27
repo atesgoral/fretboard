@@ -21,4 +21,19 @@ describe('ChordBrowser scale selector', () => {
     expect(renderedOptions).toHaveLength(SCALE_OPTIONS.length)
     expect(renderedOptions.map((option) => option.textContent)).toEqual(expectedLabels)
   })
+
+  it('renders a None key option', () => {
+    render(
+      <ChordBrowser
+        scaleRoot={null}
+        scaleId="major"
+        onScaleRootChange={vi.fn()}
+        onScaleIdChange={vi.fn()}
+      />,
+    )
+
+    const keySelect = screen.getByTitle('Select key') as HTMLSelectElement
+    expect(keySelect.value).toBe('')
+    expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
+  })
 })

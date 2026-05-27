@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
-import ChordBrowser from './components/ChordBrowser'
+import ChordBrowser, { type ScaleRootSelection } from './components/ChordBrowser'
 import DiatonicChordList from './components/DiatonicChordList'
 import { buildScaleRoles, type ScaleId } from './components/scales'
 import AppHeader from './components/AppHeader'
@@ -9,12 +9,7 @@ import { buildCommonVoicing, getChordPitchClasses } from './components/voicing'
 import type { PlayedPosition } from './components/voicing'
 import { useThemePreference } from './hooks/useThemePreference'
 import { usePersistAppPreferences } from './hooks/usePersistAppPreferences'
-import {
-  appReducer,
-  createInitialAppState,
-  getCurrentTimelineState,
-  getInitialPreferences,
-} from './state/appState'
+import { appReducer, createInitialAppState, getInitialPreferences } from './state/appState'
 
 const initialPreferences = getInitialPreferences()
 
@@ -22,7 +17,7 @@ export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const { root } = getCurrentTimelineState(appState)
+  const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>('C')
   const [scaleId, setScaleId] = useState<ScaleId>('major')
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
@@ -30,7 +25,10 @@ export default function App() {
 
   usePersistAppPreferences(appState)
 
-  const markedNotes = useMemo(() => buildScaleRoles(root, scaleId), [root, scaleId])
+  const markedNotes = useMemo(
+    () => (scaleRoot ? buildScaleRoles(scaleRoot, scaleId) : new Map<number, string>()),
+    [scaleRoot, scaleId],
+  )
 
   const handlePlayChord = useCallback((chord: ChordSelection) => {
     setPlayedPositions(buildCommonVoicing(chord))
@@ -67,18 +65,20 @@ export default function App() {
         />
 
         <ChordBrowser
-          scaleRoot={root}
+          scaleRoot={scaleRoot}
           scaleId={scaleId}
-          onScaleRootChange={(next) => dispatch({ type: 'setRoot', root: next })}
+          onScaleRootChange={setScaleRoot}
           onScaleIdChange={setScaleId}
         />
 
-        <DiatonicChordList
-          scaleRoot={root}
-          scaleId={scaleId}
-          onPlayChord={handlePlayChord}
-          onHoverChord={handleHoverChord}
-        />
+        {scaleRoot ? (
+          <DiatonicChordList
+            scaleRoot={scaleRoot}
+            scaleId={scaleId}
+            onPlayChord={handlePlayChord}
+            onHoverChord={handleHoverChord}
+          />
+        ) : null}
 
         <Fretboard
           linear={linear}

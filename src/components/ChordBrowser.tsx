@@ -1,10 +1,19 @@
 import { NOTE_NAMES, type NoteName } from './chords'
 import { SCALE_OPTIONS, type ScaleId } from './scales'
 
+export type ScaleRootSelection = NoteName | null
+
+const KEY_NONE_VALUE = ''
+
+const KEY_OPTIONS = [
+  { value: KEY_NONE_VALUE, label: 'None' },
+  ...NOTE_NAMES.map((note) => ({ value: note, label: note })),
+]
+
 type ChordBrowserProps = {
-  scaleRoot: NoteName
+  scaleRoot: ScaleRootSelection
   scaleId: ScaleId
-  onScaleRootChange: (next: NoteName) => void
+  onScaleRootChange: (next: ScaleRootSelection) => void
   onScaleIdChange: (next: ScaleId) => void
 }
 
@@ -49,9 +58,11 @@ export default function ChordBrowser({
       <div className="flex flex-wrap items-end gap-3">
         <SelectField
           label="Key"
-          value={scaleRoot}
-          options={NOTE_NAMES.map((note) => ({ value: note, label: note }))}
-          onChange={(value) => onScaleRootChange(value as NoteName)}
+          value={scaleRoot ?? KEY_NONE_VALUE}
+          options={KEY_OPTIONS}
+          onChange={(value) =>
+            onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
+          }
         />
         <SelectField
           label="Scale"

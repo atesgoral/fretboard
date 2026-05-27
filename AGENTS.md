@@ -10,6 +10,6 @@
 - Enabled clickable elements must show `cursor: pointer`. Disabled buttons must use the default cursor. Never use `cursor: not-allowed` or the disabled/not-allowed cursor.
 - Disabled buttons must be completely inert: no hover styles. Use `enabled:hover:` (or equivalent) so hover effects apply only when the control is enabled.
 - Every clickable button must include a descriptive `title` attribute for native tooltips (and matching `aria-label` when icon-only). Wrap disabled buttons in a parent with `title` so tooltips still appear.
-- Do not add custom tooltip UI or tooltip components to work around native `title` behavior unless the user explicitly asks. Prefer minimal HTML fixes (e.g. `title` on a wrapper, `pointer-events: none` on a disabled inner button).
+- Prefer the smallest correct fix that matches the actual problem. Avoid over-engineering or sweeping rewrites unless complexity is explicitly requested or technically necessary.
 - For fast audio response, playback should always be on mouse down, not click.
 - Prioritize strict music-theory accuracy in labels and explanations; avoid simplified wording that could be technically wrong.

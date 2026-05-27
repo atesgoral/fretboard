@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Reverb, Soundfont } from 'smplr'
+import FretboardLegend from './FretboardLegend'
 
 const STRINGS = 6
 const DEFAULT_FRETS = 18
@@ -699,6 +700,7 @@ export default function Fretboard({
       </div>
       <FretLabels fretPositions={fretPositions} frets={frets} />
       <NoteReadout activeNotes={activeNotes} />
+      <FretboardLegend />
     </section>
   )
 }

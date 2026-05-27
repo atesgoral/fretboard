@@ -233,8 +233,7 @@ function OpenStringPulseOverlay({ top, bottom, stringThickness }: OpenStringHigh
         height: `${bottom - top}%`,
       }}
     >
-      <span className="open-string-burst-wave open-string-burst-wave-up" style={{ '--string-thickness': `${stringThickness}px` } as React.CSSProperties} />
-      <span className="open-string-burst-wave open-string-burst-wave-down" style={{ '--string-thickness': `${stringThickness}px` } as React.CSSProperties} />
+      <span className="open-string-burst-wave" style={{ '--string-thickness': `${stringThickness}px` } as React.CSSProperties} />
     </div>
   )
 }

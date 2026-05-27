@@ -101,7 +101,7 @@ function StringLines({
     const stringColorClass = isOpenStringHovered
       ? 'bg-blue-500 dark:bg-blue-300'
       : isActiveString
-        ? 'bg-rose-500 dark:bg-rose-300'
+        ? 'bg-red-500 dark:bg-red-300'
         : 'bg-zinc-600 dark:bg-zinc-300'
 
     return (
@@ -316,7 +316,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const circleToneClass = isHovered
             ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
             : isActive
-              ? 'border-rose-900/40 bg-rose-500 text-zinc-50 dark:border-rose-200/50 dark:bg-rose-300 dark:text-zinc-900'
+              ? 'border-red-900/40 bg-red-500 text-zinc-50 dark:border-red-200/50 dark:bg-red-300 dark:text-zinc-900'
               : fret === 0
                 ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
                 : role

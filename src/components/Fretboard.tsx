@@ -257,6 +257,7 @@ type NoteGridProps = {
   stringYPositions: number[]
   hoveredPosition: HoveredPosition
   onPointerMove: (pointerId: number, position: FretCellPosition | null) => void
+  onPointerLeave: () => void
   onPressStart: (pointerId: number, stringIndex: number, fret: number) => void
   onPressEnd: (pointerId: number) => void
   markedNotes: Map<number, string>
@@ -346,6 +347,7 @@ function NoteGrid({
   stringYPositions,
   hoveredPosition,
   onPointerMove,
+  onPointerLeave,
   onPressStart,
   onPressEnd,
   markedNotes,
@@ -386,6 +388,14 @@ function NoteGrid({
     }
     onPressEnd(event.pointerId)
   }
+
+  const handleGridPointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget
+    if (next instanceof Node && event.currentTarget.contains(next)) {
+      return
+    }
+    onPointerLeave()
+  }
   const activePositionSet = new Set(
     activePositions.map((position) => `${position.stringIndex}:${position.fret}`),
   )
@@ -416,6 +426,7 @@ function NoteGrid({
       ref={gridRef}
       className="absolute inset-0 touch-none"
       onPointerMove={handleGridPointerMove}
+      onPointerLeave={handleGridPointerLeave}
       onPointerUp={handleGridPointerEnd}
       onPointerCancel={handleGridPointerEnd}
     >
@@ -777,12 +788,16 @@ export default function Fretboard({
     [syncHeldPositions],
   )
 
+  const clearHoverPosition = useCallback(() => {
+    if (activePointersRef.current.size === 0) {
+      setHoveredPosition(null)
+    }
+  }, [])
+
   const handlePointerMove = useCallback(
     (pointerId: number, position: FretCellPosition | null) => {
       if (!position) {
-        if (activePointersRef.current.size === 0) {
-          setHoveredPosition(null)
-        }
+        clearHoverPosition()
         return
       }
 
@@ -793,7 +808,7 @@ export default function Fretboard({
 
       setHoveredPosition(position)
     },
-    [handlePressEnter],
+    [clearHoverPosition, handlePressEnter],
   )
 
   useEffect(() => {
@@ -823,8 +838,22 @@ export default function Fretboard({
     })
   }, [markRecentlyPlayed, playNote, playSequence, playedPositions])
 
+  const handleFretboardPointerLeave = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      const next = event.relatedTarget
+      if (next instanceof Node && event.currentTarget.contains(next)) {
+        return
+      }
+      clearHoverPosition()
+    },
+    [clearHoverPosition],
+  )
+
   return (
-    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <section
+      className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
+      onPointerLeave={handleFretboardPointerLeave}
+    >
       <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
         <FretLines fretPositions={fretPositions} frets={frets} />
@@ -847,6 +876,7 @@ export default function Fretboard({
           stringYPositions={stringYPositions}
           hoveredPosition={hoveredPosition}
           onPointerMove={handlePointerMove}
+          onPointerLeave={clearHoverPosition}
           onPressStart={handlePressStart}
           onPressEnd={handlePressEnd}
           markedNotes={markedNotes}

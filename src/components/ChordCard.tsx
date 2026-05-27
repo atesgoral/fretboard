@@ -1,4 +1,5 @@
-import { Play, X } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Pin, Play, X } from 'lucide-react'
 import type { ChordSelection } from './chordSearch'
 import { getChordQueryForSelection } from './chordSearch'
 
@@ -10,6 +11,7 @@ export type ChordCardProps = {
   onPlay: () => void
   onHoverStart?: () => void
   onHoverEnd?: () => void
+  onPin?: () => void
   onRemove?: () => void
 }
 
@@ -34,40 +36,46 @@ const cardSurfaceClass = (active: boolean) =>
     ? 'border-zinc-800 bg-zinc-800 text-zinc-100 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
     : 'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-400'
 
-function PlayChordButton({ title, onPlayDown }: { title: string; onPlayDown: () => void }) {
+const cornerButtonClass =
+  'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100'
+
+function ChordCornerButton({
+  title,
+  positionClassName,
+  onMouseDown,
+  onClick,
+  children,
+}: {
+  title: string
+  positionClassName: string
+  onMouseDown?: () => void
+  onClick?: () => void
+  children: ReactNode
+}) {
   return (
-    <span title={title} className="absolute bottom-1 right-1 hidden group-hover:inline-flex">
+    <span title={title} className={`absolute hidden group-hover:inline-flex ${positionClassName}`}>
       <button
         type="button"
         title={title}
         aria-label={title}
         onMouseDown={(event) => {
+          if (!onMouseDown) {
+            return
+          }
           event.preventDefault()
           event.stopPropagation()
-          onPlayDown()
+          onMouseDown()
         }}
-        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
-      >
-        <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
-      </button>
-    </span>
-  )
-}
-
-function RemoveChordButton({ title, onClick }: { title: string; onClick: () => void }) {
-  return (
-    <span title={title} className="absolute right-1 top-1 hidden group-hover:inline-flex">
-      <button
-        type="button"
-        title={title}
-        aria-label={title}
         onClick={(event) => {
+          if (!onClick) {
+            return
+          }
           event.stopPropagation()
           onClick()
         }}
-        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
+        className={cornerButtonClass}
       >
-        <X className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        {children}
       </button>
     </span>
   )
@@ -119,6 +127,7 @@ export default function ChordCard({
   onPlay,
   onHoverStart,
   onHoverEnd,
+  onPin,
   onRemove,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
@@ -157,10 +166,31 @@ export default function ChordCard({
           />
         </div>
       )}
-      <PlayChordButton title={playTitle} onPlayDown={onPlay} />
-      {onRemove ? (
-        <RemoveChordButton title={`Remove chord swatch ${label}`} onClick={onRemove} />
+      {onPin ? (
+        <ChordCornerButton
+          title={`Pin chord ${label}`}
+          positionClassName="right-1 top-1"
+          onClick={onPin}
+        >
+          <Pin className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        </ChordCornerButton>
       ) : null}
+      {onRemove ? (
+        <ChordCornerButton
+          title={`Remove pinned chord ${label}`}
+          positionClassName="right-1 top-1"
+          onClick={onRemove}
+        >
+          <X className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        </ChordCornerButton>
+      ) : null}
+      <ChordCornerButton
+        title={playTitle}
+        positionClassName="bottom-1 right-1"
+        onMouseDown={onPlay}
+      >
+        <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+      </ChordCornerButton>
     </div>
   )
 }

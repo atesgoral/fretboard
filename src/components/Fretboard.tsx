@@ -291,14 +291,20 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const width = `${(fretPositions[fret + 1] - fretPositions[fret]) * 100}%`
           const isHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
-          const shouldHighlightWholeString = isHovered && fret === 0
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
           const role = markedNotes.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
-          const shouldRenderEmptyCircle = !role && (isHovered || isActive)
+          const shouldShowCircle = Boolean(role) || isActive || (isHovered && fret > 0)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0
+          const circleToneClass = isActive
+            ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
+            : fret === 0
+              ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
+              : role
+                ? 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
+                : 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
 
           return (
             <button
@@ -313,25 +319,13 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
               onMouseDown={() => onPressStart(stringIndex, fret)}
               onMouseUp={onPressEnd}
             >
-              {shouldRenderEmptyCircle ? (
+              {shouldShowCircle ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
                   {shouldRenderBurst ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
-                  <span className="inline-flex h-7 w-7 rounded-full border border-blue-900/30 bg-blue-500 shadow-sm dark:border-blue-200/40 dark:bg-blue-300" />
-                </span>
-              ) : null}
-              {role ? (
-                <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                  {shouldRenderBurst ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
                   <span
-                    className={`relative z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold shadow-sm ${
-                      isActive
-                        ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
-                        : shouldHighlightWholeString
-                          ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
-                          : 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
-                    }`}
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold shadow-sm ${circleToneClass}`}
                   >
-                    {role}
+                    {role ?? ''}
                   </span>
                 </span>
               ) : null}

@@ -368,7 +368,10 @@ function NoteGrid({
               title={`Play string ${stringIndex + 1}, fret ${fret}`}
               className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
-              onPointerEnter={() => onHover(stringIndex, fret)}
+              onPointerEnter={() => {
+                onHover(stringIndex, fret)
+                onPressEnter(stringIndex, fret)
+              }}
               onPointerMove={() => onPressEnter(stringIndex, fret)}
               onPointerLeave={onLeave}
               onPointerDown={(event) => {

@@ -297,7 +297,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const isActive = activePositionSet.has(positionKey)
           const shouldShowCircle = Boolean(role) || isActive || (isHovered && fret > 0)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
-          const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0
+          const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
           const circleToneClass = isActive
             ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
             : fret === 0

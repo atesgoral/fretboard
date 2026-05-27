@@ -17,43 +17,54 @@ function getChordLabel(chord: ChordSelection) {
   return getChordQueryForSelection(chord.root, chord.qualityId, chord.extensionIds)
 }
 
+function getChordCardTitle(degreeLabel: string | undefined, label: string) {
+  if (degreeLabel) {
+    return `${degreeLabel}: ${label}`
+  }
+  return label
+}
+
 const cardSurfaceClass = (active: boolean) =>
   active
     ? 'border-zinc-800 bg-zinc-800 text-zinc-100 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
     : 'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-400'
 
-function PlayChordButton({ onPlayDown }: { onPlayDown: () => void }) {
+function PlayChordButton({ title, onPlayDown }: { title: string; onPlayDown: () => void }) {
   return (
-    <button
-      type="button"
-      aria-label="Play chord"
-      title="Play chord"
-      onMouseDown={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-        onPlayDown()
-      }}
-      className="absolute bottom-1 right-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
-    >
-      <Play className="h-3.5 w-3.5" aria-hidden="true" />
-    </button>
+    <span title={title} className="absolute bottom-1 right-1 hidden group-hover:inline-flex">
+      <button
+        type="button"
+        title={title}
+        aria-label={title}
+        onMouseDown={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onPlayDown()
+        }}
+        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
+      >
+        <Play className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </span>
   )
 }
 
-function RemoveChordButton({ onClick }: { onClick: () => void }) {
+function RemoveChordButton({ title, onClick }: { title: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      aria-label="Remove chord swatch"
-      title="Remove chord swatch"
-      onClick={(event) => {
-        event.stopPropagation()
-        onClick()
-      }}
-      className="absolute right-1 top-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
-    >
-      <X className="h-3.5 w-3.5" aria-hidden="true" />
-    </button>
+    <span title={title} className="absolute right-1 top-1 hidden group-hover:inline-flex">
+      <button
+        type="button"
+        title={title}
+        aria-label={title}
+        onClick={(event) => {
+          event.stopPropagation()
+          onClick()
+        }}
+        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </span>
   )
 }
 
@@ -87,6 +98,8 @@ export default function ChordCard({
   onRemove,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
+  const cardTitle = getChordCardTitle(degreeLabel, label)
+  const playTitle = `Play chord ${label}`
 
   return (
     <div
@@ -98,6 +111,7 @@ export default function ChordCard({
         <button
           type="button"
           title={`${active ? 'Selected' : 'Select'} chord ${label}`}
+          aria-label={`${active ? 'Selected' : 'Select'} chord ${label}`}
           onClick={onSelect}
           className={`flex h-full w-full cursor-pointer flex-col justify-between rounded-md border p-2 text-left transition ${cardSurfaceClass(active)}`}
         >
@@ -105,13 +119,16 @@ export default function ChordCard({
         </button>
       ) : (
         <div
+          title={cardTitle}
           className={`flex h-full w-full flex-col justify-between rounded-md border p-2 text-left transition ${cardSurfaceClass(active)}`}
         >
           <ChordCardContent chord={chord} degreeLabel={degreeLabel} label={label} />
         </div>
       )}
-      <PlayChordButton onPlayDown={onPlay} />
-      {onRemove ? <RemoveChordButton onClick={onRemove} /> : null}
+      <PlayChordButton title={playTitle} onPlayDown={onPlay} />
+      {onRemove ? (
+        <RemoveChordButton title={`Remove chord swatch ${label}`} onClick={onRemove} />
+      ) : null}
     </div>
   )
 }

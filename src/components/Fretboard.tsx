@@ -296,7 +296,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const role = markedNotes.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
-          const shouldRenderEmptyHoverCircle = isHovered && !role && fret > 0
+          const shouldRenderEmptyCircle = !role && (isHovered || isActive)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0
 
@@ -313,8 +313,11 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
               onMouseDown={() => onPressStart(stringIndex, fret)}
               onMouseUp={onPressEnd}
             >
-              {shouldRenderEmptyHoverCircle ? (
-                <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-900/30 bg-blue-500 shadow-sm dark:border-blue-200/40 dark:bg-blue-300" />
+              {shouldRenderEmptyCircle ? (
+                <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                  {shouldRenderBurst ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
+                  <span className="inline-flex h-7 w-7 rounded-full border border-blue-900/30 bg-blue-500 shadow-sm dark:border-blue-200/40 dark:bg-blue-300" />
+                </span>
               ) : null}
               {role ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -428,11 +431,7 @@ export default function Fretboard({
       ? [getNoteIdentity(activePosition)]
       : []
     : recentlyPlayedPositions.map(getNoteIdentity)
-  const activePositions = hoveredPosition
-    ? activePosition
-      ? [activePosition]
-      : []
-    : recentlyPlayedPositions
+  const activePositions = recentlyPlayedPositions
   const burstActivePositions = recentlyPlayedPositions
 
 

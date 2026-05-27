@@ -466,7 +466,11 @@ function NoteGrid({
               data-fret-cell=""
               data-string-index={stringIndex}
               data-fret={fret}
-              title={`Play string ${stringIndex + 1}, fret ${fret}`}
+              title={
+                fret === 0
+                  ? `Play string ${stringIndex + 1}, open string`
+                  : `Play string ${stringIndex + 1}, fret ${fret}`
+              }
               className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
               onPointerDown={(event) => handleCellPointerDown(event, stringIndex, fret)}

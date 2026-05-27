@@ -40,7 +40,9 @@ export default function AppHeader({
 }: AppHeaderProps) {
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">Fretboard</h1>
+      <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+        Fretboard
+      </h1>
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -92,7 +94,9 @@ export default function AppHeader({
           title={muted ? 'Unmute playback' : 'Mute playback'}
           onClick={onToggleMuted}
           className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-zinc-700 transition dark:bg-zinc-800 dark:text-zinc-100 ${
-            muted ? 'border-zinc-800 dark:border-zinc-100' : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
+            muted
+              ? 'border-zinc-800 dark:border-zinc-100'
+              : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
           }`}
         >
           <svg
@@ -125,4 +129,3 @@ export default function AppHeader({
     </div>
   )
 }
-

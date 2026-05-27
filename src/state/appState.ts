@@ -102,7 +102,9 @@ function updateActiveSwatch(state: TimelineState, update: Partial<ChordSelection
   if (state.activeSwatchIndex === null) return state
   return {
     ...state,
-    swatches: state.swatches.map((swatch, index) => (index === state.activeSwatchIndex ? { ...swatch, ...update } : swatch)),
+    swatches: state.swatches.map((swatch, index) =>
+      index === state.activeSwatchIndex ? { ...swatch, ...update } : swatch,
+    ),
   }
 }
 
@@ -117,7 +119,10 @@ function currentTimelineState(timeline: TimelineHistory): TimelineState {
   return timeline.snapshots[timeline.currentIndex]
 }
 
-function replaceCurrentTimelineSnapshot(previous: TimelineHistory, nextState: TimelineState): TimelineHistory {
+function replaceCurrentTimelineSnapshot(
+  previous: TimelineHistory,
+  nextState: TimelineState,
+): TimelineHistory {
   const snapshots = [...previous.snapshots]
   snapshots[previous.currentIndex] = cloneTimelineState(nextState)
   return { snapshots, currentIndex: previous.currentIndex }
@@ -144,14 +149,26 @@ export type AppAction =
 export function appReducer(state: AppState, action: AppAction): AppState {
   if (action.type === 'undo') {
     if (state.timeline.currentIndex === 0) return state
-    return { ...state, timeline: { ...state.timeline, currentIndex: state.timeline.currentIndex - 1 } }
+    return {
+      ...state,
+      timeline: { ...state.timeline, currentIndex: state.timeline.currentIndex - 1 },
+    }
   }
   if (action.type === 'redo') {
     if (state.timeline.currentIndex >= state.timeline.snapshots.length - 1) return state
-    return { ...state, timeline: { ...state.timeline, currentIndex: state.timeline.currentIndex + 1 } }
+    return {
+      ...state,
+      timeline: { ...state.timeline, currentIndex: state.timeline.currentIndex + 1 },
+    }
   }
 
-  if (action.type === 'toggleLinear' || action.type === 'toggleLowEAtBottom' || action.type === 'toggleNaturalDecay' || action.type === 'toggleReverb' || action.type === 'toggleMuted') {
+  if (
+    action.type === 'toggleLinear' ||
+    action.type === 'toggleLowEAtBottom' ||
+    action.type === 'toggleNaturalDecay' ||
+    action.type === 'toggleReverb' ||
+    action.type === 'toggleMuted'
+  ) {
     const keyMap = {
       toggleLinear: 'linear',
       toggleLowEAtBottom: 'lowEAtBottom',
@@ -183,24 +200,49 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   if (action.type === 'setRoot') {
     next = updateActiveSwatch({ ...current, root: action.root }, { root: action.root })
   } else if (action.type === 'setQuality') {
-    next = updateActiveSwatch({ ...current, qualityId: action.qualityId }, { qualityId: action.qualityId })
+    next = updateActiveSwatch(
+      { ...current, qualityId: action.qualityId },
+      { qualityId: action.qualityId },
+    )
   } else if (action.type === 'setExtensions') {
-    next = updateActiveSwatch({ ...current, extensionIds: action.extensionIds }, { extensionIds: action.extensionIds })
+    next = updateActiveSwatch(
+      { ...current, extensionIds: action.extensionIds },
+      { extensionIds: action.extensionIds },
+    )
   } else if (action.type === 'toggleExtension') {
     const extensionIds = current.extensionIds.includes(action.extensionId)
       ? current.extensionIds.filter((id) => id !== action.extensionId)
       : [...current.extensionIds, action.extensionId]
     next = updateActiveSwatch({ ...current, extensionIds }, { extensionIds })
   } else if (action.type === 'addSwatch') {
-    const selected = { root: current.root, qualityId: current.qualityId, extensionIds: [...current.extensionIds] }
-    next = { ...current, swatches: [...current.swatches, selected], activeSwatchIndex: current.swatches.length }
+    const selected = {
+      root: current.root,
+      qualityId: current.qualityId,
+      extensionIds: [...current.extensionIds],
+    }
+    next = {
+      ...current,
+      swatches: [...current.swatches, selected],
+      activeSwatchIndex: current.swatches.length,
+    }
   } else if (action.type === 'addSwatchChord') {
-    const selected = { root: action.chord.root, qualityId: action.chord.qualityId, extensionIds: [...action.chord.extensionIds] }
-    next = { ...current, swatches: [...current.swatches, selected], activeSwatchIndex: current.swatches.length }
+    const selected = {
+      root: action.chord.root,
+      qualityId: action.chord.qualityId,
+      extensionIds: [...action.chord.extensionIds],
+    }
+    next = {
+      ...current,
+      swatches: [...current.swatches, selected],
+      activeSwatchIndex: current.swatches.length,
+    }
   } else if (action.type === 'selectCurrentChord') {
     return {
       ...state,
-      timeline: replaceCurrentTimelineSnapshot(state.timeline, { ...current, activeSwatchIndex: null }),
+      timeline: replaceCurrentTimelineSnapshot(state.timeline, {
+        ...current,
+        activeSwatchIndex: null,
+      }),
     }
   } else if (action.type === 'removeSwatch') {
     const swatches = current.swatches.filter((_, idx) => idx !== action.index)

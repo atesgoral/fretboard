@@ -33,7 +33,6 @@ describe('appReducer timeline history', () => {
     expect(current.swatches[0]?.root).toBe('A')
   })
 
-
   it('does not add undo steps when switching selected swatches', () => {
     let state = createInitialAppState({})
     state = appReducer(state, { type: 'setRoot', root: 'D' })

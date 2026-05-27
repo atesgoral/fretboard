@@ -50,7 +50,6 @@ export default function App() {
           onToggleReverb={() => dispatch({ type: 'toggleReverb' })}
         />
 
-
         <ChordBrowser
           scaleRoot={root}
           scaleId={scaleId}

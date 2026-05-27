@@ -442,7 +442,11 @@ export default function Fretboard({
   const hoveredOpenStringVisualIndex =
     hoveredPosition && hoveredPosition.fret === 0 ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activeStringVisualIndexes = useMemo(() => {
-    const activeStringIndexes = new Set(recentlyPlayedPositions.map((position) => position.stringIndex))
+    const activeStringIndexes = new Set(
+      recentlyPlayedPositions
+        .filter((position) => position.fret === 0)
+        .map((position) => position.stringIndex),
+    )
     return new Set(
       stringOrder
         .map((stringIndex, visualIndex) => (activeStringIndexes.has(stringIndex) ? visualIndex : -1))

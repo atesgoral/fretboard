@@ -11,6 +11,10 @@ const FALLBACK_SOUNDFONT = 'acoustic_guitar_steel'
 const REVERB_STORAGE_KEY = 'cadence_reverb'
 const DEFAULT_REVERB_LEVEL = 0.15
 
+function getStringYPositions() {
+  return Array.from({ length: STRINGS }, (_, index) => ((index + 0.5) / STRINGS) * 100)
+}
+
 function getFretPositions(linear: boolean, frets: number) {
   if (linear) {
     return Array.from({ length: frets + 1 }, (_, index) => index / frets)
@@ -79,20 +83,17 @@ function FretLines({ fretPositions, frets }: FretLinesProps) {
   )
 }
 
-function StringLines({ lowEAtBottom }: { lowEAtBottom: boolean }) {
-  const stringThicknesses = lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES
-
+function StringLines({ stringYPositions, stringThicknesses }: { stringYPositions: number[]; stringThicknesses: number[] }) {
   return Array.from({ length: STRINGS }, (_, index) => {
-    const top = `${10 + (index / (STRINGS - 1)) * 80}%`
+    const stringTop = `calc(${stringYPositions[index]}% - ${stringThicknesses[index] / 2}px)`
 
     return (
       <div
         key={`string-${index}`}
         className="absolute left-0 right-0 bg-zinc-600 dark:bg-zinc-300"
         style={{
-          top,
+          top: stringTop,
           height: `${stringThicknesses[index]}px`,
-          transform: `translateY(-${stringThicknesses[index] / 2}px)`,
         }}
       />
     )
@@ -390,10 +391,7 @@ export default function Fretboard({
   playSequence,
 }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
-  const stringYPositions = useMemo(
-    () => Array.from({ length: STRINGS }, (_, index) => 10 + (index / (STRINGS - 1)) * 80),
-    [],
-  )
+  const stringYPositions = useMemo(() => getStringYPositions(), [])
   const stringThicknesses = useMemo(
     () => (lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES),
     [lowEAtBottom],
@@ -593,7 +591,7 @@ export default function Fretboard({
       <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
         <FretLines fretPositions={fretPositions} frets={frets} />
-        <StringLines lowEAtBottom={lowEAtBottom} />
+        <StringLines stringYPositions={stringYPositions} stringThicknesses={stringThicknesses} />
         <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />
         <NoteGrid
           fretPositions={fretPositions}

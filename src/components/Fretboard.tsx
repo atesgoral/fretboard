@@ -298,16 +298,15 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const shouldShowCircle = Boolean(role) || isActive || (isHovered && fret > 0)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
-          const isHoverAccent = isHovered && !isActive
-          const circleToneClass = isActive
-            ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
-            : isHoverAccent
-              ? 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
+          const circleToneClass = isHovered
+            ? 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
+            : isActive
+              ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
               : fret === 0
-              ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
-              : role
-                ? 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
-                : 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
+                ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
+                : role
+                  ? 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
+                  : 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
 
           return (
             <button

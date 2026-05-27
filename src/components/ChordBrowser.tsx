@@ -1,6 +1,5 @@
 import { NOTE_NAMES, type NoteName } from './chords'
-
-type ScaleId = 'major' | 'minor'
+import { SCALE_OPTIONS, type ScaleId } from './scales'
 
 type ChordBrowserProps = {
   scaleRoot: NoteName

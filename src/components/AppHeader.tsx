@@ -1,4 +1,5 @@
 import type { ThemePreference } from '../hooks/useThemePreference'
+import { Redo2, Undo2, Volume2, VolumeX } from 'lucide-react'
 import SettingsMenu from './controls/SettingsMenu'
 
 type AppHeaderProps = {
@@ -52,19 +53,7 @@ export default function AppHeader({
           disabled={!canUndo}
           className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-          >
-            <path d="M9 7 4 12l5 5" />
-            <path d="M4 12h8a6 6 0 0 1 6 6" />
-          </svg>
+          <Undo2 className="h-5 w-5" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -74,19 +63,7 @@ export default function AppHeader({
           disabled={!canRedo}
           className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-          >
-            <path d="m15 7 5 5-5 5" />
-            <path d="M20 12h-8a6 6 0 0 0-6 6" />
-          </svg>
+          <Redo2 className="h-5 w-5" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -99,19 +76,11 @@ export default function AppHeader({
               : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
           }`}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-          >
-            <path d="M5 14v-4h4l5-4v12l-5-4H5Z" />
-            {muted ? <path d="m4 4 16 16" /> : null}
-          </svg>
+          {muted ? (
+            <VolumeX className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <Volume2 className="h-5 w-5" aria-hidden="true" />
+          )}
         </button>
         <SettingsMenu
           preference={preference}

@@ -21,6 +21,8 @@ type AppHeaderProps = {
   onToggleReverb: () => void
 }
 
+const headerIconClass = 'pointer-events-none h-5 w-5'
+
 const headerIconButtonClass =
   'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500 aria-disabled:dark:hover:border-zinc-700'
 
@@ -61,7 +63,7 @@ export default function AppHeader({
           }}
           className={headerIconButtonClass}
         >
-          <Undo2 className="h-5 w-5" aria-hidden="true" />
+          <Undo2 className={headerIconClass} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -74,7 +76,7 @@ export default function AppHeader({
           }}
           className={headerIconButtonClass}
         >
-          <Redo2 className="h-5 w-5" aria-hidden="true" />
+          <Redo2 className={headerIconClass} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -88,9 +90,9 @@ export default function AppHeader({
           }`}
         >
           {muted ? (
-            <VolumeX className="h-5 w-5" aria-hidden="true" />
+            <VolumeX className={headerIconClass} aria-hidden="true" />
           ) : (
-            <Volume2 className="h-5 w-5" aria-hidden="true" />
+            <Volume2 className={headerIconClass} aria-hidden="true" />
           )}
         </button>
         <SettingsMenu

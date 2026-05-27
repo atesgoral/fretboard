@@ -239,20 +239,6 @@ function OpenStringPulseOverlay({ top, bottom, stringThickness }: OpenStringHigh
   )
 }
 
-type StringHoverOverlayProps = {
-  isVisible: boolean
-}
-
-function StringHoverOverlay({ isVisible }: StringHoverOverlayProps) {
-  if (!isVisible) {
-    return null
-  }
-
-  return (
-    <span className="pointer-events-none block h-full w-full bg-zinc-600/10 ring-1 ring-inset ring-zinc-600/35 dark:bg-zinc-100/10 dark:ring-zinc-100/35" />
-  )
-}
-
 function getStringBandBounds(stringYPositions: number[]) {
   return stringYPositions.map((position, index) => {
     if (index === 0) {
@@ -275,6 +261,8 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
+  const hoveredOpenStringVisualIndex =
+    hoveredPosition && hoveredPosition.fret === 0 ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activeOpenStringVisualIndexes = stringOrder.reduce<Array<{ visualIndex: number; stringThickness: number; burstKey: number }>>((indexes, stringIndex, visualIndex) => {
     const openStringPositionKey = `${stringIndex}:0`
     const isOpenStringBurstActive = burstActivePositionSet.has(openStringPositionKey)
@@ -308,6 +296,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const role = markedNotes.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
+          const shouldRenderEmptyHoverCircle = isHovered && !role && fret > 0
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst = burstActivePositionSet.has(positionKey) && burstKey > 0
 
@@ -324,11 +313,21 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
               onMouseDown={() => onPressStart(stringIndex, fret)}
               onMouseUp={onPressEnd}
             >
-              <StringHoverOverlay isVisible={isHovered && !shouldHighlightWholeString} />
+              {shouldRenderEmptyHoverCircle ? (
+                <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 inline-flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-900/30 bg-blue-500 shadow-sm dark:border-blue-200/40 dark:bg-blue-300" />
+              ) : null}
               {role ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                   {shouldRenderBurst ? <span key={`burst-${positionKey}-${burstKey}`} className="note-burst-wave" /> : null}
-                  <span className={`relative z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold text-zinc-900 shadow-sm ${isActive ? 'border-blue-900/30 bg-blue-500 dark:border-blue-200/40 dark:bg-blue-300' : 'border-amber-900/20 bg-amber-500 dark:border-amber-200/30 dark:bg-amber-300'}`}>
+                  <span
+                    className={`relative z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold shadow-sm ${
+                      isActive
+                        ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
+                        : shouldHighlightWholeString
+                          ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
+                          : 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
+                    }`}
+                  >
                     {role}
                   </span>
                 </span>
@@ -337,6 +336,15 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
+      {hoveredOpenStringVisualIndex >= 0 ? (
+        <div
+          className="pointer-events-none absolute left-0 right-0 z-10 bg-blue-500/12 ring-1 ring-inset ring-blue-500/45 dark:bg-blue-300/12 dark:ring-blue-300/45"
+          style={{
+            top: `${stringBandBounds[hoveredOpenStringVisualIndex].top}%`,
+            height: `${stringBandBounds[hoveredOpenStringVisualIndex].bottom - stringBandBounds[hoveredOpenStringVisualIndex].top}%`,
+          }}
+        />
+      ) : null}
       {activeOpenStringVisualIndexes.map(({ visualIndex, stringThickness, burstKey }) => {
         const band = stringBandBounds[visualIndex]
         return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}-${burstKey}`} top={band.top} bottom={band.bottom} stringThickness={stringThickness} />

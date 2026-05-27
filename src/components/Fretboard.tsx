@@ -30,7 +30,7 @@ type FretboardProps = {
   reverbEnabled: boolean
   muted: boolean
   frets?: number
-  chordRoles: Map<number, string>
+  markedNotes: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
 }
@@ -211,7 +211,7 @@ type NoteGridProps = {
   onPressStart: (stringIndex: number, fret: number) => void
   onPressEnter: (stringIndex: number, fret: number) => void
   onPressEnd: () => void
-  chordRoles: Map<number, string>
+  markedNotes: Map<number, string>
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
   animatedPositionBursts: Record<string, number>
@@ -271,7 +271,7 @@ function getStringBandBounds(stringYPositions: number[]) {
   })
 }
 
-function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, chordRoles, activePositions, burstActivePositions, animatedPositionBursts, stringThicknesses }: NoteGridProps) {
+function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hoveredPosition, onHover, onLeave, onPressStart, onPressEnter, onPressEnd, markedNotes, activePositions, burstActivePositions, animatedPositionBursts, stringThicknesses }: NoteGridProps) {
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
@@ -305,7 +305,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
           const shouldHighlightWholeString = isHovered && fret === 0
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
-          const role = chordRoles.get(noteClass)
+          const role = markedNotes.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
@@ -386,7 +386,7 @@ export default function Fretboard({
   reverbEnabled,
   muted,
   frets = DEFAULT_FRETS,
-  chordRoles,
+  markedNotes,
   playedPositions,
   playSequence,
 }: FretboardProps) {
@@ -607,7 +607,7 @@ export default function Fretboard({
           onPressStart={handlePressStart}
           onPressEnter={handlePressEnter}
           onPressEnd={clearPointerPress}
-          chordRoles={chordRoles}
+          markedNotes={markedNotes}
           activePositions={activePositions}
           burstActivePositions={burstActivePositions}
           animatedPositionBursts={animatedPositionBursts}

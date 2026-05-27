@@ -302,12 +302,12 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const circleToneClass = isActive
             ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
             : isHoverAccent
-              ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
+              ? 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
               : fret === 0
               ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
               : role
                 ? 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
-                : 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
+                : 'border-emerald-900/30 bg-emerald-500 text-zinc-900 dark:border-emerald-200/40 dark:bg-emerald-300 dark:text-zinc-900'
 
           return (
             <button
@@ -342,7 +342,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
       })}
       {hoveredOpenStringVisualIndex >= 0 ? (
         <div
-          className="pointer-events-none absolute left-0 right-0 z-10 bg-blue-500/95 dark:bg-blue-300/95"
+          className="pointer-events-none absolute left-0 right-0 z-10 bg-emerald-500/95 dark:bg-emerald-300/95"
           style={{
             top: `calc(${stringYPositions[hoveredOpenStringVisualIndex]}% - ${stringThicknesses[hoveredOpenStringVisualIndex] / 2}px)`,
             height: `${stringThicknesses[hoveredOpenStringVisualIndex]}px`,

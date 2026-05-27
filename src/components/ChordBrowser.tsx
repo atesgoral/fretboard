@@ -41,10 +41,7 @@ export default function ChordBrowser({ scaleRoot, scaleId, onScaleRootChange, on
         <SelectField
           label="Scale"
           value={scaleId}
-          options={[
-            { value: 'major', label: 'Major' },
-            { value: 'minor', label: 'Natural Minor' },
-          ]}
+          options={SCALE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
           onChange={(value) => onScaleIdChange(value as ScaleId)}
         />
       </div>

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
-import { buildChordRoles, CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
-import { type ScaleId } from './components/scales'
+import { buildScaleRoles, type ScaleId } from './components/scales'
 import { useThemePreference } from './hooks/useThemePreference'
 import {
   APP_PREFERENCES_STORAGE_KEY,
@@ -13,45 +12,6 @@ import {
   getInitialPreferences,
   toStoredPreferences,
 } from './state/appState'
-type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
-type PlayedPosition = { stringIndex: number; fret: number }
-type VoicingMode = 'strum' | 'finger' | 'shell'
-type DisplayMode = 'fretboard' | 'shape'
-
-const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
-
-function getChordPitchClasses(chord: ChordSelection) {
-  const rootIndex = NOTE_NAMES.indexOf(chord.root)
-  const quality = CHORD_QUALITIES.find((item) => item.id === chord.qualityId) ?? CHORD_QUALITIES[0]
-  const intervals = [...quality.intervals]
-  chord.extensionIds.forEach((id) => {
-    const extension = CHORD_EXTENSIONS.find((item) => item.id === id)
-    if (extension) {
-      intervals.push(extension.interval)
-    }
-  })
-
-  return Array.from(new Set(intervals.map((interval) => (rootIndex + interval) % 12)))
-}
-
-function buildCommonVoicing(chord: ChordSelection, voicingMode: VoicingMode, inversion: 0 | 1 | 2): PlayedPosition[] {
-  const pitchClasses = getChordPitchClasses(chord)
-  const playableFrets = voicingMode === 'strum' ? 6 : 9
-  const positions = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
-    const fret = Array.from({ length: 6 }, (_, index) => index).find((candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12))
-    const boundedFret = Array.from({ length: playableFrets + 1 }, (_, index) => index).find((candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12))
-    const selectedFret = voicingMode === 'strum' ? fret : boundedFret
-    return selectedFret === undefined ? null : { stringIndex, fret: selectedFret }
-  }).filter((position): position is PlayedPosition => position !== null)
-
-  const filteredByMode = voicingMode === 'shell' ? positions.filter((position) => position.stringIndex >= 1 && position.stringIndex <= 4).slice(0, 3) : positions
-  const inversionOffset = inversion % Math.max(filteredByMode.length, 1)
-  const rotated = filteredByMode.slice(inversionOffset).concat(filteredByMode.slice(0, inversionOffset))
-
-  if (voicingMode === 'finger') return rotated.slice(0, 4)
-  if (voicingMode === 'shell') return rotated
-  return rotated.length >= 4 ? rotated : rotated.slice(0, 3)
-}
 
 const initialPreferences = getInitialPreferences()
 
@@ -59,20 +19,14 @@ export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const { root, qualityId, extensionIds } = getCurrentTimelineState(appState)
-  const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
-  const [playSequence, setPlaySequence] = useState(0)
-  const [voicingMode, setVoicingMode] = useState<VoicingMode>('strum')
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('fretboard')
-  const [inversion, setInversion] = useState<0 | 1 | 2>(0)
+  const { root } = getCurrentTimelineState(appState)
   const [scaleId, setScaleId] = useState<ScaleId>('major')
 
   useEffect(() => {
     window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
   }, [appState])
 
-  const chordRoles = buildChordRoles(root, qualityId, extensionIds)
-  const focusedVoicing = useMemo(() => buildCommonVoicing({ root, qualityId, extensionIds }, voicingMode, inversion), [root, qualityId, extensionIds, voicingMode, inversion])
+  const markedNotes = useMemo(() => buildScaleRoles(root, scaleId), [root, scaleId])
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -154,9 +108,9 @@ export default function App() {
           naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           muted={muted}
-          chordRoles={displayMode === 'shape' ? new Map() : chordRoles}
-          playedPositions={displayMode === 'shape' ? focusedVoicing : playedPositions}
-          playSequence={playSequence}
+          markedNotes={markedNotes}
+          playedPositions={[]}
+          playSequence={0}
         />
       </section>
     </main>

@@ -17,6 +17,11 @@ function getChordLabel(chord: ChordSelection) {
   return getChordQueryForSelection(chord.root, chord.qualityId, chord.extensionIds)
 }
 
+function getChordQualityLine(chord: ChordSelection) {
+  const label = getChordLabel(chord)
+  return label.slice(chord.root.length) || 'maj'
+}
+
 function getChordCardTitle(degreeLabel: string | undefined, label: string) {
   if (degreeLabel) {
     return `${degreeLabel}: ${label}`
@@ -43,7 +48,7 @@ function PlayChordButton({ title, onPlayDown }: { title: string; onPlayDown: () 
         }}
         className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
       >
-        <Play className="h-3.5 w-3.5" aria-hidden="true" />
+        <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </span>
   )
@@ -62,7 +67,7 @@ function RemoveChordButton({ title, onClick }: { title: string; onClick: () => v
         }}
         className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
       >
-        <X className="h-3.5 w-3.5" aria-hidden="true" />
+        <X className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </span>
   )
@@ -71,21 +76,40 @@ function RemoveChordButton({ title, onClick }: { title: string; onClick: () => v
 function ChordCardContent({
   chord,
   degreeLabel,
-  label,
+  qualityLine,
+  active,
 }: {
   chord: ChordSelection
   degreeLabel?: string
-  label: string
+  qualityLine: string
+  active: boolean
 }) {
   return (
     <>
-      <span className="text-xs tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-        {degreeLabel ?? chord.root}
+      {degreeLabel ? (
+        <span
+          className={`absolute left-2 top-2 text-xs font-medium tracking-[0.12em] ${
+            active ? 'opacity-70' : 'text-zinc-500 dark:text-zinc-400'
+          }`}
+        >
+          {degreeLabel}
+        </span>
+      ) : null}
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-semibold leading-none tracking-tight">
+        {chord.root}
       </span>
-      <span className="text-sm font-semibold leading-tight">{label}</span>
+      <span
+        className={`absolute left-1/2 top-[calc(50%+1.125rem)] -translate-x-1/2 text-xs font-medium leading-tight ${
+          active ? 'opacity-70' : 'text-zinc-500 dark:text-zinc-400'
+        }`}
+      >
+        {qualityLine}
+      </span>
     </>
   )
 }
+
+const cardLayoutClass = 'relative h-full w-full rounded-md border p-2 text-center transition'
 
 export default function ChordCard({
   chord,
@@ -98,6 +122,7 @@ export default function ChordCard({
   onRemove,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
+  const qualityLine = getChordQualityLine(chord)
   const cardTitle = getChordCardTitle(degreeLabel, label)
   const playTitle = `Play chord ${label}`
 
@@ -113,16 +138,23 @@ export default function ChordCard({
           title={`${active ? 'Selected' : 'Select'} chord ${label}`}
           aria-label={`${active ? 'Selected' : 'Select'} chord ${label}`}
           onClick={onSelect}
-          className={`flex h-full w-full cursor-pointer flex-col justify-between rounded-md border p-2 text-left transition ${cardSurfaceClass(active)}`}
+          className={`${cardLayoutClass} cursor-pointer ${cardSurfaceClass(active)}`}
         >
-          <ChordCardContent chord={chord} degreeLabel={degreeLabel} label={label} />
+          <ChordCardContent
+            chord={chord}
+            degreeLabel={degreeLabel}
+            qualityLine={qualityLine}
+            active={active}
+          />
         </button>
       ) : (
-        <div
-          title={cardTitle}
-          className={`flex h-full w-full flex-col justify-between rounded-md border p-2 text-left transition ${cardSurfaceClass(active)}`}
-        >
-          <ChordCardContent chord={chord} degreeLabel={degreeLabel} label={label} />
+        <div title={cardTitle} className={`${cardLayoutClass} ${cardSurfaceClass(active)}`}>
+          <ChordCardContent
+            chord={chord}
+            degreeLabel={degreeLabel}
+            qualityLine={qualityLine}
+            active={active}
+          />
         </div>
       )}
       <PlayChordButton title={playTitle} onPlayDown={onPlay} />

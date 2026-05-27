@@ -226,17 +226,39 @@ type ExcitationState = {
 
 type TriggerType = 'pick' | 'slide'
 
+type PointerPressState = {
+  stringIndex: number
+  fret: number
+  lastKey: string
+}
+
+function getActivePositionsFromPointers(
+  pointers: Map<number, PointerPressState>,
+): ActivePosition[] {
+  const seen = new Set<string>()
+  const positions: ActivePosition[] = []
+
+  for (const { stringIndex, fret } of pointers.values()) {
+    const key = `${stringIndex}:${fret}`
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    positions.push({ stringIndex, fret })
+  }
+
+  return positions
+}
+
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
   stringOrder: number[]
   stringYPositions: number[]
   hoveredPosition: HoveredPosition
-  onHover: (stringIndex: number, fret: number) => void
-  onLeave: () => void
-  onPressStart: (stringIndex: number, fret: number) => void
-  onPressEnter: (stringIndex: number, fret: number) => void
-  onPressEnd: () => void
+  onPointerMove: (pointerId: number, position: FretCellPosition | null) => void
+  onPressStart: (pointerId: number, stringIndex: number, fret: number) => void
+  onPressEnd: (pointerId: number) => void
   markedNotes: Map<number, string>
   highlightedPitchClasses: Set<number>
   activePositions: ActivePosition[]
@@ -323,10 +345,8 @@ function NoteGrid({
   stringOrder,
   stringYPositions,
   hoveredPosition,
-  onHover,
-  onLeave,
+  onPointerMove,
   onPressStart,
-  onPressEnter,
   onPressEnd,
   markedNotes,
   highlightedPitchClasses,
@@ -338,19 +358,16 @@ function NoteGrid({
   const gridRef = useRef<HTMLDivElement>(null)
   const stringBandBounds = getStringBandBounds(stringYPositions)
 
-  const updatePositionFromPointer = (event: { clientX: number; clientY: number }) => {
+  const updatePositionFromPointer = (
+    pointerId: number,
+    event: { clientX: number; clientY: number },
+  ) => {
     const position = getFretCellFromPointer(event, gridRef.current)
-    if (!position) {
-      onLeave()
-      return
-    }
-
-    onHover(position.stringIndex, position.fret)
-    onPressEnter(position.stringIndex, position.fret)
+    onPointerMove(pointerId, position)
   }
 
   const handleGridPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    updatePositionFromPointer(event)
+    updatePositionFromPointer(event.pointerId, event)
   }
 
   const handleCellPointerDown = (
@@ -360,14 +377,14 @@ function NoteGrid({
   ) => {
     event.preventDefault()
     gridRef.current?.setPointerCapture(event.pointerId)
-    onPressStart(stringIndex, fret)
+    onPressStart(event.pointerId, stringIndex, fret)
   }
 
   const handleGridPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
     if (gridRef.current?.hasPointerCapture(event.pointerId)) {
       gridRef.current.releasePointerCapture(event.pointerId)
     }
-    onPressEnd()
+    onPressEnd(event.pointerId)
   }
   const activePositionSet = new Set(
     activePositions.map((position) => `${position.stringIndex}:${position.fret}`),
@@ -546,23 +563,23 @@ export default function Fretboard({
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
+  const [heldPositions, setHeldPositions] = useState<ActivePosition[]>([])
   const reverbEnabledRef = useRef(reverbEnabled)
-  const isPointerDownRef = useRef(false)
-  const lastPlayedRef = useRef<string | null>(null)
+  const activePointersRef = useRef(new Map<number, PointerPressState>())
   const [recentlyPlayedPositions, setRecentlyPlayedPositions] = useState<ActivePosition[]>([])
   const [animatedPositionBursts, setAnimatedPositionBursts] = useState<Record<string, number>>({})
   const excitationByStringRef = useRef<ExcitationState[]>(
     Array.from({ length: STRINGS }, () => ({ level: 0, timestampMs: 0 })),
   )
 
-  const activePosition = hoveredPosition
-  const activeNotes = hoveredPosition
-    ? activePosition
-      ? [getNoteIdentity(activePosition)]
-      : []
-    : recentlyPlayedPositions.map(getNoteIdentity)
-  const activePositions = recentlyPlayedPositions
-  const burstActivePositions = recentlyPlayedPositions
+  const activeNotes =
+    heldPositions.length > 0
+      ? heldPositions.map(getNoteIdentity)
+      : hoveredPosition
+        ? [getNoteIdentity(hoveredPosition)]
+        : recentlyPlayedPositions.map(getNoteIdentity)
+  const activePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
+  const burstActivePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
   const hoveredOpenStringVisualIndex =
     hoveredPosition && hoveredPosition.fret === 0
       ? stringOrder.indexOf(hoveredPosition.stringIndex)
@@ -594,20 +611,6 @@ export default function Fretboard({
         .filter((visualIndex) => visualIndex >= 0),
     )
   }, [recentlyPlayedPositions, stringOrder])
-
-  const clearPointerPress = useCallback(() => {
-    isPointerDownRef.current = false
-    lastPlayedRef.current = null
-  }, [])
-
-  useEffect(() => {
-    window.addEventListener('pointerup', clearPointerPress)
-    window.addEventListener('pointercancel', clearPointerPress)
-    return () => {
-      window.removeEventListener('pointerup', clearPointerPress)
-      window.removeEventListener('pointercancel', clearPointerPress)
-    }
-  }, [clearPointerPress])
 
   useEffect(() => {
     return () => {
@@ -683,6 +686,12 @@ export default function Fretboard({
     })
   }, [])
 
+  const syncHeldPositions = useCallback(() => {
+    const positions = getActivePositionsFromPointers(activePointersRef.current)
+    setHeldPositions(positions)
+    markRecentlyPlayed(positions)
+  }, [markRecentlyPlayed])
+
   const playNote = useCallback(
     async (stringIndex: number, fret: number, triggerType: TriggerType) => {
       if (muted) {
@@ -723,15 +732,85 @@ export default function Fretboard({
   )
 
   const handlePressStart = useCallback(
-    (stringIndex: number, fret: number) => {
-      isPointerDownRef.current = true
+    (pointerId: number, stringIndex: number, fret: number) => {
       const positionKey = `${stringIndex}:${fret}`
-      lastPlayedRef.current = positionKey
-      markRecentlyPlayed([{ stringIndex, fret }])
+      activePointersRef.current.set(pointerId, { stringIndex, fret, lastKey: positionKey })
+      syncHeldPositions()
       void playNote(stringIndex, fret, 'pick')
     },
-    [markRecentlyPlayed, playNote],
+    [playNote, syncHeldPositions],
   )
+
+  const handlePressEnter = useCallback(
+    (pointerId: number, stringIndex: number, fret: number) => {
+      const pointerState = activePointersRef.current.get(pointerId)
+      if (!pointerState) {
+        return
+      }
+
+      const positionKey = `${stringIndex}:${fret}`
+      if (pointerState.lastKey === positionKey) {
+        return
+      }
+
+      activePointersRef.current.set(pointerId, {
+        stringIndex,
+        fret,
+        lastKey: positionKey,
+      })
+      syncHeldPositions()
+      void playNote(stringIndex, fret, 'slide')
+    },
+    [playNote, syncHeldPositions],
+  )
+
+  const handlePressEnd = useCallback(
+    (pointerId: number) => {
+      activePointersRef.current.delete(pointerId)
+      if (activePointersRef.current.size === 0) {
+        setHeldPositions([])
+        setHoveredPosition(null)
+        return
+      }
+      syncHeldPositions()
+    },
+    [syncHeldPositions],
+  )
+
+  const handlePointerMove = useCallback(
+    (pointerId: number, position: FretCellPosition | null) => {
+      if (!position) {
+        if (activePointersRef.current.size === 0) {
+          setHoveredPosition(null)
+        }
+        return
+      }
+
+      if (activePointersRef.current.has(pointerId)) {
+        handlePressEnter(pointerId, position.stringIndex, position.fret)
+        return
+      }
+
+      setHoveredPosition(position)
+    },
+    [handlePressEnter],
+  )
+
+  useEffect(() => {
+    const handleWindowPointerEnd = (event: PointerEvent) => {
+      if (!activePointersRef.current.has(event.pointerId)) {
+        return
+      }
+      handlePressEnd(event.pointerId)
+    }
+
+    window.addEventListener('pointerup', handleWindowPointerEnd)
+    window.addEventListener('pointercancel', handleWindowPointerEnd)
+    return () => {
+      window.removeEventListener('pointerup', handleWindowPointerEnd)
+      window.removeEventListener('pointercancel', handleWindowPointerEnd)
+    }
+  }, [handlePressEnd])
 
   useEffect(() => {
     if (playSequence === 0 || playedPositions.length === 0) {
@@ -743,24 +822,6 @@ export default function Fretboard({
       void playNote(position.stringIndex, position.fret, 'pick')
     })
   }, [markRecentlyPlayed, playNote, playSequence, playedPositions])
-
-  const handlePressEnter = useCallback(
-    (stringIndex: number, fret: number) => {
-      if (!isPointerDownRef.current) {
-        return
-      }
-
-      const positionKey = `${stringIndex}:${fret}`
-      if (lastPlayedRef.current === positionKey) {
-        return
-      }
-
-      lastPlayedRef.current = positionKey
-      markRecentlyPlayed([{ stringIndex, fret }])
-      void playNote(stringIndex, fret, 'slide')
-    },
-    [markRecentlyPlayed, playNote],
-  )
 
   return (
     <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
@@ -785,11 +846,9 @@ export default function Fretboard({
           stringOrder={stringOrder}
           stringYPositions={stringYPositions}
           hoveredPosition={hoveredPosition}
-          onHover={(stringIndex, fret) => setHoveredPosition({ stringIndex, fret })}
-          onLeave={() => setHoveredPosition(null)}
+          onPointerMove={handlePointerMove}
           onPressStart={handlePressStart}
-          onPressEnter={handlePressEnter}
-          onPressEnd={clearPointerPress}
+          onPressEnd={handlePressEnd}
           markedNotes={markedNotes}
           highlightedPitchClasses={highlightedPitchClassSet}
           activePositions={activePositions}

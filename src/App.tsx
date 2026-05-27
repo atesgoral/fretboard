@@ -3,6 +3,7 @@ import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
 import { buildChordRoles, CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES, type NoteName } from './components/chords'
 import SettingsMenu from './components/controls/SettingsMenu'
+import { type ScaleId } from './components/scales'
 import { useThemePreference } from './hooks/useThemePreference'
 import {
   APP_PREFERENCES_STORAGE_KEY,
@@ -16,7 +17,6 @@ type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[
 type PlayedPosition = { stringIndex: number; fret: number }
 type VoicingMode = 'strum' | 'finger' | 'shell'
 type DisplayMode = 'fretboard' | 'shape'
-type ScaleId = 'major' | 'minor'
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 

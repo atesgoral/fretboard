@@ -331,7 +331,7 @@ function NoteGrid({
   }, [])
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 touch-none">
       {stringOrder.map((stringIndex, visualIndex) => {
         const band = stringBandBounds[visualIndex]
         const top = `${band.top}%`
@@ -368,11 +368,14 @@ function NoteGrid({
               title={`Play string ${stringIndex + 1}, fret ${fret}`}
               className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
-              onMouseEnter={() => onHover(stringIndex, fret)}
-              onMouseMove={() => onPressEnter(stringIndex, fret)}
-              onMouseLeave={onLeave}
-              onMouseDown={() => onPressStart(stringIndex, fret)}
-              onMouseUp={onPressEnd}
+              onPointerEnter={() => onHover(stringIndex, fret)}
+              onPointerMove={() => onPressEnter(stringIndex, fret)}
+              onPointerLeave={onLeave}
+              onPointerDown={(event) => {
+                event.preventDefault()
+                onPressStart(stringIndex, fret)
+              }}
+              onPointerUp={onPressEnd}
             >
               {shouldShowCircle ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -532,8 +535,12 @@ export default function Fretboard({
   }, [])
 
   useEffect(() => {
-    window.addEventListener('mouseup', clearPointerPress)
-    return () => window.removeEventListener('mouseup', clearPointerPress)
+    window.addEventListener('pointerup', clearPointerPress)
+    window.addEventListener('pointercancel', clearPointerPress)
+    return () => {
+      window.removeEventListener('pointerup', clearPointerPress)
+      window.removeEventListener('pointercancel', clearPointerPress)
+    }
   }, [clearPointerPress])
 
   useEffect(() => {

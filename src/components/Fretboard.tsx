@@ -83,14 +83,23 @@ function FretLines({ fretPositions, frets }: FretLinesProps) {
   )
 }
 
-function StringLines({ stringYPositions, stringThicknesses }: { stringYPositions: number[]; stringThicknesses: number[] }) {
+function StringLines({
+  stringYPositions,
+  stringThicknesses,
+  hoveredOpenStringVisualIndex,
+}: {
+  stringYPositions: number[]
+  stringThicknesses: number[]
+  hoveredOpenStringVisualIndex: number
+}) {
   return Array.from({ length: STRINGS }, (_, index) => {
     const stringTop = `calc(${stringYPositions[index]}% - ${stringThicknesses[index] / 2}px)`
+    const isOpenStringHovered = hoveredOpenStringVisualIndex === index
 
     return (
       <div
         key={`string-${index}`}
-        className="absolute left-0 right-0 bg-zinc-600 dark:bg-zinc-300"
+        className={`absolute left-0 right-0 ${isOpenStringHovered ? 'bg-blue-500 dark:bg-blue-300' : 'bg-zinc-600 dark:bg-zinc-300'}`}
         style={{
           top: stringTop,
           height: `${stringThicknesses[index]}px`,
@@ -261,8 +270,6 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
   const stringBandBounds = getStringBandBounds(stringYPositions)
   const activePositionSet = new Set(activePositions.map((position) => `${position.stringIndex}:${position.fret}`))
   const burstActivePositionSet = new Set(burstActivePositions.map((position) => `${position.stringIndex}:${position.fret}`))
-  const hoveredOpenStringVisualIndex =
-    hoveredPosition && hoveredPosition.fret === 0 ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
   const activeOpenStringVisualIndexes = stringOrder.reduce<Array<{ visualIndex: number; stringThickness: number; burstKey: number }>>((indexes, stringIndex, visualIndex) => {
     const openStringPositionKey = `${stringIndex}:0`
     const isOpenStringBurstActive = burstActivePositionSet.has(openStringPositionKey)
@@ -339,15 +346,6 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           )
         })
       })}
-      {hoveredOpenStringVisualIndex >= 0 ? (
-        <div
-          className="pointer-events-none absolute left-0 right-0 z-10 bg-blue-500/95 dark:bg-blue-300/95"
-          style={{
-            top: `calc(${stringYPositions[hoveredOpenStringVisualIndex]}% - ${stringThicknesses[hoveredOpenStringVisualIndex] / 2}px)`,
-            height: `${stringThicknesses[hoveredOpenStringVisualIndex]}px`,
-          }}
-        />
-      ) : null}
       {activeOpenStringVisualIndexes.map(({ visualIndex, stringThickness, burstKey }) => {
         const band = stringBandBounds[visualIndex]
         return <OpenStringPulseOverlay key={`active-open-string-${visualIndex}-${burstKey}`} top={band.top} bottom={band.bottom} stringThickness={stringThickness} />
@@ -433,6 +431,8 @@ export default function Fretboard({
     : recentlyPlayedPositions.map(getNoteIdentity)
   const activePositions = recentlyPlayedPositions
   const burstActivePositions = recentlyPlayedPositions
+  const hoveredOpenStringVisualIndex =
+    hoveredPosition && hoveredPosition.fret === 0 ? stringOrder.indexOf(hoveredPosition.stringIndex) : -1
 
 
   const clearPointerPress = useCallback(() => {
@@ -598,7 +598,11 @@ export default function Fretboard({
       <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
         <FretLines fretPositions={fretPositions} frets={frets} />
-        <StringLines stringYPositions={stringYPositions} stringThicknesses={stringThicknesses} />
+        <StringLines
+          stringYPositions={stringYPositions}
+          stringThicknesses={stringThicknesses}
+          hoveredOpenStringVisualIndex={hoveredOpenStringVisualIndex}
+        />
         <FretMarkers fretPositions={fretPositions} frets={frets} stringYPositions={stringYPositions} />
         <NoteGrid
           fretPositions={fretPositions}

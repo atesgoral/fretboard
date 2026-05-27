@@ -17,7 +17,7 @@ export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>('C')
+  const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>(null)
   const [scaleId, setScaleId] = useState<ScaleId>('major')
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)

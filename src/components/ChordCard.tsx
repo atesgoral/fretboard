@@ -129,8 +129,8 @@ export default function ChordCard({
   return (
     <div
       className="group relative h-24 w-24 shrink-0"
-      onMouseEnter={onHoverStart}
-      onMouseLeave={onHoverEnd}
+      onPointerEnter={onHoverStart}
+      onPointerLeave={onHoverEnd}
     >
       {onSelect ? (
         <button

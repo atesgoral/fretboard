@@ -301,7 +301,7 @@ function NoteGrid({ fretPositions, frets, stringOrder, stringYPositions, hovered
           const circleToneClass = isHovered
             ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
             : isActive
-              ? 'border-orange-900/30 bg-orange-500 text-zinc-900 dark:border-orange-200/40 dark:bg-orange-300 dark:text-zinc-900'
+              ? 'border-orange-950/40 bg-orange-600 text-zinc-50 dark:border-orange-200/50 dark:bg-orange-400 dark:text-zinc-900'
               : fret === 0
                 ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
                 : role

@@ -38,42 +38,60 @@
   position: absolute;
   left: 0;
   right: 0;
+  top: 50%;
+  height: var(--string-thickness, 2px);
+  transform: translateY(-50%);
+}
+
+.open-string-burst-wave::before,
+.open-string-burst-wave::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgb(56 189 248 / 0.95) 0%,
-    rgb(56 189 248 / 0.8) 35%,
-    rgb(56 189 248 / 0.15) 100%
-  );
-  transform-origin: left center;
-  animation: open-string-burst-wave 320ms ease-out forwards;
+  background: rgb(56 189 248 / 0.9);
+  opacity: 0.95;
+  will-change: transform, opacity;
 }
 
-.open-string-burst-wave-up {
-  top: calc(50% - (var(--string-thickness, 2px) / 2));
+.open-string-burst-wave::before {
+  top: 0;
+  transform: translateY(-1px);
+  animation: open-string-burst-top 260ms ease-out forwards;
 }
 
-.open-string-burst-wave-down {
-  top: calc(50% + (var(--string-thickness, 2px) / 2));
+.open-string-burst-wave::after {
+  bottom: 0;
+  transform: translateY(1px);
+  animation: open-string-burst-bottom 260ms ease-out forwards;
 }
 
-@keyframes open-string-burst-wave {
+@keyframes open-string-burst-top {
   from {
     opacity: 0.95;
-    transform: scaleX(0.04);
+    transform: translateY(-1px);
   }
 
   to {
     opacity: 0;
-    transform: scaleX(1);
+    transform: translateY(-10px);
   }
 }
 
-:root[data-theme='dark'] .open-string-burst-wave {
-  background: linear-gradient(
-    90deg,
-    rgb(125 211 252 / 0.98) 0%,
-    rgb(125 211 252 / 0.84) 35%,
-    rgb(125 211 252 / 0.22) 100%
-  );
+@keyframes open-string-burst-bottom {
+  from {
+    opacity: 0.95;
+    transform: translateY(1px);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+:root[data-theme='dark'] .open-string-burst-wave::before,
+:root[data-theme='dark'] .open-string-burst-wave::after {
+  background: rgb(125 211 252 / 0.92);
 }

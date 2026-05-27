@@ -24,7 +24,7 @@ type AppHeaderProps = {
 const headerIconClass = 'pointer-events-none h-5 w-5'
 
 const headerIconButtonClass =
-  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500 aria-disabled:dark:hover:border-zinc-700'
+  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition enabled:hover:border-zinc-400 disabled:cursor-default disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500'
 
 export default function AppHeader({
   canUndo,
@@ -54,26 +54,18 @@ export default function AppHeader({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          title="Undo chord changes"
-          aria-label="Undo chord changes"
-          aria-disabled={!canUndo}
-          tabIndex={canUndo ? 0 : -1}
-          onClick={() => {
-            if (canUndo) onUndo()
-          }}
+          {...(canUndo ? { title: 'Undo chord changes', 'aria-label': 'Undo chord changes' } : {})}
+          onClick={onUndo}
+          disabled={!canUndo}
           className={headerIconButtonClass}
         >
           <Undo2 className={headerIconClass} aria-hidden="true" />
         </button>
         <button
           type="button"
-          title="Redo chord changes"
-          aria-label="Redo chord changes"
-          aria-disabled={!canRedo}
-          tabIndex={canRedo ? 0 : -1}
-          onClick={() => {
-            if (canRedo) onRedo()
-          }}
+          {...(canRedo ? { title: 'Redo chord changes', 'aria-label': 'Redo chord changes' } : {})}
+          onClick={onRedo}
+          disabled={!canRedo}
           className={headerIconButtonClass}
         >
           <Redo2 className={headerIconClass} aria-hidden="true" />

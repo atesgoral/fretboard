@@ -1,8 +1,12 @@
-import { useMemo, useReducer, useState } from 'react'
+import { useCallback, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser from './components/ChordBrowser'
+import DiatonicChordList from './components/DiatonicChordList'
 import { buildScaleRoles, type ScaleId } from './components/scales'
 import AppHeader from './components/AppHeader'
+import type { ChordSelection } from './components/chordSearch'
+import { buildCommonVoicing, getChordPitchClasses } from './components/voicing'
+import type { PlayedPosition } from './components/voicing'
 import { useThemePreference } from './hooks/useThemePreference'
 import { usePersistAppPreferences } from './hooks/usePersistAppPreferences'
 import {
@@ -20,10 +24,22 @@ export default function App() {
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
   const { root } = getCurrentTimelineState(appState)
   const [scaleId, setScaleId] = useState<ScaleId>('major')
+  const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
+  const [playSequence, setPlaySequence] = useState(0)
+  const [highlightedPitchClasses, setHighlightedPitchClasses] = useState<number[]>([])
 
   usePersistAppPreferences(appState)
 
   const markedNotes = useMemo(() => buildScaleRoles(root, scaleId), [root, scaleId])
+
+  const handlePlayChord = useCallback((chord: ChordSelection) => {
+    setPlayedPositions(buildCommonVoicing(chord))
+    setPlaySequence((current) => current + 1)
+  }, [])
+
+  const handleHoverChord = useCallback((chord: ChordSelection | null) => {
+    setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
+  }, [])
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -57,6 +73,13 @@ export default function App() {
           onScaleIdChange={setScaleId}
         />
 
+        <DiatonicChordList
+          scaleRoot={root}
+          scaleId={scaleId}
+          onPlayChord={handlePlayChord}
+          onHoverChord={handleHoverChord}
+        />
+
         <Fretboard
           linear={linear}
           lowEAtBottom={lowEAtBottom}
@@ -64,8 +87,9 @@ export default function App() {
           reverbEnabled={reverbEnabled}
           muted={muted}
           markedNotes={markedNotes}
-          playedPositions={[]}
-          playSequence={0}
+          highlightedPitchClasses={highlightedPitchClasses}
+          playedPositions={playedPositions}
+          playSequence={playSequence}
         />
       </section>
     </main>

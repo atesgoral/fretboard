@@ -9,4 +9,5 @@
 - If you encounter an issue, do not waive it as "found it like this"; fix it.
 - Every clickable element must show `cursor: pointer`.
 - Every clickable button must include a descriptive `title` tooltip.
+- For fast audio response, playback should always be on mouse down, not click.
 - Prioritize strict music-theory accuracy in labels and explanations; avoid simplified wording that could be technically wrong.

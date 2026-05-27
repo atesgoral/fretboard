@@ -62,16 +62,14 @@ export default function SettingsMenu({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <span title="Open settings menu" className="inline-flex">
-          <button
-            type="button"
-            title="Open settings menu"
-            aria-label="Open settings menu"
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </span>
+        <button
+          type="button"
+          title="Open settings menu"
+          aria-label="Open settings menu"
+          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
+        >
+          <Menu className="pointer-events-none h-5 w-5" aria-hidden="true" />
+        </button>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content

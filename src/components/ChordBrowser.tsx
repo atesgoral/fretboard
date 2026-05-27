@@ -8,7 +8,17 @@ type ChordBrowserProps = {
   onScaleIdChange: (next: ScaleId) => void
 }
 
-function SelectField({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: { value: string; label: string }[]
+  onChange: (value: string) => void
+}) {
   return (
     <label className="flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
       {label}
@@ -28,7 +38,12 @@ function SelectField({ label, value, options, onChange }: { label: string; value
   )
 }
 
-export default function ChordBrowser({ scaleRoot, scaleId, onScaleRootChange, onScaleIdChange }: ChordBrowserProps) {
+export default function ChordBrowser({
+  scaleRoot,
+  scaleId,
+  onScaleRootChange,
+  onScaleIdChange,
+}: ChordBrowserProps) {
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex flex-wrap items-end gap-3">

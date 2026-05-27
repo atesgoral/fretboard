@@ -5,25 +5,48 @@ describe('parseChordQuery', () => {
   const fallback = { root: 'C' as const, qualityId: 'maj', extensionIds: [] as string[] }
 
   it('parses rooted dominant chords quickly', () => {
-    expect(parseChordQuery('F#7', fallback)).toEqual({ root: 'F#', qualityId: 'maj', extensionIds: ['b7'] })
+    expect(parseChordQuery('F#7', fallback)).toEqual({
+      root: 'F#',
+      qualityId: 'maj',
+      extensionIds: ['b7'],
+    })
   })
 
   it('parses minor aliases', () => {
-    expect(parseChordQuery('Bbm7', fallback)).toEqual({ root: 'A#', qualityId: 'min', extensionIds: ['b7'] })
+    expect(parseChordQuery('Bbm7', fallback)).toEqual({
+      root: 'A#',
+      qualityId: 'min',
+      extensionIds: ['b7'],
+    })
   })
 
   it('keeps preset alias semantics before tonal fallback', () => {
-    expect(parseChordQuery('Cmaj11', fallback)).toEqual({ root: 'C', qualityId: 'maj', extensionIds: ['7', '#11'] })
-    expect(parseChordQuery('Cmaj13', fallback)).toEqual({ root: 'C', qualityId: 'maj', extensionIds: ['7', '9', '#11', '13'] })
+    expect(parseChordQuery('Cmaj11', fallback)).toEqual({
+      root: 'C',
+      qualityId: 'maj',
+      extensionIds: ['7', '#11'],
+    })
+    expect(parseChordQuery('Cmaj13', fallback)).toEqual({
+      root: 'C',
+      qualityId: 'maj',
+      extensionIds: ['7', '9', '#11', '13'],
+    })
   })
 
-
   it('parses dominant 13 aliases from freeform input', () => {
-    expect(parseChordQuery('G13', fallback)).toEqual({ root: 'G', qualityId: 'maj', extensionIds: ['b7', '9', '13'] })
+    expect(parseChordQuery('G13', fallback)).toEqual({
+      root: 'G',
+      qualityId: 'maj',
+      extensionIds: ['b7', '9', '13'],
+    })
   })
 
   it('uses tonal fallback for non-preset chord spellings', () => {
-    expect(parseChordQuery('Cadd9', fallback)).toEqual({ root: 'C', qualityId: 'maj', extensionIds: ['9'] })
+    expect(parseChordQuery('Cadd9', fallback)).toEqual({
+      root: 'C',
+      qualityId: 'maj',
+      extensionIds: ['9'],
+    })
   })
 
   it('falls back when query is unknown', () => {

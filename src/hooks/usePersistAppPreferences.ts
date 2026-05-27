@@ -4,7 +4,9 @@ import { APP_PREFERENCES_STORAGE_KEY, toStoredPreferences } from '../state/appSt
 
 export function usePersistAppPreferences(appState: AppState) {
   useEffect(() => {
-    window.localStorage.setItem(APP_PREFERENCES_STORAGE_KEY, JSON.stringify(toStoredPreferences(appState)))
+    window.localStorage.setItem(
+      APP_PREFERENCES_STORAGE_KEY,
+      JSON.stringify(toStoredPreferences(appState)),
+    )
   }, [appState])
 }
-

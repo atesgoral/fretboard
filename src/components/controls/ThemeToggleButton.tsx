@@ -28,7 +28,10 @@ const SystemIcon = ({ className }: IconProps) => (
 const LightIcon = ({ className }: IconProps) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
     <circle cx="12" cy="12" r="4" {...ICON_STROKE_PROPS} />
-    <path d="M12 2.5v2.5M12 19v2.5M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M2.5 12H5M19 12h2.5M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8" {...ICON_STROKE_PROPS} />
+    <path
+      d="M12 2.5v2.5M12 19v2.5M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M2.5 12H5M19 12h2.5M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"
+      {...ICON_STROKE_PROPS}
+    />
   </svg>
 )
 

@@ -1,5 +1,6 @@
 import type { ThemePreference } from '../hooks/useThemePreference'
 import { Redo2, Undo2, Volume2, VolumeX } from 'lucide-react'
+import IconButton from './controls/IconButton'
 import SettingsMenu from './controls/SettingsMenu'
 
 type AppHeaderProps = {
@@ -21,6 +22,9 @@ type AppHeaderProps = {
   onToggleReverb: () => void
 }
 
+const headerIconButtonClass =
+  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition enabled:hover:border-zinc-400 disabled:cursor-default disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500'
+
 export default function AppHeader({
   canUndo,
   canRedo,
@@ -39,41 +43,37 @@ export default function AppHeader({
   onToggleNaturalDecay,
   onToggleReverb,
 }: AppHeaderProps) {
+  const muteTitle = muted ? 'Unmute playback' : 'Mute playback'
+
   return (
     <div className="flex items-center justify-between">
       <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
         Fretboard
       </h1>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Undo chord changes"
+        <IconButton
           title="Undo chord changes"
           onClick={onUndo}
           disabled={!canUndo}
-          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
+          className={headerIconButtonClass}
         >
           <Undo2 className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label="Redo chord changes"
+        </IconButton>
+        <IconButton
           title="Redo chord changes"
           onClick={onRedo}
           disabled={!canRedo}
-          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500"
+          className={headerIconButtonClass}
         >
           <Redo2 className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label={muted ? 'Unmute playback' : 'Mute playback'}
-          title={muted ? 'Unmute playback' : 'Mute playback'}
+        </IconButton>
+        <IconButton
+          title={muteTitle}
           onClick={onToggleMuted}
-          className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-zinc-700 transition dark:bg-zinc-800 dark:text-zinc-100 ${
+          className={`${headerIconButtonClass} ${
             muted
               ? 'border-zinc-800 dark:border-zinc-100'
-              : 'border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
+              : 'border-zinc-300 enabled:hover:border-zinc-400 dark:border-zinc-700 enabled:dark:hover:border-zinc-500'
           }`}
         >
           {muted ? (
@@ -81,7 +81,7 @@ export default function AppHeader({
           ) : (
             <Volume2 className="h-5 w-5" aria-hidden="true" />
           )}
-        </button>
+        </IconButton>
         <SettingsMenu
           preference={preference}
           onCycleTheme={onCycleTheme}

@@ -95,22 +95,21 @@ function ChordCardContent({
           {degreeLabel}
         </span>
       ) : null}
-      <div className="flex translate-y-1 flex-col items-center justify-center text-center">
-        <span className="text-3xl font-semibold leading-none tracking-tight">{chord.root}</span>
-        <span
-          className={`mt-1 text-xs font-medium leading-tight ${
-            active ? 'opacity-70' : 'text-zinc-500 dark:text-zinc-400'
-          }`}
-        >
-          {qualityLine}
-        </span>
-      </div>
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-semibold leading-none tracking-tight">
+        {chord.root}
+      </span>
+      <span
+        className={`absolute left-1/2 top-[calc(50%+1.125rem)] -translate-x-1/2 text-xs font-medium leading-tight ${
+          active ? 'opacity-70' : 'text-zinc-500 dark:text-zinc-400'
+        }`}
+      >
+        {qualityLine}
+      </span>
     </>
   )
 }
 
-const cardLayoutClass =
-  'relative flex h-full w-full items-center justify-center rounded-md border p-2 text-center transition'
+const cardLayoutClass = 'relative h-full w-full rounded-md border p-2 text-center transition'
 
 export default function ChordCard({
   chord,

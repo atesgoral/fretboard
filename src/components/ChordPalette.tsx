@@ -1,3 +1,4 @@
+import { ArrowRight, Play, X } from 'lucide-react'
 import { type NoteName } from './chords'
 import { getChordQueryForSelection } from './chordSearch'
 
@@ -31,19 +32,7 @@ function RemoveSwatchButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="absolute right-1 top-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-3.5 w-3.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M6 6l12 12" />
-        <path d="M18 6 6 18" />
-      </svg>
+      <X className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
 }
@@ -60,18 +49,7 @@ function PlaySwatchButton({ onClick }: { onClick: () => void }) {
       }}
       className="absolute bottom-1 right-1 hidden h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 group-hover:flex dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-3.5 w-3.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M8 6v12l10-6-10-6Z" />
-      </svg>
+      <Play className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
 }
@@ -119,19 +97,7 @@ function AddSwatchButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="flex h-24 w-14 cursor-pointer items-center justify-center rounded-md border border-dashed border-zinc-400 bg-white text-zinc-700 transition hover:border-zinc-600 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100"
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-6 w-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14" />
-        <path d="m12 5 7 7-7 7" />
-      </svg>
+      <ArrowRight className="h-6 w-6" aria-hidden="true" />
     </button>
   )
 }

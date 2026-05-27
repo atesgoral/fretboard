@@ -95,7 +95,7 @@ function ChordCardContent({
           {degreeLabel}
         </span>
       ) : null}
-      <div className="flex flex-col items-center justify-center text-center">
+      <div className="flex translate-y-1 flex-col items-center justify-center text-center">
         <span className="text-3xl font-semibold leading-none tracking-tight">{chord.root}</span>
         <span
           className={`mt-1 text-xs font-medium leading-tight ${

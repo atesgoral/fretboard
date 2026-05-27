@@ -39,6 +39,7 @@ type FretboardProps = {
   muted: boolean
   frets?: number
   markedNotes: Map<number, string>
+  highlightedPitchClasses?: number[]
   playedPositions: ActivePosition[]
   playSequence: number
 }
@@ -91,16 +92,19 @@ function StringLines({
   stringYPositions,
   stringThicknesses,
   hoveredOpenStringVisualIndex,
+  highlightedOpenStringVisualIndexes,
   activeStringVisualIndexes,
 }: {
   stringYPositions: number[]
   stringThicknesses: number[]
   hoveredOpenStringVisualIndex: number
+  highlightedOpenStringVisualIndexes: Set<number>
   activeStringVisualIndexes: Set<number>
 }) {
   return Array.from({ length: STRINGS }, (_, index) => {
     const stringTop = `calc(${stringYPositions[index]}% - ${stringThicknesses[index] / 2}px)`
-    const isOpenStringHovered = hoveredOpenStringVisualIndex === index
+    const isOpenStringHovered =
+      hoveredOpenStringVisualIndex === index || highlightedOpenStringVisualIndexes.has(index)
     const isActiveString = activeStringVisualIndexes.has(index)
     const stringColorClass = isOpenStringHovered
       ? 'bg-blue-500 dark:bg-blue-300'
@@ -234,6 +238,7 @@ type NoteGridProps = {
   onPressEnter: (stringIndex: number, fret: number) => void
   onPressEnd: () => void
   markedNotes: Map<number, string>
+  highlightedPitchClasses: Set<number>
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
   animatedPositionBursts: Record<string, number>
@@ -293,6 +298,7 @@ function NoteGrid({
   onPressEnter,
   onPressEnd,
   markedNotes,
+  highlightedPitchClasses,
   activePositions,
   burstActivePositions,
   animatedPositionBursts,
@@ -334,17 +340,18 @@ function NoteGrid({
         return Array.from({ length: frets }, (_, fret) => {
           const left = `${fretPositions[fret] * 100}%`
           const width = `${(fretPositions[fret + 1] - fretPositions[fret]) * 100}%`
-          const isHovered =
+          const isDirectlyHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
+          const isHighlighted = isDirectlyHovered || highlightedPitchClasses.has(noteClass)
           const role = markedNotes.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
-          const shouldShowCircle = Boolean(role) || isActive || (isHovered && fret > 0)
+          const shouldShowCircle = Boolean(role) || isActive || isHighlighted
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst =
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
-          const circleToneClass = isHovered
+          const circleToneClass = isHighlighted
             ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
             : isActive
               ? 'border-purple-900/40 bg-purple-500 text-zinc-50 dark:border-purple-200/50 dark:bg-purple-300 dark:text-zinc-900'
@@ -444,10 +451,15 @@ export default function Fretboard({
   muted,
   frets = DEFAULT_FRETS,
   markedNotes,
+  highlightedPitchClasses = [],
   playedPositions,
   playSequence,
 }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
+  const highlightedPitchClassSet = useMemo(
+    () => new Set(highlightedPitchClasses),
+    [highlightedPitchClasses],
+  )
   const stringYPositions = useMemo(() => getStringYPositions(), [])
   const stringThicknesses = useMemo(
     () => (lowEAtBottom ? [...STRING_THICKNESSES].reverse() : STRING_THICKNESSES),
@@ -486,6 +498,19 @@ export default function Fretboard({
     hoveredPosition && hoveredPosition.fret === 0
       ? stringOrder.indexOf(hoveredPosition.stringIndex)
       : -1
+  const highlightedOpenStringVisualIndexes = useMemo(() => {
+    if (highlightedPitchClassSet.size === 0) {
+      return new Set<number>()
+    }
+
+    return new Set(
+      stringOrder
+        .map((stringIndex, visualIndex) =>
+          highlightedPitchClassSet.has(OPEN_STRING_MIDI[stringIndex] % 12) ? visualIndex : -1,
+        )
+        .filter((visualIndex) => visualIndex >= 0),
+    )
+  }, [highlightedPitchClassSet, stringOrder])
   const activeStringVisualIndexes = useMemo(() => {
     const activeStringIndexes = new Set(
       recentlyPlayedPositions
@@ -673,6 +698,7 @@ export default function Fretboard({
           stringYPositions={stringYPositions}
           stringThicknesses={stringThicknesses}
           hoveredOpenStringVisualIndex={hoveredOpenStringVisualIndex}
+          highlightedOpenStringVisualIndexes={highlightedOpenStringVisualIndexes}
           activeStringVisualIndexes={activeStringVisualIndexes}
         />
         <FretMarkers
@@ -692,6 +718,7 @@ export default function Fretboard({
           onPressEnter={handlePressEnter}
           onPressEnd={clearPointerPress}
           markedNotes={markedNotes}
+          highlightedPitchClasses={highlightedPitchClassSet}
           activePositions={activePositions}
           burstActivePositions={burstActivePositions}
           animatedPositionBursts={animatedPositionBursts}

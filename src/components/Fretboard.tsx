@@ -268,6 +268,37 @@ function OpenStringPulseOverlay({ top, bottom, stringThickness }: OpenStringHigh
   )
 }
 
+type FretCellPosition = {
+  stringIndex: number
+  fret: number
+}
+
+function getFretCellFromPointer(
+  event: { clientX: number; clientY: number },
+  grid: HTMLElement | null,
+): FretCellPosition | null {
+  if (!grid) {
+    return null
+  }
+
+  const target = document.elementFromPoint(event.clientX, event.clientY)
+  if (!target || !grid.contains(target)) {
+    return null
+  }
+
+  const cell = target.closest('[data-fret-cell]')
+  if (!(cell instanceof HTMLElement)) {
+    return null
+  }
+
+  const { stringIndex, fret } = cell.dataset
+  if (stringIndex === undefined || fret === undefined) {
+    return null
+  }
+
+  return { stringIndex: Number(stringIndex), fret: Number(fret) }
+}
+
 function getStringBandBounds(stringYPositions: number[]) {
   return stringYPositions.map((position, index) => {
     if (index === 0) {
@@ -304,7 +335,40 @@ function NoteGrid({
   animatedPositionBursts,
   stringThicknesses,
 }: NoteGridProps) {
+  const gridRef = useRef<HTMLDivElement>(null)
   const stringBandBounds = getStringBandBounds(stringYPositions)
+
+  const updatePositionFromPointer = (event: { clientX: number; clientY: number }) => {
+    const position = getFretCellFromPointer(event, gridRef.current)
+    if (!position) {
+      onLeave()
+      return
+    }
+
+    onHover(position.stringIndex, position.fret)
+    onPressEnter(position.stringIndex, position.fret)
+  }
+
+  const handleGridPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    updatePositionFromPointer(event)
+  }
+
+  const handleCellPointerDown = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    stringIndex: number,
+    fret: number,
+  ) => {
+    event.preventDefault()
+    gridRef.current?.setPointerCapture(event.pointerId)
+    onPressStart(stringIndex, fret)
+  }
+
+  const handleGridPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (gridRef.current?.hasPointerCapture(event.pointerId)) {
+      gridRef.current.releasePointerCapture(event.pointerId)
+    }
+    onPressEnd()
+  }
   const activePositionSet = new Set(
     activePositions.map((position) => `${position.stringIndex}:${position.fret}`),
   )
@@ -331,7 +395,13 @@ function NoteGrid({
   }, [])
 
   return (
-    <div className="absolute inset-0 touch-none">
+    <div
+      ref={gridRef}
+      className="absolute inset-0 touch-none"
+      onPointerMove={handleGridPointerMove}
+      onPointerUp={handleGridPointerEnd}
+      onPointerCancel={handleGridPointerEnd}
+    >
       {stringOrder.map((stringIndex, visualIndex) => {
         const band = stringBandBounds[visualIndex]
         const top = `${band.top}%`
@@ -365,20 +435,13 @@ function NoteGrid({
             <button
               key={`note-${stringIndex}-${fret}`}
               type="button"
+              data-fret-cell=""
+              data-string-index={stringIndex}
+              data-fret={fret}
               title={`Play string ${stringIndex + 1}, fret ${fret}`}
               className="absolute cursor-pointer border-0 bg-transparent p-0"
               style={{ left, top, width, height }}
-              onPointerEnter={() => {
-                onHover(stringIndex, fret)
-                onPressEnter(stringIndex, fret)
-              }}
-              onPointerMove={() => onPressEnter(stringIndex, fret)}
-              onPointerLeave={onLeave}
-              onPointerDown={(event) => {
-                event.preventDefault()
-                onPressStart(stringIndex, fret)
-              }}
-              onPointerUp={onPressEnd}
+              onPointerDown={(event) => handleCellPointerDown(event, stringIndex, fret)}
             >
               {shouldShowCircle ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">

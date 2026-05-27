@@ -39,6 +39,22 @@ describe('buildDiatonicTriads', () => {
     ])
   })
 
+  it('uses Roman numerals for C major pentatonic', () => {
+    const chords = buildDiatonicTriads('C', 'major-pentatonic')
+    const degreeLabels = chords.map(({ degreeLabel }) => degreeLabel)
+
+    expect(degreeLabels).toEqual(['I', 'II', 'III', 'V', 'VI'])
+    expect(degreeLabels.every((label) => /^[b#]?[IV]+/.test(label))).toBe(true)
+  })
+
+  it('uses Roman numerals for A minor pentatonic', () => {
+    const chords = buildDiatonicTriads('A', 'minor-pentatonic')
+    const degreeLabels = chords.map(({ degreeLabel }) => degreeLabel)
+
+    expect(degreeLabels).toEqual(['I', 'bIII', 'IV', 'V', 'bVII'])
+    expect(degreeLabels).not.toContain('R')
+  })
+
   it('builds triads for C lydian with a diminished chord on #4', () => {
     const chords = buildDiatonicTriads('C', 'lydian')
     const fourthDegree = chords[3]

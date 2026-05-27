@@ -9,6 +9,22 @@ export type DiatonicChord = {
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const
 
+const SCALE_ROLE_TO_ROMAN_BASE: Record<string, string> = {
+  R: 'I',
+  '2': 'II',
+  '3': 'III',
+  '4': 'IV',
+  '5': 'V',
+  '6': 'VI',
+  '7': 'VII',
+  b2: 'bII',
+  b3: 'bIII',
+  '#4': '#IV',
+  b5: 'bV',
+  b6: 'bVI',
+  b7: 'bVII',
+}
+
 function getTriadQualityId(thirdInterval: number, fifthInterval: number) {
   if (thirdInterval === 3 && fifthInterval === 7) return 'min'
   if (thirdInterval === 4 && fifthInterval === 7) return 'maj'
@@ -19,28 +35,35 @@ function getTriadQualityId(thirdInterval: number, fifthInterval: number) {
   return 'maj'
 }
 
-function getRomanNumeral(
-  degreeIndex: number,
-  qualityId: string,
-  scaleLength: number,
-  scaleRole: string,
-) {
-  if (scaleLength !== 7) {
-    return null
+function getRomanBaseFromScaleRole(scaleRole: string, degreeIndex: number) {
+  const fromRole = SCALE_ROLE_TO_ROMAN_BASE[scaleRole]
+  if (fromRole) {
+    return fromRole
   }
 
   const alteration = scaleRole.startsWith('b') ? 'b' : scaleRole.startsWith('#') ? '#' : ''
-  const base = ROMAN_NUMERALS[degreeIndex]
-  const alteredBase = `${alteration}${base}`
+  const base = ROMAN_NUMERALS[degreeIndex] ?? String(degreeIndex + 1)
+  return `${alteration}${base}`
+}
 
-  if (qualityId === 'maj') return alteredBase
-  if (qualityId === 'min') return alteredBase.toLowerCase()
-  if (qualityId === 'dim') return `${alteredBase.toLowerCase()}°`
-  if (qualityId === 'aug') return `${alteredBase}+`
+function applyChordQualityToRoman(romanBase: string, qualityId: string) {
+  const match = romanBase.match(/^([b#]*)(.+)$/)
+  const prefix = match?.[1] ?? ''
+  const core = match?.[2] ?? romanBase
+
+  if (qualityId === 'maj') return `${prefix}${core}`
+  if (qualityId === 'min') return `${prefix}${core.toLowerCase()}`
+  if (qualityId === 'dim') return `${prefix}${core.toLowerCase()}°`
+  if (qualityId === 'aug') return `${prefix}${core}+`
   if (qualityId === 'sus2' || qualityId === 'sus4') {
-    return `${alteredBase.toLowerCase()}(${qualityId === 'sus2' ? 'sus2' : 'sus4'})`
+    return `${prefix}${core.toLowerCase()}(${qualityId})`
   }
-  return alteredBase
+  return `${prefix}${core}`
+}
+
+function getRomanNumeral(degreeIndex: number, qualityId: string, scaleRole: string) {
+  const romanBase = getRomanBaseFromScaleRole(scaleRole, degreeIndex)
+  return applyChordQualityToRoman(romanBase, qualityId)
 }
 
 export function buildDiatonicTriads(scaleRoot: NoteName, scaleId: ScaleId): DiatonicChord[] {
@@ -61,10 +84,10 @@ export function buildDiatonicTriads(scaleRoot: NoteName, scaleId: ScaleId): Diat
     const fifthInterval = (fifthPc - chordRootPc + 12) % 12
     const qualityId = getTriadQualityId(thirdInterval, fifthInterval)
     const chordRoot = NOTE_NAMES[chordRootPc]
-    const roman = getRomanNumeral(degreeIndex, qualityId, scaleLength, scale.roles[degreeIndex])
+    const scaleRole = scale.roles[degreeIndex]
 
     return {
-      degreeLabel: roman ?? scale.roles[degreeIndex],
+      degreeLabel: getRomanNumeral(degreeIndex, qualityId, scaleRole),
       chord: {
         root: chordRoot,
         qualityId,

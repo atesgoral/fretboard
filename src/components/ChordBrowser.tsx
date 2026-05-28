@@ -35,7 +35,7 @@ function SelectField({
 }) {
   return (
     <label
-      className={`flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400${disabled ? ' opacity-40' : ''}`}
+      className={`flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300${disabled ? ' opacity-40' : ''}`}
     >
       {label}
       <select
@@ -43,7 +43,7 @@ function SelectField({
         disabled={disabled}
         title={disabled ? undefined : `Select ${label.toLowerCase()}`}
         onChange={(event) => onChange(event.target.value)}
-        className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 disabled:cursor-default dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+        className="cursor-pointer rounded-md border border-amber-200/90 bg-white px-2 py-2 text-sm font-normal tracking-normal text-zinc-800 disabled:cursor-default dark:border-amber-800/60 dark:bg-zinc-900 dark:text-zinc-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -66,7 +66,7 @@ export default function ChordBrowser({
   const scaleToggleTitle = showScaleNotes ? 'Hide scale notes' : 'Show scale notes'
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <section className="rounded-lg border border-amber-200/80 bg-amber-50/30 p-3 shadow-sm dark:border-amber-800/50 dark:bg-amber-950/20">
       <div className="flex flex-wrap items-end gap-3">
         <SelectField
           label="Key"
@@ -88,7 +88,7 @@ export default function ChordBrowser({
           title={scaleToggleTitle}
           aria-label={scaleToggleTitle}
           onClick={onToggleScaleNotes}
-          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500 enabled:dark:hover:text-zinc-100"
+          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-amber-200/90 bg-white text-amber-800 transition enabled:hover:border-amber-400 enabled:hover:text-amber-950 dark:border-amber-800/60 dark:bg-zinc-900 dark:text-amber-200 enabled:dark:hover:border-amber-600 enabled:dark:hover:text-amber-100"
         >
           {showScaleNotes ? (
             <Eye className="pointer-events-none h-5 w-5" aria-hidden="true" />

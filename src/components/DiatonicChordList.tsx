@@ -36,10 +36,10 @@ export default function DiatonicChordList({
 
   return (
     <section
-      className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
+      className="rounded-lg border border-blue-200/80 bg-blue-50/30 p-3 shadow-sm dark:border-blue-800/50 dark:bg-blue-950/20"
       onPointerLeave={handlePointerLeave}
     >
-      <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+      <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-blue-800 dark:text-blue-300">
         Diatonic triads in {scaleRoot} {scaleLabel}
       </h2>
       <div className="flex items-center gap-3 overflow-x-auto pb-1">

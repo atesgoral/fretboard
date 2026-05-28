@@ -25,6 +25,7 @@ export default function App() {
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
   const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>(null)
   const [scaleId, setScaleId] = useState<ScaleId>('major')
+  const [showScaleNotes, setShowScaleNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
   const [highlightedPitchClasses, setHighlightedPitchClasses] = useState<number[]>([])
@@ -32,8 +33,9 @@ export default function App() {
   usePersistAppPreferences(appState)
 
   const markedNotes = useMemo(
-    () => (scaleRoot ? buildScaleRoles(scaleRoot, scaleId) : new Map<number, string>()),
-    [scaleRoot, scaleId],
+    () =>
+      showScaleNotes && scaleRoot ? buildScaleRoles(scaleRoot, scaleId) : new Map<number, string>(),
+    [scaleRoot, scaleId, showScaleNotes],
   )
 
   const handlePlayChord = useCallback((chord: ChordSelection) => {
@@ -83,8 +85,10 @@ export default function App() {
         <ChordBrowser
           scaleRoot={scaleRoot}
           scaleId={scaleId}
+          showScaleNotes={showScaleNotes}
           onScaleRootChange={setScaleRoot}
           onScaleIdChange={setScaleId}
+          onToggleScaleNotes={() => setShowScaleNotes((current) => !current)}
         />
 
         {scaleRoot ? (

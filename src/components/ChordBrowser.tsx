@@ -1,4 +1,5 @@
 import { NOTE_NAMES, type NoteName } from './chords'
+import { Eye, EyeOff } from 'lucide-react'
 import { SCALE_OPTIONS, type ScaleId } from './scales'
 
 export type ScaleRootSelection = NoteName | null
@@ -13,8 +14,10 @@ const KEY_OPTIONS = [
 type ChordBrowserProps = {
   scaleRoot: ScaleRootSelection
   scaleId: ScaleId
+  showScaleNotes: boolean
   onScaleRootChange: (next: ScaleRootSelection) => void
   onScaleIdChange: (next: ScaleId) => void
+  onToggleScaleNotes: () => void
 }
 
 function SelectField({
@@ -55,9 +58,13 @@ function SelectField({
 export default function ChordBrowser({
   scaleRoot,
   scaleId,
+  showScaleNotes,
   onScaleRootChange,
   onScaleIdChange,
+  onToggleScaleNotes,
 }: ChordBrowserProps) {
+  const scaleToggleTitle = showScaleNotes ? 'Hide scale notes' : 'Show scale notes'
+
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex flex-wrap items-end gap-3">
@@ -76,6 +83,19 @@ export default function ChordBrowser({
           onChange={(value) => onScaleIdChange(value as ScaleId)}
           disabled={scaleRoot === null}
         />
+        <button
+          type="button"
+          title={scaleToggleTitle}
+          aria-label={scaleToggleTitle}
+          onClick={onToggleScaleNotes}
+          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500 enabled:dark:hover:text-zinc-100"
+        >
+          {showScaleNotes ? (
+            <Eye className="pointer-events-none h-5 w-5" aria-hidden="true" />
+          ) : (
+            <EyeOff className="pointer-events-none h-5 w-5" aria-hidden="true" />
+          )}
+        </button>
       </div>
     </section>
   )

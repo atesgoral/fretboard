@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ChordBrowser from './ChordBrowser'
 import { SCALE_OPTIONS } from './scales'
@@ -9,8 +9,10 @@ describe('ChordBrowser scale selector', () => {
       <ChordBrowser
         scaleRoot="C"
         scaleId="major"
+        showScaleNotes
         onScaleRootChange={vi.fn()}
         onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
       />,
     )
 
@@ -27,8 +29,10 @@ describe('ChordBrowser scale selector', () => {
       <ChordBrowser
         scaleRoot={null}
         scaleId="major"
+        showScaleNotes
         onScaleRootChange={vi.fn()}
         onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
       />,
     )
 
@@ -42,11 +46,31 @@ describe('ChordBrowser scale selector', () => {
       <ChordBrowser
         scaleRoot={null}
         scaleId="major"
+        showScaleNotes
         onScaleRootChange={vi.fn()}
         onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
       />,
     )
 
     expect(screen.getByLabelText('Scale')).toBeDisabled()
+  })
+
+  it('calls toggle handler from the eye button', () => {
+    const onToggleScaleNotes = vi.fn()
+
+    render(
+      <ChordBrowser
+        scaleRoot="C"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={vi.fn()}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={onToggleScaleNotes}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide scale notes' }))
+    expect(onToggleScaleNotes).toHaveBeenCalledTimes(1)
   })
 })

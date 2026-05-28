@@ -4,13 +4,26 @@ import { buildChordVoicing } from './voicing'
 const cMajor = { root: 'C' as const, qualityId: 'maj', extensionIds: [] as string[] }
 
 describe('buildChordVoicing', () => {
-  it('returns playable positions for a major triad', () => {
+  it('returns playable finger positions for a major triad', () => {
     const positions = buildChordVoicing(cMajor)
     expect(positions.length).toBeGreaterThanOrEqual(3)
+    expect(positions.length).toBeLessThanOrEqual(4)
     positions.forEach((position) => {
       expect(position.fret).toBeGreaterThanOrEqual(0)
       expect(position.fret).toBeLessThanOrEqual(15)
     })
+  })
+
+  it('limits finger style to four voices with thumb on the lowest string', () => {
+    const finger = buildChordVoicing(cMajor, { style: 'finger', register: 0, inversion: 0 })
+    const strum = buildChordVoicing(cMajor, { style: 'strum', register: 0, inversion: 0 })
+
+    expect(finger.length).toBeLessThanOrEqual(4)
+    expect(strum.length).toBeGreaterThan(finger.length)
+
+    const stringIndices = finger.map((position) => position.stringIndex)
+    expect(new Set(stringIndices).size).toBe(stringIndices.length)
+    expect(finger[0]?.stringIndex).toBe(Math.min(...stringIndices))
   })
 
   it('uses fewer notes for shell style', () => {

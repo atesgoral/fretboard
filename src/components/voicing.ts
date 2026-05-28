@@ -1,5 +1,5 @@
 import { CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES } from './chords'
-import type { ChordPlayback, ChordInversion } from './chordPlayback'
+import type { ChordPlayback, ChordInversion, ChordPlayStyle } from './chordPlayback'
 import { DEFAULT_CHORD_PLAYBACK } from './chordPlayback'
 import type { ChordSelection } from './chordSearch'
 
@@ -12,6 +12,22 @@ const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 const MAX_FRET_SEARCH = 12
 const REGISTER_FRET_SHIFT = 3
 const MAX_FRET = 15
+const FINGER_VOICE_COUNT = 4
+
+const UPPER_VOICE_ROLE_PRIORITY = [
+  '3',
+  'm3',
+  'b7',
+  '7',
+  '5',
+  '9',
+  '13',
+  '11',
+  '#11',
+  '2',
+  '4',
+  'R',
+] as const
 
 type ChordTone = {
   pitchClass: number
@@ -60,6 +76,13 @@ function findFretsForString(stringIndex: number, pitchClasses: number[]) {
   )
 }
 
+function rolePriority(role: string) {
+  const index = UPPER_VOICE_ROLE_PRIORITY.indexOf(
+    role as (typeof UPPER_VOICE_ROLE_PRIORITY)[number],
+  )
+  return index === -1 ? UPPER_VOICE_ROLE_PRIORITY.length : index
+}
+
 function shiftPositionsByRegister(
   positions: PlayedPosition[],
   register: ChordPlayback['register'],
@@ -81,22 +104,73 @@ function shiftPositionsByRegister(
   return shifted
 }
 
-export function getChordPitchClasses(chord: ChordSelection) {
-  return Array.from(new Set(getChordTones(chord).map((tone) => tone.pitchClass)))
+/** Thumb on bass; up to three upper voices on higher strings (bossa-style). */
+function buildFingerVoicing(tones: ChordTone[], bassPitchClass: number): PlayedPosition[] {
+  const positions: PlayedPosition[] = []
+
+  for (let stringIndex = 0; stringIndex < OPEN_STRING_MIDI.length; stringIndex += 1) {
+    const bassFrets = findFretsForString(stringIndex, [bassPitchClass])
+    if (bassFrets.length === 0) {
+      continue
+    }
+    positions.push({ stringIndex, fret: bassFrets[0] })
+    break
+  }
+
+  if (positions.length === 0) {
+    return positions
+  }
+
+  const bassString = positions[0].stringIndex
+  const usedPitchClasses = new Set([bassPitchClass])
+
+  for (
+    let stringIndex = bassString + 1;
+    stringIndex < OPEN_STRING_MIDI.length && positions.length < FINGER_VOICE_COUNT;
+    stringIndex += 1
+  ) {
+    const candidates: { fret: number; pitchClass: number; priority: number; isNew: boolean }[] = []
+
+    tones.forEach((tone) => {
+      if (tone.role === 'R' && tone.pitchClass === bassPitchClass) {
+        return
+      }
+
+      const frets = findFretsForString(stringIndex, [tone.pitchClass])
+      frets.forEach((fret) => {
+        candidates.push({
+          fret,
+          pitchClass: tone.pitchClass,
+          priority: rolePriority(tone.role),
+          isNew: !usedPitchClasses.has(tone.pitchClass),
+        })
+      })
+    })
+
+    if (candidates.length === 0) {
+      continue
+    }
+
+    candidates.sort((a, b) => {
+      if (a.isNew !== b.isNew) {
+        return a.isNew ? -1 : 1
+      }
+      return a.priority - b.priority
+    })
+
+    const best = candidates[0]
+    positions.push({ stringIndex, fret: best.fret })
+    usedPitchClasses.add(best.pitchClass)
+  }
+
+  return positions
 }
 
-export function buildChordVoicing(
-  chord: ChordSelection,
-  playback: ChordPlayback = DEFAULT_CHORD_PLAYBACK,
+function buildStrumVoicing(
+  tones: ChordTone[],
+  bassPitchClass: number,
+  allowedPitchClasses: number[],
 ): PlayedPosition[] {
-  const tones = getChordTones(chord)
-  const pitchClasses = tones.map((tone) => tone.pitchClass)
-  const allowedPitchClasses =
-    playback.style === 'shell'
-      ? tones.filter((tone) => isShellRole(tone.role)).map((tone) => tone.pitchClass)
-      : pitchClasses
-
-  const bassPitchClass = getBassPitchClass(tones, playback.inversion)
   const positions: PlayedPosition[] = []
 
   for (let stringIndex = 0; stringIndex < OPEN_STRING_MIDI.length; stringIndex += 1) {
@@ -115,12 +189,40 @@ export function buildChordVoicing(
     positions.push({ stringIndex, fret })
   }
 
-  let voicing =
+  return positions.length >= 4 ? positions : positions.slice(0, 3)
+}
+
+function buildVoicingForStyle(
+  style: ChordPlayStyle,
+  tones: ChordTone[],
+  bassPitchClass: number,
+  allowedPitchClasses: number[],
+): PlayedPosition[] {
+  if (style === 'finger') {
+    return buildFingerVoicing(tones, bassPitchClass)
+  }
+
+  const positions = buildStrumVoicing(tones, bassPitchClass, allowedPitchClasses)
+  return style === 'shell' ? positions.slice(0, 4) : positions
+}
+
+export function getChordPitchClasses(chord: ChordSelection) {
+  return Array.from(new Set(getChordTones(chord).map((tone) => tone.pitchClass)))
+}
+
+export function buildChordVoicing(
+  chord: ChordSelection,
+  playback: ChordPlayback = DEFAULT_CHORD_PLAYBACK,
+): PlayedPosition[] {
+  const tones = getChordTones(chord)
+  const pitchClasses = tones.map((tone) => tone.pitchClass)
+  const allowedPitchClasses =
     playback.style === 'shell'
-      ? positions.slice(0, 4)
-      : positions.length >= 4
-        ? positions
-        : positions.slice(0, 3)
+      ? tones.filter((tone) => isShellRole(tone.role)).map((tone) => tone.pitchClass)
+      : pitchClasses
+
+  const bassPitchClass = getBassPitchClass(tones, playback.inversion)
+  let voicing = buildVoicingForStyle(playback.style, tones, bassPitchClass, allowedPitchClasses)
 
   voicing = shiftPositionsByRegister(voicing, playback.register)
   return voicing

@@ -22,7 +22,7 @@ export const DEFAULT_CHORD_PLAYBACK: ChordPlayback = {
 }
 
 export const CHORD_PLAY_STYLE_OPTIONS: { value: ChordPlayStyle; label: string }[] = [
-  { value: 'finger', label: 'Finger' },
+  { value: 'finger', label: 'Finger (4 voices)' },
   { value: 'strum', label: 'Strum' },
   { value: 'shell', label: 'Shell' },
 ]

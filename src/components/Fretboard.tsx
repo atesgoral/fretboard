@@ -273,7 +273,7 @@ const CIRCLE_TONE = {
   scaleRoot:
     'border-2 border-amber-950 bg-amber-500 text-white dark:border-white dark:bg-amber-300 dark:text-zinc-900',
   neutral:
-    'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900',
+    'border-zinc-600 bg-zinc-600 text-zinc-100 dark:border-zinc-300 dark:bg-zinc-300 dark:text-zinc-900',
 } as const
 
 function getCircleToneClass({

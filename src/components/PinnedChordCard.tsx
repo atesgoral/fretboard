@@ -20,6 +20,8 @@ export default function PinnedChordCard({
 }: PinnedChordCardProps) {
   const [customizeOpen, setCustomizeOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const gearButtonRef = useRef<HTMLButtonElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!customizeOpen) {
@@ -27,18 +29,31 @@ export default function PinnedChordCard({
     }
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (containerRef.current?.contains(event.target as Node)) {
+      const target = event.target
+      if (!(target instanceof Node)) {
+        return
+      }
+      if (containerRef.current?.contains(target)) {
+        return
+      }
+      if (popoverRef.current?.contains(target)) {
         return
       }
       setCustomizeOpen(false)
     }
 
-    window.addEventListener('pointerdown', handlePointerDown)
-    return () => window.removeEventListener('pointerdown', handlePointerDown)
+    const listenerId = window.setTimeout(() => {
+      window.addEventListener('pointerdown', handlePointerDown)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(listenerId)
+      window.removeEventListener('pointerdown', handlePointerDown)
+    }
   }, [customizeOpen])
 
-  const handleCustomizeToggle = () => {
-    setCustomizeOpen((open) => !open)
+  const handleCustomizeOpen = () => {
+    setCustomizeOpen(true)
   }
 
   const handlePlaybackChange = (playback: Partial<ChordPlayback>) => {
@@ -50,13 +65,19 @@ export default function PinnedChordCard({
       <ChordCard
         chord={chord}
         showControls={customizeOpen}
+        customizeButtonRef={gearButtonRef}
         onPlay={onPlay}
         onHoverStart={onHoverStart}
         onRemove={onRemove}
-        onCustomize={handleCustomizeToggle}
+        onCustomize={handleCustomizeOpen}
       />
       {customizeOpen ? (
-        <ChordCustomizePopover playback={chord} onChange={handlePlaybackChange} />
+        <ChordCustomizePopover
+          anchorRef={gearButtonRef}
+          panelRef={popoverRef}
+          playback={chord}
+          onChange={handlePlaybackChange}
+        />
       ) : null}
     </div>
   )

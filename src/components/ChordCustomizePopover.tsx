@@ -1,4 +1,5 @@
-import { useId } from 'react'
+import { useId, useLayoutEffect, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import type { ChordPlayback } from './chordPlayback'
 import {
   CHORD_INVERSION_OPTIONS,
@@ -7,6 +8,8 @@ import {
 } from './chordPlayback'
 
 type ChordCustomizePopoverProps = {
+  anchorRef: RefObject<HTMLElement | null>
+  panelRef: RefObject<HTMLDivElement>
   playback: ChordPlayback
   onChange: (playback: Partial<ChordPlayback>) => void
 }
@@ -17,15 +20,50 @@ const fieldClass =
 const labelClass =
   'mb-1 block text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400'
 
-export default function ChordCustomizePopover({ playback, onChange }: ChordCustomizePopoverProps) {
+export default function ChordCustomizePopover({
+  anchorRef,
+  panelRef,
+  playback,
+  onChange,
+}: ChordCustomizePopoverProps) {
   const panelId = useId()
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
 
-  return (
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const anchor = anchorRef.current
+      if (!anchor) {
+        return
+      }
+
+      const rect = anchor.getBoundingClientRect()
+      setPosition({
+        left: rect.left,
+        top: rect.bottom + 8,
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [anchorRef])
+
+  if (!position) {
+    return null
+  }
+
+  return createPortal(
     <div
+      ref={panelRef}
       id={panelId}
       role="dialog"
       aria-label="Chord playback settings"
-      className="absolute bottom-full left-0 z-20 mb-2 w-44 rounded-md border border-zinc-300 bg-white p-2 shadow-lg dark:border-zinc-600 dark:bg-zinc-950"
+      className="fixed z-50 w-44 rounded-md border border-zinc-300 bg-white p-2 shadow-lg dark:border-zinc-600 dark:bg-zinc-950"
+      style={{ top: position.top, left: position.left }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="mb-2">
@@ -86,6 +124,7 @@ export default function ChordCustomizePopover({ playback, onChange }: ChordCusto
           ))}
         </select>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { Pin, Play, Settings, X } from 'lucide-react'
 import type { ChordSelection } from './chordSearch'
 import { getChordQueryForSelection } from './chordSearch'
@@ -14,6 +14,7 @@ export type ChordCardProps = {
   onPin?: () => void
   onRemove?: () => void
   onCustomize?: () => void
+  customizeButtonRef?: Ref<HTMLButtonElement>
   showControls?: boolean
 }
 
@@ -42,13 +43,16 @@ const cornerButtonClass =
   'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100'
 
 function cornerVisibilityClass(showControls: boolean) {
-  return showControls ? 'inline-flex' : 'hidden group-hover:inline-flex'
+  return showControls
+    ? 'pointer-events-auto opacity-100'
+    : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
 }
 
 function ChordCornerButton({
   title,
   positionClassName,
   showControls,
+  buttonRef,
   onMouseDown,
   onClick,
   children,
@@ -56,6 +60,7 @@ function ChordCornerButton({
   title: string
   positionClassName: string
   showControls: boolean
+  buttonRef?: Ref<HTMLButtonElement>
   onMouseDown?: () => void
   onClick?: () => void
   children: ReactNode
@@ -63,25 +68,26 @@ function ChordCornerButton({
   return (
     <span
       title={title}
-      className={`absolute ${cornerVisibilityClass(showControls)} ${positionClassName}`}
+      className={`absolute z-10 ${cornerVisibilityClass(showControls)} ${positionClassName}`}
     >
       <button
+        ref={buttonRef}
         type="button"
         title={title}
         aria-label={title}
         onMouseDown={(event) => {
+          event.stopPropagation()
           if (!onMouseDown) {
             return
           }
           event.preventDefault()
-          event.stopPropagation()
           onMouseDown()
         }}
         onClick={(event) => {
+          event.stopPropagation()
           if (!onClick) {
             return
           }
-          event.stopPropagation()
           onClick()
         }}
         className={cornerButtonClass}
@@ -141,6 +147,7 @@ export default function ChordCard({
   onPin,
   onRemove,
   onCustomize,
+  customizeButtonRef,
   showControls = false,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
@@ -184,7 +191,8 @@ export default function ChordCard({
           title={`Customize chord ${label}`}
           positionClassName="bottom-1 left-1"
           showControls={showControls}
-          onClick={onCustomize}
+          buttonRef={customizeButtonRef}
+          onMouseDown={onCustomize}
         >
           <Settings className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         </ChordCornerButton>

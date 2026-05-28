@@ -64,4 +64,33 @@ describe('buildDiatonicTriads', () => {
       getChordQueryForSelection(fourthDegree.chord.root, fourthDegree.chord.qualityId, []),
     ).toBe('F#dim')
   })
+
+  it('builds augmented triads for C whole tone', () => {
+    const chords = buildDiatonicTriads('C', 'whole-tone')
+    const labels = chords.map(({ degreeLabel, chord }) => ({
+      degreeLabel,
+      label: getChordQueryForSelection(chord.root, chord.qualityId, chord.extensionIds),
+    }))
+
+    expect(labels).toEqual([
+      { degreeLabel: 'I+', label: 'Caug' },
+      { degreeLabel: 'II+', label: 'Daug' },
+      { degreeLabel: 'III+', label: 'Eaug' },
+      { degreeLabel: '#IV+', label: 'F#aug' },
+      { degreeLabel: '#V+', label: 'G#aug' },
+      { degreeLabel: 'bVII+', label: 'A#aug' },
+    ])
+  })
+
+  it('labels altered diminished degrees without dropping accidentals', () => {
+    const wholeHalfLabels = buildDiatonicTriads('C', 'diminished-whole-half').map(
+      ({ degreeLabel }) => degreeLabel,
+    )
+    const halfWholeLabels = buildDiatonicTriads('C', 'diminished-half-whole').map(
+      ({ degreeLabel }) => degreeLabel,
+    )
+
+    expect(wholeHalfLabels).toEqual(['i°', 'ii°', 'biii°', 'iv°', 'bv°', 'bvi°', 'bbvii°', 'vii°'])
+    expect(halfWholeLabels).toEqual(['i°', 'bii°', '#ii°', 'iii°', '#iv°', 'v°', 'vi°', 'bvii°'])
+  })
 })

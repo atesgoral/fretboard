@@ -6,6 +6,12 @@ function pitchClass(note: string) {
   return NOTE_NAMES.indexOf(note as (typeof NOTE_NAMES)[number])
 }
 
+function getScale(value: string) {
+  const scale = SCALE_OPTIONS.find((option) => option.value === value)
+  if (!scale) throw new Error(`Missing scale ${value}`)
+  return scale
+}
+
 describe('buildScaleRoles', () => {
   it('maps C major scale roles correctly', () => {
     const roles = buildScaleRoles('C', 'major')
@@ -38,6 +44,16 @@ describe('buildScaleRoles', () => {
     expect(roles.get(pitchClass('F#'))).toBe('3')
     expect(roles.get(pitchClass('C#'))).toBe('7')
   })
+
+  it('maps Spanish 8-Tone with both minor and major third colors', () => {
+    const roles = buildScaleRoles('C', 'spanish-8-tone')
+
+    expect(roles.get(pitchClass('C'))).toBe('R')
+    expect(roles.get(pitchClass('C#'))).toBe('b2')
+    expect(roles.get(pitchClass('D#'))).toBe('b3')
+    expect(roles.get(pitchClass('E'))).toBe('3')
+    expect(roles.get(pitchClass('F#'))).toBe('b5')
+  })
 })
 
 describe('SCALE_OPTIONS integrity', () => {
@@ -52,6 +68,34 @@ describe('SCALE_OPTIONS integrity', () => {
         expect(interval).toBeGreaterThanOrEqual(0)
         expect(interval).toBeLessThanOrEqual(11)
       })
+    })
+  })
+
+  it('includes Spanish, diminished, whole tone, and related scale formulas', () => {
+    expect(getScale('phrygian-dominant')).toMatchObject({
+      label: 'Phrygian Dominant (Spanish Gypsy)',
+      intervals: [0, 1, 4, 5, 7, 8, 10],
+      roles: ['R', 'b2', '3', '4', '5', 'b6', 'b7'],
+    })
+    expect(getScale('spanish-8-tone')).toMatchObject({
+      label: 'Spanish 8-Tone',
+      intervals: [0, 1, 3, 4, 5, 6, 8, 10],
+      roles: ['R', 'b2', 'b3', '3', '4', 'b5', 'b6', 'b7'],
+    })
+    expect(getScale('whole-tone')).toMatchObject({
+      label: 'Whole Tone',
+      intervals: [0, 2, 4, 6, 8, 10],
+      roles: ['R', '2', '3', '#4', '#5', 'b7'],
+    })
+    expect(getScale('diminished-whole-half')).toMatchObject({
+      label: 'Diminished (Whole-Half)',
+      intervals: [0, 2, 3, 5, 6, 8, 9, 11],
+      roles: ['R', '2', 'b3', '4', 'b5', 'b6', 'bb7', '7'],
+    })
+    expect(getScale('diminished-half-whole')).toMatchObject({
+      label: 'Dominant Diminished (Half-Whole)',
+      intervals: [0, 1, 3, 4, 6, 7, 9, 10],
+      roles: ['R', 'b2', '#2', '3', '#4', '5', '6', 'b7'],
     })
   })
 })

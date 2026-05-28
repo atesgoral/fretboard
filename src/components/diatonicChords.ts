@@ -12,9 +12,11 @@ const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const
 const SCALE_ROLE_TO_ROMAN_BASE: Record<string, string> = {
   R: 'I',
   '2': 'II',
+  '#2': '#II',
   '3': 'III',
   '4': 'IV',
   '5': 'V',
+  '#5': '#V',
   '6': 'VI',
   '7': 'VII',
   b2: 'bII',
@@ -22,6 +24,7 @@ const SCALE_ROLE_TO_ROMAN_BASE: Record<string, string> = {
   '#4': '#IV',
   b5: 'bV',
   b6: 'bVI',
+  bb7: 'bbVII',
   b7: 'bVII',
 }
 

@@ -121,7 +121,7 @@ function StringLines({
           ? 'bg-purple-500 dark:bg-purple-300'
           : isScaleOpenString
             ? 'bg-amber-500 dark:bg-amber-300'
-            : 'bg-zinc-600 dark:bg-zinc-300'
+            : 'bg-zinc-500 dark:bg-zinc-400'
 
     return (
       <div

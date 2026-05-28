@@ -3,6 +3,7 @@ import Fretboard from './components/Fretboard'
 import ChordBrowser, { type ScaleRootSelection } from './components/ChordBrowser'
 import DiatonicChordList from './components/DiatonicChordList'
 import PinnedChordList from './components/PinnedChordList'
+import { buildChordRoles } from './components/chords'
 import { buildScaleRoles, type ScaleId } from './components/scales'
 import AppHeader from './components/AppHeader'
 import type { ChordSelection } from './components/chordSearch'
@@ -29,6 +30,9 @@ export default function App() {
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
   const [highlightedPitchClasses, setHighlightedPitchClasses] = useState<number[]>([])
+  const [highlightedChordRoles, setHighlightedChordRoles] = useState<Map<number, string>>(
+    () => new Map(),
+  )
 
   usePersistAppPreferences(appState)
 
@@ -45,6 +49,9 @@ export default function App() {
 
   const handleHoverChord = useCallback((chord: ChordSelection | null) => {
     setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
+    setHighlightedChordRoles(
+      chord ? buildChordRoles(chord.root, chord.qualityId, chord.extensionIds) : new Map(),
+    )
   }, [])
 
   const { swatches: pinnedChords } = getCurrentTimelineState(appState)
@@ -116,6 +123,7 @@ export default function App() {
           muted={muted}
           markedNotes={markedNotes}
           highlightedPitchClasses={highlightedPitchClasses}
+          highlightedChordRoles={highlightedChordRoles}
           playedPositions={playedPositions}
           playSequence={playSequence}
         />

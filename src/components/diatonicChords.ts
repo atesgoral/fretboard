@@ -10,7 +10,7 @@ export type DiatonicChord = {
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const
 
 const SCALE_ROLE_TO_ROMAN_BASE: Record<string, string> = {
-  R: 'I',
+  '1': 'I',
   '2': 'II',
   '#2': '#II',
   '3': 'III',

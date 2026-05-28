@@ -4,6 +4,9 @@ import FretboardLegend from './FretboardLegend'
 
 const STRINGS = 6
 const DEFAULT_FRETS = 18
+const FRETBOARD_MIN_WIDTH_PX = 1280
+const SCALE_FUNCTION_LABEL_LEFT = '28%'
+const CHORD_FUNCTION_LABEL_LEFT = '72%'
 const MARKER_FRETS = new Set([3, 5, 7, 9])
 const STRING_THICKNESSES = [4, 3.5, 3, 2.5, 2, 1.5]
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
@@ -40,6 +43,7 @@ type FretboardProps = {
   frets?: number
   markedNotes: Map<number, string>
   highlightedPitchClasses?: number[]
+  highlightedChordRoles?: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
 }
@@ -66,7 +70,7 @@ function FretLines({ fretPositions, frets }: FretLinesProps) {
         style={{
           left: nutLeft,
           width: '5px',
-          transform: 'translateX(-2px)',
+          transform: 'translateX(-50%)',
         }}
       />
       {Array.from({ length: frets - 1 }, (_, index) => index + 2).map((fret) => {
@@ -138,12 +142,12 @@ type FretLabelsProps = {
 
 function FretLabels({ fretPositions, frets }: FretLabelsProps) {
   return (
-    <div className="relative mx-auto mt-2 h-5 min-w-[1200px]">
+    <div className="relative mx-auto mt-2 h-5" style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}>
       <span
         className="absolute -translate-x-1/2 text-xs font-medium tracking-wide text-zinc-600 dark:text-zinc-300"
         style={{ left: `${((fretPositions[0] + fretPositions[1]) / 2) * 100}%` }}
       >
-        O
+        Open
       </span>
       {Array.from({ length: frets - 1 }, (_, index) => index + 1).map((fret) => {
         const labelCenter = (fretPositions[fret] + fretPositions[fret + 1]) / 2
@@ -262,6 +266,7 @@ type NoteGridProps = {
   onPressEnd: (pointerId: number) => void
   markedNotes: Map<number, string>
   highlightedPitchClasses: Set<number>
+  highlightedChordRoles: Map<number, string>
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
   animatedPositionBursts: Record<string, number>
@@ -352,6 +357,7 @@ function NoteGrid({
   onPressEnd,
   markedNotes,
   highlightedPitchClasses,
+  highlightedChordRoles,
   activePositions,
   burstActivePositions,
   animatedPositionBursts,
@@ -443,9 +449,12 @@ function NoteGrid({
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
           const isHighlighted = isDirectlyHovered || highlightedPitchClasses.has(noteClass)
           const role = markedNotes.get(noteClass)
+          const chordRole = highlightedChordRoles.get(noteClass)
           const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
+          const showChordRoleLabel = Boolean(chordRole && isHighlighted && !isActive)
           const shouldShowCircle = Boolean(role) || isActive || isHighlighted
+          const noteName = getNoteName(OPEN_STRING_MIDI[stringIndex] + fret)
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst =
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
@@ -475,6 +484,24 @@ function NoteGrid({
               style={{ left, top, width, height }}
               onPointerDown={(event) => handleCellPointerDown(event, stringIndex, fret)}
             >
+              {role ? (
+                <span
+                  className="pointer-events-none absolute top-1 z-20 -translate-x-1/2 text-[10px] font-semibold leading-none text-amber-900 dark:text-amber-200"
+                  style={{ left: `max(0.25rem, calc(${SCALE_FUNCTION_LABEL_LEFT} - 0.4375rem))` }}
+                >
+                  {role}
+                </span>
+              ) : null}
+              {showChordRoleLabel ? (
+                <span
+                  className="pointer-events-none absolute top-1 z-20 -translate-x-1/2 text-[10px] font-semibold leading-none text-blue-900 dark:text-blue-200"
+                  style={{
+                    left: `min(calc(100% - 0.25rem), calc(${CHORD_FUNCTION_LABEL_LEFT} + 0.4375rem))`,
+                  }}
+                >
+                  {chordRole}
+                </span>
+              ) : null}
               {shouldShowCircle ? (
                 <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
                   {shouldRenderBurst ? (
@@ -483,11 +510,9 @@ function NoteGrid({
                   <span
                     className={`relative block h-7 w-7 rounded-full border shadow-sm ${circleToneClass}`}
                   >
-                    {role ? (
-                      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold">
-                        {role}
-                      </span>
-                    ) : null}
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold leading-none">
+                      {noteName}
+                    </span>
                   </span>
                 </span>
               ) : null}
@@ -553,6 +578,7 @@ export default function Fretboard({
   frets = DEFAULT_FRETS,
   markedNotes,
   highlightedPitchClasses = [],
+  highlightedChordRoles = new Map(),
   playedPositions,
   playSequence,
 }: FretboardProps) {
@@ -858,7 +884,10 @@ export default function Fretboard({
       className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
       onPointerLeave={handleFretboardPointerLeave}
     >
-      <div className="relative mx-auto h-[260px] min-w-[1200px] bg-zinc-50 dark:bg-zinc-800">
+      <div
+        className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
+        style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
+      >
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
         <FretLines fretPositions={fretPositions} frets={frets} />
         <StringLines
@@ -885,6 +914,7 @@ export default function Fretboard({
           onPressEnd={handlePressEnd}
           markedNotes={markedNotes}
           highlightedPitchClasses={highlightedPitchClassSet}
+          highlightedChordRoles={highlightedChordRoles}
           activePositions={activePositions}
           burstActivePositions={burstActivePositions}
           animatedPositionBursts={animatedPositionBursts}

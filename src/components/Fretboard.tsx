@@ -254,6 +254,40 @@ function getActivePositionsFromPointers(
   return positions
 }
 
+const CIRCLE_TONE = {
+  chord:
+    'border-blue-900/30 bg-blue-500 text-white dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900',
+  chordRoot:
+    'border-2 border-blue-950 bg-blue-500 text-white dark:border-white dark:bg-blue-300 dark:text-zinc-900',
+  played:
+    'border-purple-900/40 bg-purple-500 text-zinc-50 dark:border-purple-200/50 dark:bg-purple-300 dark:text-zinc-900',
+  open: 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900',
+  scale:
+    'border-amber-900/20 bg-amber-500 text-white dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900',
+  scaleRoot:
+    'border-2 border-amber-950 bg-amber-500 text-white dark:border-white dark:bg-amber-300 dark:text-zinc-900',
+} as const
+
+function getCircleToneClass({
+  isHighlighted,
+  isChordRoot,
+  isActive,
+  isOpen,
+  scaleRole,
+}: {
+  isHighlighted: boolean
+  isChordRoot: boolean
+  isActive: boolean
+  isOpen: boolean
+  scaleRole: string | undefined
+}) {
+  if (isHighlighted) return isChordRoot ? CIRCLE_TONE.chordRoot : CIRCLE_TONE.chord
+  if (isActive) return CIRCLE_TONE.played
+  if (isOpen) return CIRCLE_TONE.open
+  if (scaleRole) return scaleRole === '1' ? CIRCLE_TONE.scaleRoot : CIRCLE_TONE.scale
+  return CIRCLE_TONE.chord
+}
+
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
@@ -458,15 +492,13 @@ function NoteGrid({
           const burstKey = animatedPositionBursts[positionKey] ?? 0
           const shouldRenderBurst =
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
-          const circleToneClass = isHighlighted
-            ? 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
-            : isActive
-              ? 'border-purple-900/40 bg-purple-500 text-zinc-50 dark:border-purple-200/50 dark:bg-purple-300 dark:text-zinc-900'
-              : fret === 0
-                ? 'border-zinc-500/50 bg-zinc-600 text-zinc-100 dark:border-zinc-500/60 dark:bg-zinc-300 dark:text-zinc-900'
-                : role
-                  ? 'border-amber-900/20 bg-amber-500 text-zinc-900 dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900'
-                  : 'border-blue-900/30 bg-blue-500 text-zinc-900 dark:border-blue-200/40 dark:bg-blue-300 dark:text-zinc-900'
+          const circleToneClass = getCircleToneClass({
+            isHighlighted,
+            isChordRoot: chordRole === 'R',
+            isActive,
+            isOpen: fret === 0,
+            scaleRole: role,
+          })
 
           return (
             <button
@@ -510,7 +542,7 @@ function NoteGrid({
                   <span
                     className={`relative block h-7 w-7 rounded-full border shadow-sm ${circleToneClass}`}
                   >
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold leading-none">
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold leading-none">
                       {noteName}
                     </span>
                   </span>

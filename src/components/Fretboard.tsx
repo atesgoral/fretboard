@@ -114,7 +114,7 @@ function StringLines({
     const isActiveString = activeStringVisualIndexes.has(index)
     const isScaleOpenString = scaleOpenStringVisualIndexes.has(index)
     const stringColorClass = isDirectlyHoveredOpenString
-      ? 'bg-zinc-950 dark:bg-zinc-50'
+      ? 'bg-black dark:bg-white'
       : isChordHighlighted
         ? 'bg-blue-500 dark:bg-blue-300'
         : isActiveString
@@ -272,8 +272,7 @@ const CIRCLE_TONE = {
     'border-amber-900/20 bg-amber-500 text-white dark:border-amber-200/30 dark:bg-amber-300 dark:text-zinc-900',
   scaleRoot:
     'border-2 border-amber-950 bg-amber-500 text-white dark:border-white dark:bg-amber-300 dark:text-zinc-900',
-  neutral:
-    'border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950',
+  neutral: 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
 } as const
 
 function getCircleToneClass({

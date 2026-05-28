@@ -95,28 +95,33 @@ function FretLines({ fretPositions, frets }: FretLinesProps) {
 function StringLines({
   stringYPositions,
   stringThicknesses,
+  hoveredOpenStringVisualIndex,
   highlightedOpenStringVisualIndexes,
   activeStringVisualIndexes,
   scaleOpenStringVisualIndexes,
 }: {
   stringYPositions: number[]
   stringThicknesses: number[]
+  hoveredOpenStringVisualIndex: number
   highlightedOpenStringVisualIndexes: Set<number>
   activeStringVisualIndexes: Set<number>
   scaleOpenStringVisualIndexes: Set<number>
 }) {
   return Array.from({ length: STRINGS }, (_, index) => {
     const stringTop = `calc(${stringYPositions[index]}% - ${stringThicknesses[index] / 2}px)`
+    const isDirectlyHoveredOpenString = hoveredOpenStringVisualIndex === index
     const isChordHighlighted = highlightedOpenStringVisualIndexes.has(index)
     const isActiveString = activeStringVisualIndexes.has(index)
     const isScaleOpenString = scaleOpenStringVisualIndexes.has(index)
-    const stringColorClass = isChordHighlighted
-      ? 'bg-blue-500 dark:bg-blue-300'
-      : isActiveString
-        ? 'bg-purple-500 dark:bg-purple-300'
-        : isScaleOpenString
-          ? 'bg-amber-500 dark:bg-amber-300'
-          : 'bg-zinc-600 dark:bg-zinc-300'
+    const stringColorClass = isDirectlyHoveredOpenString
+      ? 'bg-zinc-600 dark:bg-zinc-300'
+      : isChordHighlighted
+        ? 'bg-blue-500 dark:bg-blue-300'
+        : isActiveString
+          ? 'bg-purple-500 dark:bg-purple-300'
+          : isScaleOpenString
+            ? 'bg-amber-500 dark:bg-amber-300'
+            : 'bg-zinc-600 dark:bg-zinc-300'
 
     return (
       <div
@@ -656,6 +661,10 @@ export default function Fretboard({
         : recentlyPlayedPositions.map(getNoteIdentity)
   const activePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
   const burstActivePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
+  const hoveredOpenStringVisualIndex =
+    hoveredPosition && hoveredPosition.fret === 0
+      ? stringOrder.indexOf(hoveredPosition.stringIndex)
+      : -1
   const highlightedOpenStringVisualIndexes = useMemo(() => {
     if (highlightedPitchClassSet.size === 0) {
       return new Set<number>()
@@ -937,6 +946,7 @@ export default function Fretboard({
         <StringLines
           stringYPositions={stringYPositions}
           stringThicknesses={stringThicknesses}
+          hoveredOpenStringVisualIndex={hoveredOpenStringVisualIndex}
           highlightedOpenStringVisualIndexes={highlightedOpenStringVisualIndexes}
           activeStringVisualIndexes={activeStringVisualIndexes}
           scaleOpenStringVisualIndexes={scaleOpenStringVisualIndexes}

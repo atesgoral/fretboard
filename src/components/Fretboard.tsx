@@ -272,16 +272,19 @@ const CIRCLE_TONE = {
 } as const
 
 function getCircleToneClass({
+  isDirectlyHovered,
   isChordHighlighted,
   isChordRoot,
   isActive,
   scaleRole,
 }: {
+  isDirectlyHovered: boolean
   isChordHighlighted: boolean
   isChordRoot: boolean
   isActive: boolean
   scaleRole: string | undefined
 }) {
+  if (isDirectlyHovered) return CIRCLE_TONE.neutral
   if (isChordHighlighted) return isChordRoot ? CIRCLE_TONE.chordRoot : CIRCLE_TONE.chord
   if (isActive) return CIRCLE_TONE.played
   if (scaleRole) return scaleRole === '1' ? CIRCLE_TONE.scaleRoot : CIRCLE_TONE.scale
@@ -493,6 +496,7 @@ function NoteGrid({
           const shouldRenderBurst =
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
           const circleToneClass = getCircleToneClass({
+            isDirectlyHovered,
             isChordHighlighted: highlightedPitchClasses.has(noteClass),
             isChordRoot: chordRole === 'R',
             isActive,

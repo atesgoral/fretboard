@@ -13,25 +13,37 @@ const scaleLegendTextClass = 'text-amber-900 dark:text-amber-200'
 const chordLegendTextClass = 'text-blue-900 dark:text-blue-200'
 const lastPlayedLegendTextClass = 'text-purple-900 dark:text-purple-200'
 
+const scaleCircleClass =
+  'border-amber-900/20 bg-amber-500 dark:border-amber-200/30 dark:bg-amber-300'
+const chordCircleClass = 'border-blue-900/30 bg-blue-500 dark:border-blue-200/40 dark:bg-blue-300'
+const lastPlayedCircleClass =
+  'border-purple-900/40 bg-purple-500 dark:border-purple-200/50 dark:bg-purple-300'
+
 type LegendItem = {
   symbol: string
   label: string
 }
 
 type LegendRowProps = {
+  circleClass: string
   prefix: string
-  items: ReadonlyArray<LegendItem>
+  items?: ReadonlyArray<LegendItem>
   textClass: string
 }
 
-function LegendRow({ prefix, items, textClass }: LegendRowProps) {
+function LegendCircle({ className }: { className: string }) {
+  return <span className={`inline-block h-3.5 w-3.5 shrink-0 rounded-full border ${className}`} />
+}
+
+function LegendRow({ circleClass, prefix, items = [], textClass }: LegendRowProps) {
   const symbolClass = `${textClass} font-semibold`
 
   return (
-    <div
-      className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] ${textClass}`}
-    >
-      <span className="font-medium">{prefix}</span>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] ${textClass}`}>
+      <span className="inline-flex items-center gap-1.5 font-medium">
+        <LegendCircle className={circleClass} />
+        {prefix}
+      </span>
       {items.map((item) => (
         <span key={`${item.symbol}-${item.label}`} className="inline-flex items-center gap-1.5">
           <span className={symbolClass}>{item.symbol}</span>
@@ -44,20 +56,24 @@ function LegendRow({ prefix, items, textClass }: LegendRowProps) {
 
 export default function FretboardLegend() {
   return (
-    <div className="mt-1 flex flex-col items-center gap-y-1">
+    <div className="mt-1 flex flex-col items-start gap-y-1">
       <LegendRow
+        circleClass={scaleCircleClass}
         prefix="Scale functions:"
         items={SCALE_FUNCTION_ITEMS}
         textClass={scaleLegendTextClass}
       />
       <LegendRow
+        circleClass={chordCircleClass}
         prefix="Chord functions:"
         items={CHORD_FUNCTION_ITEMS}
         textClass={chordLegendTextClass}
       />
-      <p className={`text-center text-[11px] font-medium ${lastPlayedLegendTextClass}`}>
-        Last played
-      </p>
+      <LegendRow
+        circleClass={lastPlayedCircleClass}
+        prefix="Last played"
+        textClass={lastPlayedLegendTextClass}
+      />
     </div>
   )
 }

@@ -589,7 +589,7 @@ function NoteReadout({ activeNotes }: NoteReadoutProps) {
   const noteNames = activeNotes.map((note) => note.name)
 
   return (
-    <div className="relative flex min-h-10 items-center py-2">
+    <div className="relative my-3 flex min-h-10 items-center">
       <div className="absolute left-1/2 -translate-x-1/2">
         <span
           className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 px-3 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 ${noteNames.length > 0 ? 'visible' : 'invisible'}`}

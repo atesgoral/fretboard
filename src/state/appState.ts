@@ -1,5 +1,4 @@
 import type { NoteName } from '../components/chords'
-import { areChordSelectionsEqual } from '../components/chordSelection'
 
 export const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
@@ -243,9 +242,6 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       root: action.chord.root,
       qualityId: action.chord.qualityId,
       extensionIds: [...action.chord.extensionIds],
-    }
-    if (current.swatches.some((swatch) => areChordSelectionsEqual(swatch, chord))) {
-      return state
     }
     next = {
       ...current,

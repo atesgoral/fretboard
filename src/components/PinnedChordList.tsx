@@ -1,30 +1,23 @@
-import { useMemo } from 'react'
-import type { NoteName } from './chords'
-import ChordCard from './ChordCard'
 import type { ChordSelection } from './chordSearch'
-import { buildDiatonicTriads } from './diatonicChords'
-import { SCALE_OPTIONS, type ScaleId } from './scales'
+import ChordCard from './ChordCard'
+import { getChordSelectionKey } from './chordSelection'
 
-type DiatonicChordListProps = {
-  scaleRoot: NoteName
-  scaleId: ScaleId
+type PinnedChordListProps = {
+  pinnedChords: ChordSelection[]
   onPlayChord: (chord: ChordSelection) => void
   onHoverChord: (chord: ChordSelection | null) => void
-  onPinChord: (chord: ChordSelection) => void
+  onRemoveChord: (index: number) => void
 }
 
-export default function DiatonicChordList({
-  scaleRoot,
-  scaleId,
+export default function PinnedChordList({
+  pinnedChords,
   onPlayChord,
   onHoverChord,
-  onPinChord,
-}: DiatonicChordListProps) {
-  const diatonicChords = useMemo(
-    () => buildDiatonicTriads(scaleRoot, scaleId),
-    [scaleRoot, scaleId],
-  )
-  const scaleLabel = SCALE_OPTIONS.find((option) => option.value === scaleId)?.label ?? scaleId
+  onRemoveChord,
+}: PinnedChordListProps) {
+  if (pinnedChords.length === 0) {
+    return null
+  }
 
   const handlePointerLeave = (event: React.PointerEvent<HTMLElement>) => {
     const next = event.relatedTarget
@@ -40,17 +33,16 @@ export default function DiatonicChordList({
       onPointerLeave={handlePointerLeave}
     >
       <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
-        Diatonic triads in {scaleRoot} {scaleLabel}
+        Pinned chords
       </h2>
       <div className="flex items-center gap-3 overflow-x-auto pb-1">
-        {diatonicChords.map(({ degreeLabel, chord }) => (
+        {pinnedChords.map((chord, index) => (
           <ChordCard
-            key={`${degreeLabel}-${chord.root}-${chord.qualityId}`}
+            key={getChordSelectionKey(chord, index)}
             chord={chord}
-            degreeLabel={degreeLabel}
             onPlay={() => onPlayChord(chord)}
             onHoverStart={() => onHoverChord(chord)}
-            onPin={() => onPinChord(chord)}
+            onRemove={() => onRemoveChord(index)}
           />
         ))}
       </div>

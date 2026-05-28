@@ -2,6 +2,7 @@ import { useCallback, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import ChordBrowser, { type ScaleRootSelection } from './components/ChordBrowser'
 import DiatonicChordList from './components/DiatonicChordList'
+import PinnedChordList from './components/PinnedChordList'
 import { buildScaleRoles, type ScaleId } from './components/scales'
 import AppHeader from './components/AppHeader'
 import type { ChordSelection } from './components/chordSearch'
@@ -9,7 +10,12 @@ import { buildCommonVoicing, getChordPitchClasses } from './components/voicing'
 import type { PlayedPosition } from './components/voicing'
 import { useThemePreference } from './hooks/useThemePreference'
 import { usePersistAppPreferences } from './hooks/usePersistAppPreferences'
-import { appReducer, createInitialAppState, getInitialPreferences } from './state/appState'
+import {
+  appReducer,
+  createInitialAppState,
+  getCurrentTimelineState,
+  getInitialPreferences,
+} from './state/appState'
 
 const initialPreferences = getInitialPreferences()
 
@@ -37,6 +43,16 @@ export default function App() {
 
   const handleHoverChord = useCallback((chord: ChordSelection | null) => {
     setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
+  }, [])
+
+  const { swatches: pinnedChords } = getCurrentTimelineState(appState)
+
+  const handlePinChord = useCallback((chord: ChordSelection) => {
+    dispatch({ type: 'pinChord', chord })
+  }, [])
+
+  const handleRemovePinnedChord = useCallback((index: number) => {
+    dispatch({ type: 'removeSwatch', index })
   }, [])
 
   const canUndo = appState.timeline.currentIndex > 0
@@ -77,8 +93,16 @@ export default function App() {
             scaleId={scaleId}
             onPlayChord={handlePlayChord}
             onHoverChord={handleHoverChord}
+            onPinChord={handlePinChord}
           />
         ) : null}
+
+        <PinnedChordList
+          pinnedChords={pinnedChords}
+          onPlayChord={handlePlayChord}
+          onHoverChord={handleHoverChord}
+          onRemoveChord={handleRemovePinnedChord}
+        />
 
         <Fretboard
           linear={linear}

@@ -53,6 +53,29 @@ describe('appReducer timeline history', () => {
     expect(getCurrentTimelineState(state).swatches).toHaveLength(1)
   })
 
+  it('pins chords without changing the active swatch and allows duplicates', () => {
+    let state = createInitialAppState({})
+    const chord = { root: 'C' as const, qualityId: 'maj', extensionIds: [] as string[] }
+
+    state = appReducer(state, { type: 'pinChord', chord })
+    state = appReducer(state, { type: 'pinChord', chord })
+
+    expect(getCurrentTimelineState(state).swatches).toEqual([chord, chord])
+    expect(getCurrentTimelineState(state).activeSwatchIndex).toBeNull()
+  })
+
+  it('removes pinned chords with undo support', () => {
+    let state = createInitialAppState({})
+    const chord = { root: 'D' as const, qualityId: 'min', extensionIds: [] as string[] }
+
+    state = appReducer(state, { type: 'pinChord', chord })
+    state = appReducer(state, { type: 'removeSwatch', index: 0 })
+    expect(getCurrentTimelineState(state).swatches).toHaveLength(0)
+
+    state = appReducer(state, { type: 'undo' })
+    expect(getCurrentTimelineState(state).swatches).toEqual([chord])
+  })
+
   it('keeps user preferences out of undo timeline', () => {
     let state = createInitialAppState({})
     state = appReducer(state, { type: 'setQuality', qualityId: 'min' })

@@ -97,21 +97,26 @@ function StringLines({
   stringThicknesses,
   highlightedOpenStringVisualIndexes,
   activeStringVisualIndexes,
+  scaleOpenStringVisualIndexes,
 }: {
   stringYPositions: number[]
   stringThicknesses: number[]
   highlightedOpenStringVisualIndexes: Set<number>
   activeStringVisualIndexes: Set<number>
+  scaleOpenStringVisualIndexes: Set<number>
 }) {
   return Array.from({ length: STRINGS }, (_, index) => {
     const stringTop = `calc(${stringYPositions[index]}% - ${stringThicknesses[index] / 2}px)`
     const isChordHighlighted = highlightedOpenStringVisualIndexes.has(index)
     const isActiveString = activeStringVisualIndexes.has(index)
+    const isScaleOpenString = scaleOpenStringVisualIndexes.has(index)
     const stringColorClass = isChordHighlighted
       ? 'bg-blue-500 dark:bg-blue-300'
       : isActiveString
         ? 'bg-purple-500 dark:bg-purple-300'
-        : 'bg-zinc-600 dark:bg-zinc-300'
+        : isScaleOpenString
+          ? 'bg-amber-500 dark:bg-amber-300'
+          : 'bg-zinc-600 dark:bg-zinc-300'
 
     return (
       <div
@@ -674,6 +679,19 @@ export default function Fretboard({
         .filter((visualIndex) => visualIndex >= 0),
     )
   }, [recentlyPlayedPositions, stringOrder])
+  const scaleOpenStringVisualIndexes = useMemo(() => {
+    if (markedNotes.size === 0) {
+      return new Set<number>()
+    }
+
+    return new Set(
+      stringOrder
+        .map((stringIndex, visualIndex) =>
+          markedNotes.has(OPEN_STRING_MIDI[stringIndex] % 12) ? visualIndex : -1,
+        )
+        .filter((visualIndex) => visualIndex >= 0),
+    )
+  }, [markedNotes, stringOrder])
 
   useEffect(() => {
     return () => {
@@ -917,6 +935,7 @@ export default function Fretboard({
           stringThicknesses={stringThicknesses}
           highlightedOpenStringVisualIndexes={highlightedOpenStringVisualIndexes}
           activeStringVisualIndexes={activeStringVisualIndexes}
+          scaleOpenStringVisualIndexes={scaleOpenStringVisualIndexes}
         />
         <FretMarkers
           fretPositions={fretPositions}

@@ -60,8 +60,32 @@ describe('appReducer timeline history', () => {
     state = appReducer(state, { type: 'pinChord', chord })
     state = appReducer(state, { type: 'pinChord', chord })
 
-    expect(getCurrentTimelineState(state).swatches).toEqual([chord, chord])
+    const swatches = getCurrentTimelineState(state).swatches
+    expect(swatches).toHaveLength(2)
+    expect(swatches[0]).toMatchObject(chord)
+    expect(swatches[1]).toMatchObject(chord)
     expect(getCurrentTimelineState(state).activeSwatchIndex).toBeNull()
+  })
+
+  it('updates pinned chord playback settings', () => {
+    let state = createInitialAppState({})
+    state = appReducer(state, {
+      type: 'pinChord',
+      chord: { root: 'G', qualityId: 'maj', extensionIds: [] },
+    })
+
+    state = appReducer(state, {
+      type: 'updateSwatchPlayback',
+      index: 0,
+      playback: { style: 'shell', register: 1, inversion: 2 },
+    })
+
+    expect(getCurrentTimelineState(state).swatches[0]).toMatchObject({
+      root: 'G',
+      style: 'shell',
+      register: 1,
+      inversion: 2,
+    })
   })
 
   it('removes pinned chords with undo support', () => {
@@ -73,7 +97,7 @@ describe('appReducer timeline history', () => {
     expect(getCurrentTimelineState(state).swatches).toHaveLength(0)
 
     state = appReducer(state, { type: 'undo' })
-    expect(getCurrentTimelineState(state).swatches).toEqual([chord])
+    expect(getCurrentTimelineState(state).swatches[0]).toMatchObject(chord)
   })
 
   it('keeps user preferences out of undo timeline', () => {

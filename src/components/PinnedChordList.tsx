@@ -1,12 +1,13 @@
-import type { ChordSelection } from './chordSearch'
-import ChordCard from './ChordCard'
+import type { ChordPlayback, PinnedChord } from './chordPlayback'
 import { getChordSelectionKey } from './chordSelection'
+import PinnedChordCard from './PinnedChordCard'
 
 type PinnedChordListProps = {
-  pinnedChords: ChordSelection[]
-  onPlayChord: (chord: ChordSelection) => void
-  onHoverChord: (chord: ChordSelection | null) => void
+  pinnedChords: PinnedChord[]
+  onPlayChord: (chord: PinnedChord) => void
+  onHoverChord: (chord: PinnedChord | null) => void
   onRemoveChord: (index: number) => void
+  onPlaybackChange: (index: number, playback: Partial<ChordPlayback>) => void
 }
 
 export default function PinnedChordList({
@@ -14,6 +15,7 @@ export default function PinnedChordList({
   onPlayChord,
   onHoverChord,
   onRemoveChord,
+  onPlaybackChange,
 }: PinnedChordListProps) {
   if (pinnedChords.length === 0) {
     return null
@@ -37,12 +39,13 @@ export default function PinnedChordList({
       </h2>
       <div className="flex items-center gap-3 overflow-x-auto pb-1">
         {pinnedChords.map((chord, index) => (
-          <ChordCard
+          <PinnedChordCard
             key={getChordSelectionKey(chord, index)}
             chord={chord}
             onPlay={() => onPlayChord(chord)}
             onHoverStart={() => onHoverChord(chord)}
             onRemove={() => onRemoveChord(index)}
+            onPlaybackChange={(playback) => onPlaybackChange(index, playback)}
           />
         ))}
       </div>

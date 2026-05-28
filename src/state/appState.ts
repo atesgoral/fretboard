@@ -1,4 +1,6 @@
 import type { NoteName } from '../components/chords'
+import type { ChordPlayback, PinnedChord } from '../components/chordPlayback'
+import { createPinnedChord, normalizePinnedChord } from '../components/chordPlayback'
 
 export const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
@@ -8,7 +10,7 @@ export type TimelineState = {
   root: NoteName
   qualityId: string
   extensionIds: string[]
-  swatches: ChordSelection[]
+  swatches: PinnedChord[]
   activeSwatchIndex: number | null
 }
 
@@ -52,11 +54,15 @@ function cloneChordSelection(chord: ChordSelection): ChordSelection {
   return { ...chord, extensionIds: [...chord.extensionIds] }
 }
 
+function clonePinnedChord(chord: PinnedChord): PinnedChord {
+  return normalizePinnedChord(chord)
+}
+
 function cloneTimelineState(state: TimelineState): TimelineState {
   return {
     ...state,
     extensionIds: [...state.extensionIds],
-    swatches: state.swatches.map(cloneChordSelection),
+    swatches: state.swatches.map(clonePinnedChord),
   }
 }
 
@@ -65,7 +71,9 @@ function getInitialTimelineState(stored: StoredPreferences): TimelineState {
     root: stored.root ?? DEFAULT_TIMELINE_STATE.root,
     qualityId: stored.qualityId ?? DEFAULT_TIMELINE_STATE.qualityId,
     extensionIds: stored.extensionIds ?? DEFAULT_TIMELINE_STATE.extensionIds,
-    swatches: stored.swatches ?? DEFAULT_TIMELINE_STATE.swatches,
+    swatches: (stored.swatches ?? DEFAULT_TIMELINE_STATE.swatches).map((swatch) =>
+      normalizePinnedChord(swatch),
+    ),
     activeSwatchIndex: stored.activeSwatchIndex ?? DEFAULT_TIMELINE_STATE.activeSwatchIndex,
   }
 }
@@ -144,6 +152,7 @@ export type AppAction =
   | { type: 'selectCurrentChord' }
   | { type: 'selectSwatch'; index: number }
   | { type: 'removeSwatch'; index: number }
+  | { type: 'updateSwatchPlayback'; index: number; playback: Partial<ChordPlayback> }
   | { type: 'undo' }
   | { type: 'redo' }
 
@@ -216,36 +225,38 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       : [...current.extensionIds, action.extensionId]
     next = updateActiveSwatch({ ...current, extensionIds }, { extensionIds })
   } else if (action.type === 'addSwatch') {
-    const selected = {
+    const selected = createPinnedChord({
       root: current.root,
       qualityId: current.qualityId,
       extensionIds: [...current.extensionIds],
-    }
+    })
     next = {
       ...current,
       swatches: [...current.swatches, selected],
       activeSwatchIndex: current.swatches.length,
     }
   } else if (action.type === 'addSwatchChord') {
-    const selected = {
-      root: action.chord.root,
-      qualityId: action.chord.qualityId,
-      extensionIds: [...action.chord.extensionIds],
-    }
+    const selected = createPinnedChord(action.chord)
     next = {
       ...current,
       swatches: [...current.swatches, selected],
       activeSwatchIndex: current.swatches.length,
     }
   } else if (action.type === 'pinChord') {
-    const chord = {
-      root: action.chord.root,
-      qualityId: action.chord.qualityId,
-      extensionIds: [...action.chord.extensionIds],
+    next = {
+      ...current,
+      swatches: [...current.swatches, createPinnedChord(action.chord)],
+    }
+  } else if (action.type === 'updateSwatchPlayback') {
+    const swatch = current.swatches[action.index]
+    if (!swatch) {
+      return state
     }
     next = {
       ...current,
-      swatches: [...current.swatches, chord],
+      swatches: current.swatches.map((item, index) =>
+        index === action.index ? normalizePinnedChord({ ...item, ...action.playback }) : item,
+      ),
     }
   } else if (action.type === 'selectCurrentChord') {
     return {

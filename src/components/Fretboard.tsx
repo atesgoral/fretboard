@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Reverb, Soundfont } from 'smplr'
+import type { ChordPlayStyle } from './chordPlayback'
 import FretboardLegend from './FretboardLegend'
 
 const STRINGS = 6
@@ -42,7 +43,10 @@ type FretboardProps = {
   highlightedPitchClasses?: number[]
   playedPositions: ActivePosition[]
   playSequence: number
+  playStyle?: ChordPlayStyle
 }
+
+const STRUM_STAGGER_MS = 35
 
 function getStoredReverbLevel() {
   if (typeof window === 'undefined') return DEFAULT_REVERB_LEVEL
@@ -555,6 +559,7 @@ export default function Fretboard({
   highlightedPitchClasses = [],
   playedPositions,
   playSequence,
+  playStyle = 'finger',
 }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const highlightedPitchClassSet = useMemo(
@@ -837,10 +842,21 @@ export default function Fretboard({
     }
 
     markRecentlyPlayed(playedPositions)
+
+    if (playStyle === 'strum') {
+      const ordered = [...playedPositions].sort((a, b) => a.stringIndex - b.stringIndex)
+      ordered.forEach((position, index) => {
+        window.setTimeout(() => {
+          void playNote(position.stringIndex, position.fret, 'pick')
+        }, index * STRUM_STAGGER_MS)
+      })
+      return
+    }
+
     playedPositions.forEach((position) => {
       void playNote(position.stringIndex, position.fret, 'pick')
     })
-  }, [markRecentlyPlayed, playNote, playSequence, playedPositions])
+  }, [markRecentlyPlayed, playNote, playSequence, playStyle, playedPositions])
 
   const handleFretboardPointerLeave = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {

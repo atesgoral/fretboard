@@ -3,10 +3,11 @@ import Fretboard from './components/Fretboard'
 import ChordBrowser, { type ScaleRootSelection } from './components/ChordBrowser'
 import DiatonicChordList from './components/DiatonicChordList'
 import PinnedChordList from './components/PinnedChordList'
+import type { ChordPlayback, PinnedChord } from './components/chordPlayback'
 import { buildScaleRoles, type ScaleId } from './components/scales'
 import AppHeader from './components/AppHeader'
 import type { ChordSelection } from './components/chordSearch'
-import { buildCommonVoicing, getChordPitchClasses } from './components/voicing'
+import { buildChordVoicing, getChordPitchClasses } from './components/voicing'
 import type { PlayedPosition } from './components/voicing'
 import { useThemePreference } from './hooks/useThemePreference'
 import { usePersistAppPreferences } from './hooks/usePersistAppPreferences'
@@ -26,6 +27,7 @@ export default function App() {
   const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>(null)
   const [scaleId, setScaleId] = useState<ScaleId>('major')
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
+  const [playStyle, setPlayStyle] = useState<PinnedChord['style']>('finger')
   const [playSequence, setPlaySequence] = useState(0)
   const [highlightedPitchClasses, setHighlightedPitchClasses] = useState<number[]>([])
 
@@ -36,10 +38,25 @@ export default function App() {
     [scaleRoot, scaleId],
   )
 
-  const handlePlayChord = useCallback((chord: ChordSelection) => {
-    setPlayedPositions(buildCommonVoicing(chord))
+  const playChord = useCallback((chord: ChordSelection, playback?: ChordPlayback) => {
+    setPlayedPositions(buildChordVoicing(chord, playback))
+    setPlayStyle(playback?.style ?? 'finger')
     setPlaySequence((current) => current + 1)
   }, [])
+
+  const handlePlayChord = useCallback(
+    (chord: ChordSelection) => {
+      playChord(chord)
+    },
+    [playChord],
+  )
+
+  const handlePlayPinnedChord = useCallback(
+    (chord: PinnedChord) => {
+      playChord(chord, chord)
+    },
+    [playChord],
+  )
 
   const handleHoverChord = useCallback((chord: ChordSelection | null) => {
     setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
@@ -54,6 +71,13 @@ export default function App() {
   const handleRemovePinnedChord = useCallback((index: number) => {
     dispatch({ type: 'removeSwatch', index })
   }, [])
+
+  const handlePinnedPlaybackChange = useCallback(
+    (index: number, playback: Partial<ChordPlayback>) => {
+      dispatch({ type: 'updateSwatchPlayback', index, playback })
+    },
+    [],
+  )
 
   const canUndo = appState.timeline.currentIndex > 0
   const canRedo = appState.timeline.currentIndex < appState.timeline.snapshots.length - 1
@@ -99,9 +123,10 @@ export default function App() {
 
         <PinnedChordList
           pinnedChords={pinnedChords}
-          onPlayChord={handlePlayChord}
+          onPlayChord={handlePlayPinnedChord}
           onHoverChord={handleHoverChord}
           onRemoveChord={handleRemovePinnedChord}
+          onPlaybackChange={handlePinnedPlaybackChange}
         />
 
         <Fretboard
@@ -114,6 +139,7 @@ export default function App() {
           highlightedPitchClasses={highlightedPitchClasses}
           playedPositions={playedPositions}
           playSequence={playSequence}
+          playStyle={playStyle}
         />
       </section>
     </main>

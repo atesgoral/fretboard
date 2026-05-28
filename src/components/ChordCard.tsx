@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Pin, Play, X } from 'lucide-react'
+import { Pin, Play, Settings, X } from 'lucide-react'
 import type { ChordSelection } from './chordSearch'
 import { getChordQueryForSelection } from './chordSearch'
 
@@ -13,6 +13,8 @@ export type ChordCardProps = {
   onHoverEnd?: () => void
   onPin?: () => void
   onRemove?: () => void
+  onCustomize?: () => void
+  showControls?: boolean
 }
 
 function getChordLabel(chord: ChordSelection) {
@@ -39,21 +41,30 @@ const cardSurfaceClass = (active: boolean) =>
 const cornerButtonClass =
   'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100'
 
+function cornerVisibilityClass(showControls: boolean) {
+  return showControls ? 'inline-flex' : 'hidden group-hover:inline-flex'
+}
+
 function ChordCornerButton({
   title,
   positionClassName,
+  showControls,
   onMouseDown,
   onClick,
   children,
 }: {
   title: string
   positionClassName: string
+  showControls: boolean
   onMouseDown?: () => void
   onClick?: () => void
   children: ReactNode
 }) {
   return (
-    <span title={title} className={`absolute hidden group-hover:inline-flex ${positionClassName}`}>
+    <span
+      title={title}
+      className={`absolute ${cornerVisibilityClass(showControls)} ${positionClassName}`}
+    >
       <button
         type="button"
         title={title}
@@ -129,6 +140,8 @@ export default function ChordCard({
   onHoverEnd,
   onPin,
   onRemove,
+  onCustomize,
+  showControls = false,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
   const qualityLine = getChordQualityLine(chord)
@@ -166,10 +179,21 @@ export default function ChordCard({
           />
         </div>
       )}
+      {onCustomize ? (
+        <ChordCornerButton
+          title={`Customize chord ${label}`}
+          positionClassName="bottom-1 left-1"
+          showControls={showControls}
+          onClick={onCustomize}
+        >
+          <Settings className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        </ChordCornerButton>
+      ) : null}
       {onPin ? (
         <ChordCornerButton
           title={`Pin chord ${label}`}
           positionClassName="right-1 top-1"
+          showControls={showControls}
           onClick={onPin}
         >
           <Pin className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
@@ -179,6 +203,7 @@ export default function ChordCard({
         <ChordCornerButton
           title={`Remove pinned chord ${label}`}
           positionClassName="right-1 top-1"
+          showControls={showControls}
           onClick={onRemove}
         >
           <X className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
@@ -187,6 +212,7 @@ export default function ChordCard({
       <ChordCornerButton
         title={playTitle}
         positionClassName="bottom-1 right-1"
+        showControls={showControls}
         onMouseDown={onPlay}
       >
         <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />

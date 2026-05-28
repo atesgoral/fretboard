@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import Fretboard from './components/Fretboard'
 
 const accentMarkedNotes = new Map<number, string>([
-  [0, 'R'],
+  [0, '1'],
   [2, '2'],
   [4, '3'],
   [5, '4'],
@@ -12,6 +12,14 @@ const accentMarkedNotes = new Map<number, string>([
 ])
 
 const accentHighlightedPitchClasses = [1, 3, 6, 8, 10]
+
+const accentHighlightedChordRoles = new Map<number, string>([
+  [1, 'R'],
+  [3, 'm3'],
+  [6, '5'],
+  [8, 'b7'],
+  [10, '9'],
+])
 
 const accentPlayedPositions = [
   { stringIndex: 0, fret: 3 },
@@ -42,6 +50,7 @@ function ThemePane({ dark }: { dark: boolean }) {
           frets={8}
           markedNotes={accentMarkedNotes}
           highlightedPitchClasses={accentHighlightedPitchClasses}
+          highlightedChordRoles={accentHighlightedChordRoles}
           playedPositions={accentPlayedPositions}
           playSequence={1}
         />

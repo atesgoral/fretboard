@@ -1,7 +1,10 @@
-import { CHORD_EXTENSIONS, CHORD_QUALITIES, NOTE_NAMES } from './chords'
+import { NOTE_NAMES } from './chords'
+import { getChordTones } from './chordTones'
+export { getChordPitchClasses } from './chordTones'
 import type { ChordPlayback, ChordInversion, ChordPlayStyle } from './chordPlayback'
 import { DEFAULT_CHORD_PLAYBACK } from './chordPlayback'
 import type { ChordSelection } from './chordSearch'
+import { lookupVoicingShape } from './voicingShapes'
 
 export type PlayedPosition = {
   stringIndex: number
@@ -29,38 +32,8 @@ const UPPER_VOICE_ROLE_PRIORITY = [
   'R',
 ] as const
 
-type ChordTone = {
-  pitchClass: number
-  role: string
-  interval: number
-}
-
 function isShellRole(role: string) {
   return role === 'R' || role === '3' || role === 'm3' || role === 'b7' || role === '7'
-}
-
-function getChordTones(chord: ChordSelection): ChordTone[] {
-  const rootIndex = NOTE_NAMES.indexOf(chord.root)
-  const quality = CHORD_QUALITIES.find((item) => item.id === chord.qualityId) ?? CHORD_QUALITIES[0]
-  const tones: ChordTone[] = quality.intervals.map((interval, index) => ({
-    pitchClass: (rootIndex + interval) % 12,
-    role: quality.roles[index],
-    interval,
-  }))
-
-  chord.extensionIds.forEach((id) => {
-    const extension = CHORD_EXTENSIONS.find((item) => item.id === id)
-    if (!extension) {
-      return
-    }
-    tones.push({
-      pitchClass: (rootIndex + extension.interval) % 12,
-      role: extension.role,
-      interval: extension.interval,
-    })
-  })
-
-  return tones.sort((a, b) => a.interval - b.interval)
 }
 
 function getBassPitchClass(tones: ChordTone[], inversion: ChordInversion) {
@@ -206,14 +179,15 @@ function buildVoicingForStyle(
   return style === 'shell' ? positions.slice(0, 4) : positions
 }
 
-export function getChordPitchClasses(chord: ChordSelection) {
-  return Array.from(new Set(getChordTones(chord).map((tone) => tone.pitchClass)))
-}
-
 export function buildChordVoicing(
   chord: ChordSelection,
   playback: ChordPlayback = DEFAULT_CHORD_PLAYBACK,
 ): PlayedPosition[] {
+  const curated = lookupVoicingShape(chord, playback)
+  if (curated) {
+    return curated
+  }
+
   const tones = getChordTones(chord)
   const pitchClasses = tones.map((tone) => tone.pitchClass)
   const allowedPitchClasses =

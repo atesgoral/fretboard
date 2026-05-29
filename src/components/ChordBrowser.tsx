@@ -117,33 +117,32 @@ export default function ChordBrowser({
         title={scaleToggleTitle}
         onToggleScaleNotes={onToggleScaleNotes}
       />
-      {collapsed ? (
-        <h2 className="pr-16 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300">
-          Scale
-        </h2>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-end gap-3 pr-16">
-            <SelectField
-              label="Key"
-              value={scaleRoot ?? KEY_NONE_VALUE}
-              options={KEY_OPTIONS}
-              onChange={(value) =>
-                onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
-              }
-            />
-            <SelectField
-              label="Scale"
-              value={scaleId}
-              options={SCALE_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label,
-              }))}
-              onChange={(value) => onScaleIdChange(value as ScaleId)}
-              disabled={scaleRoot === null}
-            />
-          </div>
-        </>
+      <h2
+        className={`${collapsed ? '' : 'mb-3'} pr-16 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300`}
+      >
+        Scale
+      </h2>
+      {collapsed ? null : (
+        <div className="flex flex-wrap items-end gap-3 pr-16">
+          <SelectField
+            label="Key"
+            value={scaleRoot ?? KEY_NONE_VALUE}
+            options={KEY_OPTIONS}
+            onChange={(value) =>
+              onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
+            }
+          />
+          <SelectField
+            label="Scale"
+            value={scaleId}
+            options={SCALE_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            onChange={(value) => onScaleIdChange(value as ScaleId)}
+            disabled={scaleRoot === null}
+          />
+        </div>
       )}
     </section>
   )

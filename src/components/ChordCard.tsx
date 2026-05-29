@@ -103,7 +103,7 @@ function ChordCardContent({
           {degreeLabel}
         </span>
       ) : null}
-      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-semibold leading-none tracking-tight">
+      <span className="absolute left-1/2 top-[calc(50%-0.125rem)] -translate-x-1/2 -translate-y-1/2 text-3xl font-semibold leading-none tracking-tight">
         {chord.root}
       </span>
       <span

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
 import {
   DEFAULT_CHORD_PLAYBACK_SETTINGS,
@@ -34,6 +34,7 @@ export default function App() {
   const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted, scaleRoot, scaleId } =
     appState.preferences
   const [showScaleNotes, setShowScaleNotes] = useState(true)
+  const [showChordNotes, setShowChordNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
   const [activeChordPlaybackMode, setActiveChordPlaybackMode] = useState<ChordPlaybackMode>('pluck')
@@ -47,6 +48,18 @@ export default function App() {
   )
 
   usePersistAppPreferences(appState)
+
+  const clearChordHighlights = useCallback(() => {
+    setHighlightedPitchClasses([])
+    setHighlightedPositions([])
+    setHighlightedChordRoles(new Map())
+  }, [])
+
+  useEffect(() => {
+    if (!showChordNotes) {
+      clearChordHighlights()
+    }
+  }, [clearChordHighlights, showChordNotes])
 
   const markedNotes = useMemo(
     () =>
@@ -74,11 +87,15 @@ export default function App() {
 
   const handlePreviewChordVoicing = useCallback(
     (chord: ChordSelection, playbackSettings: ChordPlaybackSettings = auditionSettings) => {
+      if (!showChordNotes) {
+        clearChordHighlights()
+        return
+      }
       setHighlightedPitchClasses([])
       setHighlightedPositions(getVoicingForPlaybackSettings(chord, playbackSettings))
       setHighlightedChordRoles(buildChordRoles(chord.root, chord.qualityId, chord.extensionIds))
     },
-    [auditionSettings],
+    [auditionSettings, clearChordHighlights, showChordNotes],
   )
 
   const handlePlayPinnedChord = useCallback(
@@ -105,13 +122,20 @@ export default function App() {
     [auditionSettings, handlePreviewChordVoicing],
   )
 
-  const handleHoverChord = useCallback((chord: ChordSelection | null) => {
-    setHighlightedPositions([])
-    setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
-    setHighlightedChordRoles(
-      chord ? buildChordRoles(chord.root, chord.qualityId, chord.extensionIds) : new Map(),
-    )
-  }, [])
+  const handleHoverChord = useCallback(
+    (chord: ChordSelection | null) => {
+      if (!showChordNotes) {
+        clearChordHighlights()
+        return
+      }
+      setHighlightedPositions([])
+      setHighlightedPitchClasses(chord ? getChordPitchClasses(chord) : [])
+      setHighlightedChordRoles(
+        chord ? buildChordRoles(chord.root, chord.qualityId, chord.extensionIds) : new Map(),
+      )
+    },
+    [clearChordHighlights, showChordNotes],
+  )
 
   const { swatches: pinnedChords } = getCurrentTimelineState(appState)
 
@@ -177,6 +201,8 @@ export default function App() {
             onPinChord={handlePinChord}
             auditionSettings={auditionSettings}
             onAuditionSettingsChange={setAuditionSettings}
+            showChordNotes={showChordNotes}
+            onToggleChordNotes={() => setShowChordNotes((current) => !current)}
           />
         ) : null}
 
@@ -189,6 +215,8 @@ export default function App() {
           onPlaybackSettingsChange={handlePinnedChordPlaybackSettingsChange}
           auditionSettings={auditionSettings}
           onAuditionSettingsChange={setAuditionSettings}
+          showChordNotes={showChordNotes}
+          onToggleChordNotes={() => setShowChordNotes((current) => !current)}
         />
 
         <Fretboard

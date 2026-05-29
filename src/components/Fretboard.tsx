@@ -331,6 +331,7 @@ type NoteGridProps = {
   onPointerLeave: () => void
   onPressStart: (pointerId: number, stringIndex: number, fret: number) => void
   onPressEnd: (pointerId: number) => void
+  onTapPlay: (positions: ActivePosition[]) => void
   markedNotes: Map<number, string>
   highlightedPitchClasses: Set<number>
   highlightedPositionKeys: Set<string>
@@ -389,6 +390,10 @@ function getFretCellFromPointer(
     return null
   }
 
+  if (typeof document.elementFromPoint !== 'function') {
+    return null
+  }
+
   const target = document.elementFromPoint(event.clientX, event.clientY)
   if (!target || !grid.contains(target)) {
     return null
@@ -436,6 +441,7 @@ function NoteGrid({
   onPointerLeave,
   onPressStart,
   onPressEnd,
+  onTapPlay,
   markedNotes,
   highlightedPitchClasses,
   highlightedPositionKeys,
@@ -570,6 +576,24 @@ function NoteGrid({
       return false
     }
 
+    if (gesture.mode === 'pending' && playPendingTap && !hasScrollingTouchGesture(pointerId)) {
+      const pendingTapEntries = Array.from(touchGesturesRef.current).filter(
+        (entry): entry is [number, TouchGestureState] => entry[1].mode === 'pending',
+      )
+      const positions = pendingTapEntries.map(([, pendingGesture]) =>
+        getCurrentTouchPosition(pendingGesture),
+      )
+
+      pendingTapEntries.forEach(([pendingPointerId, pendingGesture]) => {
+        clearTouchGestureTimeout(pendingGesture)
+        touchGesturesRef.current.delete(pendingPointerId)
+        releasePointerCapture(pendingPointerId)
+      })
+
+      onTapPlay(positions)
+      return true
+    }
+
     clearTouchGestureTimeout(gesture)
     touchGesturesRef.current.delete(pointerId)
     releasePointerCapture(pointerId)
@@ -577,12 +601,6 @@ function NoteGrid({
     if (gesture.mode === 'playing') {
       onPressEnd(pointerId)
       return true
-    }
-
-    if (gesture.mode === 'pending' && playPendingTap && !hasScrollingTouchGesture(pointerId)) {
-      const position = getCurrentTouchPosition(gesture)
-      onPressStart(pointerId, position.stringIndex, position.fret)
-      onPressEnd(pointerId)
     }
 
     return true
@@ -1124,6 +1142,17 @@ export default function Fretboard({
     [playNote, syncHeldPositions],
   )
 
+  const handleTapPlay = useCallback(
+    (positions: ActivePosition[]) => {
+      setHoveredPosition(null)
+      markRecentlyPlayed(positions)
+      positions.forEach((position) => {
+        void playNote(position.stringIndex, position.fret, 'pick')
+      })
+    },
+    [markRecentlyPlayed, playNote],
+  )
+
   const handlePressEnter = useCallback(
     (pointerId: number, stringIndex: number, fret: number) => {
       const pointerState = activePointersRef.current.get(pointerId)
@@ -1288,6 +1317,7 @@ export default function Fretboard({
             onPointerLeave={clearHoverPosition}
             onPressStart={handlePressStart}
             onPressEnd={handlePressEnd}
+            onTapPlay={handleTapPlay}
             markedNotes={markedNotes}
             highlightedPitchClasses={highlightedPitchClassSet}
             highlightedPositionKeys={highlightedPositionKeySet}

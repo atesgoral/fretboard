@@ -15,3 +15,16 @@
 - For fast audio response, playback should always be on mouse down, not click.
 - Prioritize strict music-theory accuracy in labels and explanations; avoid simplified wording that could be technically wrong.
 - When the user says a PR has been merged, switch back to `main` and pull the latest `origin/main`.
+
+## Cursor Cloud specific instructions
+
+This is a client-side-only React/Vite SPA (no backend, no database, no Docker).
+
+- **Node version**: 24 (matches CI). Installed via nvm; the `/exec-daemon/node` binary on cloud VMs is v22, so the update script prepends nvm's Node 24 to PATH.
+- **Package manager**: npm (lockfile: `package-lock.json`).
+- **Dev server**: `npm run dev` starts Vite on port 5173.
+- **Tests**: `npm run test` (Vitest, jsdom environment).
+- **Lint/checks**: `npm run typecheck`, `npm run format:check`, `npm run check:no-inline-svg`.
+- **Build**: `npm run build` outputs to `dist/`.
+- **Git hooks**: `simple-git-hooks` runs `lint-staged` (Prettier) on pre-commit. Hooks are installed automatically by the `prepare` script during `npm install`.
+- **Audio**: The `smplr` library fetches soundfont assets from a CDN at runtime; audio playback requires network access but the rest of the app functions without it.

@@ -48,7 +48,7 @@ export default function AppHeader({
 
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+      <h1 className="font-varela-round text-sm font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
         Fretboard
       </h1>
       <div className="flex items-center gap-2">

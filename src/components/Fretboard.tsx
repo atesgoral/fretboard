@@ -742,7 +742,7 @@ function NoteGrid({
                   <span
                     className={`relative block h-7 w-7 rounded-full border shadow-sm ${circleToneClass}`}
                   >
-                    <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold leading-none">
+                    <span className="font-varela-round absolute inset-0 flex translate-y-px items-center justify-center text-xs font-semibold leading-none">
                       {noteName}
                     </span>
                   </span>

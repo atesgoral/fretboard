@@ -9,6 +9,17 @@ export type PlayedPosition = {
 
 type StoredVoicing = {
   frets: Array<number | null>
+  category?: string
+  mustKnow?: boolean | string
+  lowFret?: number
+  highFret?: number
+}
+
+type OolimoTemplate = StoredVoicing & {
+  type: string
+  bassInterval: string | null
+  sourceRoot: string
+  transposable: boolean
 }
 
 type StoredChord = {
@@ -19,11 +30,46 @@ type StoredChord = {
 }
 
 type ChordVoicingDatabase = {
-  chords: StoredChord[]
+  oolimo: {
+    templates: OolimoTemplate[]
+  }
+  supplementalChords: StoredChord[]
 }
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 const MAX_FRET_SEARCH = 6
+const NOTE_PITCH_CLASS: Record<string, number> = {
+  C: 0,
+  'C#': 1,
+  Db: 1,
+  D: 2,
+  'D#': 3,
+  Eb: 3,
+  E: 4,
+  F: 5,
+  'F#': 6,
+  Gb: 6,
+  G: 7,
+  'G#': 8,
+  Ab: 8,
+  A: 9,
+  'A#': 10,
+  Bb: 10,
+  B: 11,
+}
+const ENHARMONIC_ROOT: Record<string, string> = {
+  'C#': 'Db',
+  Db: 'C#',
+  'D#': 'Eb',
+  Eb: 'D#',
+  'F#': 'Gb',
+  Gb: 'F#',
+  'G#': 'Ab',
+  Ab: 'G#',
+  'A#': 'Bb',
+  Bb: 'A#',
+}
+const CATEGORY_ORDER: Record<string, number> = { open: 0, moveable: 1, capo: 2 }
 const chordVoicings = chordVoicingsJson as ChordVoicingDatabase
 const DATABASE_CHORD_TYPE_BY_SELECTION = new Map([
   ['maj:', 'major'],
@@ -38,6 +84,7 @@ const DATABASE_CHORD_TYPE_BY_SELECTION = new Map([
   ['min:', 'm'],
   ['min:b7', 'm7'],
   ['min:b7,9', 'm7(9)'],
+  ['dim:', 'dim'],
   ['dim:b7', 'm7(b5)'],
   ['aug:', 'aug'],
   ['sus2:', 'sus2'],
@@ -45,7 +92,7 @@ const DATABASE_CHORD_TYPE_BY_SELECTION = new Map([
   ['sus4:b7', '7sus4'],
 ])
 const voicingByRootAndType = new Map(
-  chordVoicings.chords.map((chord) => [
+  chordVoicings.supplementalChords.map((chord) => [
     getVoicingKey(chord.root, chord.type, chord.bassInterval),
     chord.voicings,
   ]),
@@ -59,11 +106,77 @@ function getSelectionSignature(chord: ChordSelection) {
   return `${chord.qualityId}:${chord.extensionIds.join(',')}`
 }
 
-function getDatabaseVoicing(chord: ChordSelection): PlayedPosition[] | null {
+function transposeFrets(frets: Array<number | null>, sourceRoot: string, targetRoot: string) {
+  let transposeBy = NOTE_PITCH_CLASS[targetRoot] - NOTE_PITCH_CLASS[sourceRoot] - 12
+
+  frets.forEach((fret) => {
+    if (fret === null) return
+    while (fret + transposeBy < 0) {
+      transposeBy += 12
+    }
+  })
+
+  const transposed = frets.map((fret) => (fret === null ? null : fret + transposeBy))
+  return transposed.some((fret) => fret !== null && fret > 15) ? null : transposed
+}
+
+function getTemplateCategory(root: string, template: OolimoTemplate) {
+  if (template.transposable) return 'moveable'
+  if (template.sourceRoot === root || ENHARMONIC_ROOT[template.sourceRoot] === root) return 'open'
+  return 'capo'
+}
+
+function getTemplateVoicing(root: string, template: OolimoTemplate): StoredVoicing | null {
+  const frets =
+    root === template.sourceRoot
+      ? template.frets
+      : transposeFrets(template.frets, template.sourceRoot, root)
+  if (!frets) return null
+
+  const playedFrets = frets.filter((fret) => fret !== null)
+  if (playedFrets.length === 0) return null
+
+  return {
+    frets,
+    category: getTemplateCategory(root, template),
+    mustKnow: template.mustKnow === true || template.mustKnow === root,
+    lowFret: Math.min(...playedFrets),
+    highFret: Math.max(...playedFrets),
+  }
+}
+
+function compareVoicings(left: StoredVoicing, right: StoredVoicing) {
+  const mustKnow = Number(Boolean(right.mustKnow)) - Number(Boolean(left.mustKnow))
+  if (mustKnow !== 0) return mustKnow
+
+  const category =
+    (CATEGORY_ORDER[left.category ?? 'moveable'] ?? 99) -
+    (CATEGORY_ORDER[right.category ?? 'moveable'] ?? 99)
+  if (category !== 0) return category
+
+  const lowFret = (left.lowFret ?? 99) - (right.lowFret ?? 99)
+  if (lowFret !== 0) return lowFret
+
+  return (left.highFret ?? 99) - (right.highFret ?? 99)
+}
+
+function getOolimoVoicing(root: string, type: string): StoredVoicing | null {
+  const voicings = chordVoicings.oolimo.templates
+    .filter((template) => template.type === type && template.bassInterval === null)
+    .map((template) => getTemplateVoicing(root, template))
+    .filter((voicing): voicing is StoredVoicing => voicing !== null)
+    .sort(compareVoicings)
+
+  return voicings[0] ?? null
+}
+
+export function getImportedVoicing(chord: ChordSelection): PlayedPosition[] | null {
   const databaseType = DATABASE_CHORD_TYPE_BY_SELECTION.get(getSelectionSignature(chord))
   if (!databaseType) return null
 
-  const voicing = voicingByRootAndType.get(getVoicingKey(chord.root, databaseType, null))?.[0]
+  const voicing =
+    voicingByRootAndType.get(getVoicingKey(chord.root, databaseType, null))?.[0] ??
+    getOolimoVoicing(chord.root, databaseType)
   if (!voicing) return null
 
   const positions = voicing.frets
@@ -89,7 +202,7 @@ export function getChordPitchClasses(chord: ChordSelection) {
 }
 
 export function buildCommonVoicing(chord: ChordSelection): PlayedPosition[] {
-  const databaseVoicing = getDatabaseVoicing(chord)
+  const databaseVoicing = getImportedVoicing(chord)
   if (databaseVoicing) return databaseVoicing
 
   const pitchClasses = getChordPitchClasses(chord)

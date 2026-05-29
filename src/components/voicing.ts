@@ -16,6 +16,7 @@ export type ChordVoicingOptions = {
 
 type StoredVoicing = {
   frets: Array<number | null>
+  intervals?: Array<string | null>
   category?: string
   mustKnow?: boolean | string
   lowFret?: number
@@ -45,6 +46,7 @@ type ChordVoicingDatabase = {
 
 const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
 const MAX_FRET_SEARCH = 6
+const MAX_INVERSION_BASS_FRET = 7
 const NOTE_PITCH_CLASS: Record<string, number> = {
   C: 0,
   'C#': 1,
@@ -128,6 +130,17 @@ function getBassIntervalForInversion(chord: ChordSelection, inversion: ChordInve
   return bassIntervals?.[inversion === 'first' ? 0 : 1] ?? null
 }
 
+function getBassPitchClassForInversion(
+  chord: ChordSelection,
+  inversion: ChordInversionPreference | undefined,
+) {
+  if (!inversion || inversion === 'root') return null
+  const rootIndex = NOTE_NAMES.indexOf(chord.root)
+  const quality = CHORD_QUALITIES.find((item) => item.id === chord.qualityId)
+  const interval = quality?.intervals[inversion === 'first' ? 1 : 2]
+  return interval === undefined ? null : (rootIndex + interval) % 12
+}
+
 function applyPositionPreference(
   voicings: StoredVoicing[],
   positionPreference: ChordPositionPreference | undefined,
@@ -135,6 +148,20 @@ function applyPositionPreference(
   if (!positionPreference || positionPreference === 'default') return voicings
 
   const preferred = voicings.filter((voicing) => voicing.category === positionPreference)
+  return preferred.length > 0 ? preferred : voicings
+}
+
+function getLowestVoicingInterval(voicing: StoredVoicing) {
+  const lowestStringIndex = voicing.frets.findIndex((fret) => fret !== null)
+  return lowestStringIndex === -1 ? null : (voicing.intervals?.[lowestStringIndex] ?? null)
+}
+
+function applyBassIntervalPreference(
+  voicings: StoredVoicing[],
+  bassInterval: string | null,
+): StoredVoicing[] {
+  if (!bassInterval) return voicings
+  const preferred = voicings.filter((voicing) => getLowestVoicingInterval(voicing) === bassInterval)
   return preferred.length > 0 ? preferred : voicings
 }
 
@@ -217,7 +244,82 @@ function getStoredVoicing(
   if (supplemental?.[0]) {
     return applyPositionPreference(supplemental, positionPreference)[0]
   }
+  if (bassInterval) {
+    const rootPositionSupplemental = voicingByRootAndType.get(getVoicingKey(chord.root, type, null))
+    if (rootPositionSupplemental?.[0]) {
+      const preferredVoicings = applyBassIntervalPreference(rootPositionSupplemental, bassInterval)
+      const preferredVoicing = applyPositionPreference(preferredVoicings, positionPreference)[0]
+      if (getLowestVoicingInterval(preferredVoicing) === bassInterval) {
+        return preferredVoicing
+      }
+    }
+  }
   return getOolimoVoicing(chord.root, type, bassInterval, positionPreference)
+}
+
+function findFretForPitchClass(
+  openMidi: number,
+  pitchClass: number,
+  maxFret: number = MAX_FRET_SEARCH - 1,
+) {
+  return Array.from({ length: maxFret + 1 }, (_, fret) => fret).find(
+    (candidateFret) => (openMidi + candidateFret) % 12 === pitchClass,
+  )
+}
+
+function findFretForPitchClasses(openMidi: number, pitchClasses: number[]) {
+  return Array.from({ length: MAX_FRET_SEARCH }, (_, fret) => fret).find((candidateFret) =>
+    pitchClasses.includes((openMidi + candidateFret) % 12),
+  )
+}
+
+function buildRootFallbackVoicing(chord: ChordSelection): PlayedPosition[] {
+  const pitchClasses = getChordPitchClasses(chord)
+
+  const positions = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
+    const fret = findFretForPitchClasses(openMidi, pitchClasses)
+    return fret === undefined ? null : { stringIndex, fret }
+  }).filter((position): position is PlayedPosition => position !== null)
+
+  return positions.length >= 4 ? positions : positions.slice(0, 3)
+}
+
+function buildInversionFallbackVoicing(
+  chord: ChordSelection,
+  bassPitchClass: number,
+): PlayedPosition[] {
+  const pitchClasses = getChordPitchClasses(chord)
+
+  const bassCandidates = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
+    const fret = findFretForPitchClass(openMidi, bassPitchClass, MAX_INVERSION_BASS_FRET)
+    return fret === undefined ? null : { stringIndex, fret }
+  }).filter((position): position is PlayedPosition => position !== null)
+
+  for (const bassPosition of bassCandidates) {
+    const positions = [bassPosition]
+    for (
+      let stringIndex = bassPosition.stringIndex + 1;
+      stringIndex < OPEN_STRING_MIDI.length;
+      stringIndex += 1
+    ) {
+      const fret = findFretForPitchClasses(OPEN_STRING_MIDI[stringIndex], pitchClasses)
+      if (fret !== undefined) {
+        positions.push({ stringIndex, fret })
+      }
+    }
+
+    const playedPitchClasses = new Set(
+      positions.map(({ stringIndex, fret }) => (OPEN_STRING_MIDI[stringIndex] + fret) % 12),
+    )
+    if (
+      positions.length >= 3 &&
+      pitchClasses.every((pitchClass) => playedPitchClasses.has(pitchClass))
+    ) {
+      return positions
+    }
+  }
+
+  return buildRootFallbackVoicing(chord)
 }
 
 export function getImportedVoicing(
@@ -262,16 +364,17 @@ export function buildCommonVoicing(
   chord: ChordSelection,
   options: ChordVoicingOptions = {},
 ): PlayedPosition[] {
+  const bassPitchClass = getBassPitchClassForInversion(chord, options.inversionPreference)
   const databaseVoicing = getImportedVoicing(chord, options)
+  if (bassPitchClass !== null) {
+    const lowestPosition = databaseVoicing?.[0]
+    const lowestPitchClass =
+      lowestPosition && (OPEN_STRING_MIDI[lowestPosition.stringIndex] + lowestPosition.fret) % 12
+    if (lowestPitchClass !== bassPitchClass) {
+      return buildInversionFallbackVoicing(chord, bassPitchClass)
+    }
+  }
   if (databaseVoicing) return databaseVoicing
 
-  const pitchClasses = getChordPitchClasses(chord)
-  const positions = OPEN_STRING_MIDI.map((openMidi, stringIndex) => {
-    const fret = Array.from({ length: MAX_FRET_SEARCH }, (_, index) => index).find(
-      (candidateFret) => pitchClasses.includes((openMidi + candidateFret) % 12),
-    )
-    return fret === undefined ? null : { stringIndex, fret }
-  }).filter((position): position is PlayedPosition => position !== null)
-
-  return positions.length >= 4 ? positions : positions.slice(0, 3)
+  return buildRootFallbackVoicing(chord)
 }

@@ -63,6 +63,7 @@ type FretboardProps = {
   frets?: number
   markedNotes: Map<number, string>
   highlightedPitchClasses?: number[]
+  highlightedPositions?: ActivePosition[]
   highlightedChordRoles?: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
@@ -332,6 +333,7 @@ type NoteGridProps = {
   onPressEnd: (pointerId: number) => void
   markedNotes: Map<number, string>
   highlightedPitchClasses: Set<number>
+  highlightedPositionKeys: Set<string>
   highlightedChordRoles: Map<number, string>
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
@@ -436,6 +438,7 @@ function NoteGrid({
   onPressEnd,
   markedNotes,
   highlightedPitchClasses,
+  highlightedPositionKeys,
   highlightedChordRoles,
   activePositions,
   burstActivePositions,
@@ -687,10 +690,12 @@ function NoteGrid({
           const isDirectlyHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
-          const isHighlighted = isDirectlyHovered || highlightedPitchClasses.has(noteClass)
+          const positionKey = `${stringIndex}:${fret}`
+          const isPositionHighlighted = highlightedPositionKeys.has(positionKey)
+          const isChordToneHighlighted = highlightedPitchClasses.has(noteClass)
+          const isHighlighted = isDirectlyHovered || isChordToneHighlighted || isPositionHighlighted
           const role = markedNotes.get(noteClass)
           const chordRole = highlightedChordRoles.get(noteClass)
-          const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
           const showChordRoleLabel = Boolean(chordRole && isHighlighted && !isActive)
           const shouldShowCircle = Boolean(role) || isActive || isHighlighted
@@ -700,7 +705,7 @@ function NoteGrid({
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
           const circleToneClass = getCircleToneClass({
             isDirectlyHovered,
-            isChordHighlighted: highlightedPitchClasses.has(noteClass),
+            isChordHighlighted: isChordToneHighlighted || isPositionHighlighted,
             isChordRoot: chordRole === 'R',
             isActive,
             scaleRole: role,
@@ -816,6 +821,7 @@ export default function Fretboard({
   frets = DEFAULT_FRETS,
   markedNotes,
   highlightedPitchClasses = [],
+  highlightedPositions = [],
   highlightedChordRoles = new Map(),
   playedPositions,
   playSequence,
@@ -825,6 +831,11 @@ export default function Fretboard({
   const highlightedPitchClassSet = useMemo(
     () => new Set(highlightedPitchClasses),
     [highlightedPitchClasses],
+  )
+  const highlightedPositionKeySet = useMemo(
+    () =>
+      new Set(highlightedPositions.map((position) => `${position.stringIndex}:${position.fret}`)),
+    [highlightedPositions],
   )
   const stringYPositions = useMemo(() => getStringYPositions(), [])
   const stringThicknesses = useMemo(
@@ -876,11 +887,14 @@ export default function Fretboard({
     return new Set(
       stringOrder
         .map((stringIndex, visualIndex) =>
-          highlightedPitchClassSet.has(OPEN_STRING_MIDI[stringIndex] % 12) ? visualIndex : -1,
+          highlightedPitchClassSet.has(OPEN_STRING_MIDI[stringIndex] % 12) ||
+          highlightedPositionKeySet.has(`${stringIndex}:0`)
+            ? visualIndex
+            : -1,
         )
         .filter((visualIndex) => visualIndex >= 0),
     )
-  }, [highlightedPitchClassSet, stringOrder])
+  }, [highlightedPitchClassSet, highlightedPositionKeySet, stringOrder])
   const activeStringVisualIndexes = useMemo(() => {
     const activeStringIndexes = new Set(
       recentlyPlayedPositions
@@ -1276,6 +1290,7 @@ export default function Fretboard({
             onPressEnd={handlePressEnd}
             markedNotes={markedNotes}
             highlightedPitchClasses={highlightedPitchClassSet}
+            highlightedPositionKeys={highlightedPositionKeySet}
             highlightedChordRoles={highlightedChordRoles}
             activePositions={activePositions}
             burstActivePositions={burstActivePositions}

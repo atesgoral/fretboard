@@ -2,13 +2,16 @@ import type { NoteName } from '../components/chords'
 import {
   DEFAULT_CHORD_PLAYBACK_SETTINGS,
   type ChordPlaybackSettings,
+  type ChordPlaybackSettingsOverride,
 } from '../components/chordPlayback'
 import type { ScaleId } from '../components/scales'
 
 export const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
 export type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
-export type PinnedChord = ChordSelection & { playbackSettings: ChordPlaybackSettings }
+export type PinnedChord = ChordSelection & {
+  playbackSettings: ChordPlaybackSettings | ChordPlaybackSettingsOverride
+}
 
 export type TimelineState = {
   root: NoteName
@@ -62,7 +65,9 @@ function cloneChordSelection(chord: ChordSelection): ChordSelection {
   return { ...chord, extensionIds: [...chord.extensionIds] }
 }
 
-function clonePlaybackSettings(settings: ChordPlaybackSettings): ChordPlaybackSettings {
+function clonePlaybackSettings<T extends ChordPlaybackSettings | ChordPlaybackSettingsOverride>(
+  settings: T,
+): T {
   return { ...settings }
 }
 
@@ -170,6 +175,11 @@ export type AppAction =
   | { type: 'addSwatch' }
   | { type: 'addSwatchChord'; chord: ChordSelection; playbackSettings: ChordPlaybackSettings }
   | { type: 'pinChord'; chord: ChordSelection; playbackSettings: ChordPlaybackSettings }
+  | {
+      type: 'setPinnedChordPlaybackSettings'
+      index: number
+      playbackSettings: ChordPlaybackSettings | ChordPlaybackSettingsOverride
+    }
   | { type: 'selectCurrentChord' }
   | { type: 'selectSwatch'; index: number }
   | { type: 'removeSwatch'; index: number }
@@ -284,6 +294,16 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     next = {
       ...current,
       swatches: [...current.swatches, chord],
+    }
+  } else if (action.type === 'setPinnedChordPlaybackSettings') {
+    if (!current.swatches[action.index]) return state
+    next = {
+      ...current,
+      swatches: current.swatches.map((swatch, index) =>
+        index === action.index
+          ? { ...swatch, playbackSettings: clonePlaybackSettings(action.playbackSettings) }
+          : swatch,
+      ),
     }
   } else if (action.type === 'selectCurrentChord') {
     return {

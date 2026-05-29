@@ -96,6 +96,32 @@ describe('appReducer timeline history', () => {
     })
   })
 
+  it('updates pinned chord playback settings', () => {
+    let state = createInitialAppState({})
+    const chord = { root: 'C' as const, qualityId: 'maj', extensionIds: [] as string[] }
+    const playbackSettings = {
+      positionPreference: 'inherit' as const,
+      inversionPreference: 'first' as const,
+      playbackMode: 'strum' as const,
+    }
+
+    state = appReducer(state, {
+      type: 'pinChord',
+      chord,
+      playbackSettings: DEFAULT_CHORD_PLAYBACK_SETTINGS,
+    })
+    state = appReducer(state, {
+      type: 'setPinnedChordPlaybackSettings',
+      index: 0,
+      playbackSettings,
+    })
+
+    expect(getCurrentTimelineState(state).swatches[0]).toEqual({
+      ...chord,
+      playbackSettings,
+    })
+  })
+
   it('removes pinned chords with undo support', () => {
     let state = createInitialAppState({})
     const chord = { root: 'D' as const, qualityId: 'min', extensionIds: [] as string[] }

@@ -4,6 +4,13 @@ import { buildDiatonicTriads } from './diatonicChords'
 import { SCALE_OPTIONS } from './scales'
 import { buildCommonVoicing, getImportedVoicing } from './voicing'
 
+const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
+
+function getLowestPitchClass(positions: Array<{ stringIndex: number; fret: number }>) {
+  const lowest = positions[0]
+  return lowest ? (OPEN_STRING_MIDI[lowest.stringIndex] + lowest.fret) % 12 : null
+}
+
 describe('buildCommonVoicing', () => {
   it('uses imported chord shapes before falling back to pitch-class search', () => {
     expect(buildCommonVoicing({ root: 'C', qualityId: 'maj', extensionIds: [] })).toEqual([
@@ -55,6 +62,18 @@ describe('buildCommonVoicing', () => {
       { stringIndex: 4, fret: 1 },
       { stringIndex: 5, fret: 2 },
     ])
+  })
+
+  it('builds requested inversions when imported diminished shapes only provide root position', () => {
+    const chord = { root: 'E' as const, qualityId: 'dim', extensionIds: [] }
+
+    const rootPosition = buildCommonVoicing(chord, { inversionPreference: 'root' })
+    const firstInversion = buildCommonVoicing(chord, { inversionPreference: 'first' })
+    const secondInversion = buildCommonVoicing(chord, { inversionPreference: 'second' })
+
+    expect(getLowestPitchClass(rootPosition)).toBe(4)
+    expect(getLowestPitchClass(firstInversion)).toBe(7)
+    expect(getLowestPitchClass(secondInversion)).toBe(10)
   })
 
   it('has imported voicing coverage for every listed diatonic triad', () => {

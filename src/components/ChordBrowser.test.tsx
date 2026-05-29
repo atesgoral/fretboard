@@ -73,4 +73,25 @@ describe('ChordBrowser scale selector', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide scale notes' }))
     expect(onToggleScaleNotes).toHaveBeenCalledTimes(1)
   })
+
+  it('keeps the scale note toggle available when collapsed', () => {
+    const onToggleScaleNotes = vi.fn()
+
+    render(
+      <ChordBrowser
+        scaleRoot="C"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={vi.fn()}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={onToggleScaleNotes}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse scale panel' }))
+    expect(screen.queryByLabelText('Key')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide scale notes' }))
+    expect(onToggleScaleNotes).toHaveBeenCalledTimes(1)
+  })
 })

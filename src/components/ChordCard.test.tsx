@@ -62,6 +62,26 @@ describe('ChordCard', () => {
     expect(onPlayHoverEnd).toHaveBeenCalledTimes(1)
   })
 
+  it('clears card hover when leaving from the play button', () => {
+    const onPlay = vi.fn()
+    const onHoverEnd = vi.fn()
+    const onPlayHoverEnd = vi.fn()
+
+    render(
+      <ChordCard
+        chord={{ root: 'C', qualityId: 'maj', extensionIds: [] }}
+        onPlay={onPlay}
+        onHoverEnd={onHoverEnd}
+        onPlayHoverEnd={onPlayHoverEnd}
+      />,
+    )
+
+    fireEvent.pointerLeave(screen.getByRole('button', { name: 'Play chord Cmaj' }))
+
+    expect(onPlayHoverEnd).toHaveBeenCalledTimes(1)
+    expect(onHoverEnd).toHaveBeenCalledTimes(1)
+  })
+
   it('plays immediately from the hidden play-button area on touch', () => {
     const onPlay = vi.fn()
 

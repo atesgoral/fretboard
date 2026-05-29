@@ -88,6 +88,7 @@ export default function PinnedChordList({
               chord={chord}
               onPlay={() => onPlayChord(chord)}
               onHoverStart={() => onHoverChord(chord)}
+              onHoverEnd={() => onHoverChord(null)}
               onPlayHoverStart={() => onPreviewChordVoicing(chord)}
               onPlayHoverEnd={() => onHoverChord(chord)}
               onRemove={() => onRemoveChord(index)}

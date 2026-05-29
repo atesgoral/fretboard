@@ -144,16 +144,12 @@ export default function App() {
           canRedo={canRedo}
           muted={muted}
           preference={preference}
-          linear={linear}
-          lowEAtBottom={lowEAtBottom}
           naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           onUndo={() => dispatch({ type: 'undo' })}
           onRedo={() => dispatch({ type: 'redo' })}
           onToggleMuted={() => dispatch({ type: 'toggleMuted' })}
           onCycleTheme={cyclePreference}
-          onToggleLinear={() => dispatch({ type: 'toggleLinear' })}
-          onToggleLowEPosition={() => dispatch({ type: 'toggleLowEAtBottom' })}
           onToggleNaturalDecay={() => dispatch({ type: 'toggleNaturalDecay' })}
           onToggleReverb={() => dispatch({ type: 'toggleReverb' })}
         />
@@ -194,6 +190,8 @@ export default function App() {
         <Fretboard
           linear={linear}
           lowEAtBottom={lowEAtBottom}
+          onToggleLinear={() => dispatch({ type: 'toggleLinear' })}
+          onToggleLowEPosition={() => dispatch({ type: 'toggleLowEAtBottom' })}
           naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           muted={muted}

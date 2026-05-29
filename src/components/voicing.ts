@@ -7,6 +7,13 @@ export type PlayedPosition = {
   fret: number
 }
 
+export type ChordPositionPreference = 'default' | 'open' | 'moveable'
+export type ChordInversionPreference = 'root' | 'first' | 'second'
+export type ChordVoicingOptions = {
+  positionPreference?: ChordPositionPreference
+  inversionPreference?: ChordInversionPreference
+}
+
 type StoredVoicing = {
   frets: Array<number | null>
   category?: string
@@ -91,6 +98,14 @@ const DATABASE_CHORD_TYPE_BY_SELECTION = new Map([
   ['sus4:', 'sus4'],
   ['sus4:b7', '7sus4'],
 ])
+const BASS_INTERVALS_BY_QUALITY = {
+  maj: ['3', '5'],
+  min: ['m3', '5'],
+  dim: ['m3', 'b5'],
+  aug: ['3', '#5'],
+  sus2: ['9', '5'],
+  sus4: ['11', '5'],
+} as const
 const voicingByRootAndType = new Map(
   chordVoicings.supplementalChords.map((chord) => [
     getVoicingKey(chord.root, chord.type, chord.bassInterval),
@@ -104,6 +119,23 @@ function getVoicingKey(root: string, type: string, bassInterval: string | null) 
 
 function getSelectionSignature(chord: ChordSelection) {
   return `${chord.qualityId}:${chord.extensionIds.join(',')}`
+}
+
+function getBassIntervalForInversion(chord: ChordSelection, inversion: ChordInversionPreference) {
+  if (inversion === 'root') return null
+  const bassIntervals =
+    BASS_INTERVALS_BY_QUALITY[chord.qualityId as keyof typeof BASS_INTERVALS_BY_QUALITY]
+  return bassIntervals?.[inversion === 'first' ? 0 : 1] ?? null
+}
+
+function applyPositionPreference(
+  voicings: StoredVoicing[],
+  positionPreference: ChordPositionPreference | undefined,
+) {
+  if (!positionPreference || positionPreference === 'default') return voicings
+
+  const preferred = voicings.filter((voicing) => voicing.category === positionPreference)
+  return preferred.length > 0 ? preferred : voicings
 }
 
 function transposeFrets(frets: Array<number | null>, sourceRoot: string, targetRoot: string) {
@@ -160,23 +192,48 @@ function compareVoicings(left: StoredVoicing, right: StoredVoicing) {
   return (left.highFret ?? 99) - (right.highFret ?? 99)
 }
 
-function getOolimoVoicing(root: string, type: string): StoredVoicing | null {
+function getOolimoVoicing(
+  root: string,
+  type: string,
+  bassInterval: string | null,
+  positionPreference: ChordPositionPreference | undefined,
+): StoredVoicing | null {
   const voicings = chordVoicings.oolimo.templates
-    .filter((template) => template.type === type && template.bassInterval === null)
+    .filter((template) => template.type === type && template.bassInterval === bassInterval)
     .map((template) => getTemplateVoicing(root, template))
     .filter((voicing): voicing is StoredVoicing => voicing !== null)
     .sort(compareVoicings)
 
-  return voicings[0] ?? null
+  return applyPositionPreference(voicings, positionPreference)[0] ?? null
 }
 
-export function getImportedVoicing(chord: ChordSelection): PlayedPosition[] | null {
+function getStoredVoicing(
+  chord: ChordSelection,
+  type: string,
+  bassInterval: string | null,
+  positionPreference: ChordPositionPreference | undefined,
+) {
+  const supplemental = voicingByRootAndType.get(getVoicingKey(chord.root, type, bassInterval))
+  if (supplemental?.[0]) {
+    return applyPositionPreference(supplemental, positionPreference)[0]
+  }
+  return getOolimoVoicing(chord.root, type, bassInterval, positionPreference)
+}
+
+export function getImportedVoicing(
+  chord: ChordSelection,
+  options: ChordVoicingOptions = {},
+): PlayedPosition[] | null {
   const databaseType = DATABASE_CHORD_TYPE_BY_SELECTION.get(getSelectionSignature(chord))
   if (!databaseType) return null
 
+  const requestedBassInterval = getBassIntervalForInversion(
+    chord,
+    options.inversionPreference ?? 'root',
+  )
   const voicing =
-    voicingByRootAndType.get(getVoicingKey(chord.root, databaseType, null))?.[0] ??
-    getOolimoVoicing(chord.root, databaseType)
+    getStoredVoicing(chord, databaseType, requestedBassInterval, options.positionPreference) ??
+    getStoredVoicing(chord, databaseType, null, options.positionPreference)
   if (!voicing) return null
 
   const positions = voicing.frets
@@ -201,8 +258,11 @@ export function getChordPitchClasses(chord: ChordSelection) {
   return Array.from(new Set(intervals.map((interval) => (rootIndex + interval) % 12)))
 }
 
-export function buildCommonVoicing(chord: ChordSelection): PlayedPosition[] {
-  const databaseVoicing = getImportedVoicing(chord)
+export function buildCommonVoicing(
+  chord: ChordSelection,
+  options: ChordVoicingOptions = {},
+): PlayedPosition[] {
+  const databaseVoicing = getImportedVoicing(chord, options)
   if (databaseVoicing) return databaseVoicing
 
   const pitchClasses = getChordPitchClasses(chord)

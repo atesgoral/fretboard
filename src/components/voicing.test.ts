@@ -15,6 +15,30 @@ describe('buildCommonVoicing', () => {
     ])
   })
 
+  it('can prefer open position and inversion shapes from the imported database', () => {
+    const chord = { root: 'C' as const, qualityId: 'maj', extensionIds: [] }
+
+    expect(buildCommonVoicing(chord, { positionPreference: 'open' })).toEqual([
+      { stringIndex: 1, fret: 3 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+      { stringIndex: 5, fret: 3 },
+    ])
+    expect(buildCommonVoicing(chord, { inversionPreference: 'first' })).toEqual([
+      { stringIndex: 0, fret: 0 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+    ])
+    expect(buildCommonVoicing(chord, { inversionPreference: 'second' })).toEqual([
+      { stringIndex: 0, fret: 3 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+    ])
+  })
+
   it('maps current half-diminished selections to Oolimo m7(b5) voicings', () => {
     expect(buildCommonVoicing({ root: 'C', qualityId: 'dim', extensionIds: ['b7'] })).toEqual([
       { stringIndex: 1, fret: 3 },

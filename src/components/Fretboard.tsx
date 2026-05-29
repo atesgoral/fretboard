@@ -316,7 +316,7 @@ function getCircleToneClass({
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
-  scrollContainerRef: React.RefObject<HTMLElement>
+  scrollContainerRef: React.RefObject<HTMLDivElement>
   stringOrder: number[]
   stringYPositions: number[]
   hoveredPosition: HoveredPosition
@@ -836,7 +836,7 @@ export default function Fretboard({
   const instrumentLoadingRef = useRef<Promise<ReturnType<typeof Soundfont>> | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
-  const scrollContainerRef = useRef<HTMLElement | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const audioResumePromiseRef = useRef<Promise<void | undefined> | null>(null)
   const fretboardSurfaceRef = useRef<HTMLDivElement>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)

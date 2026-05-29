@@ -39,17 +39,20 @@ function LegendRow({ circleClass, prefix, items = [], textClass }: LegendRowProp
   const symbolClass = `${textClass} font-semibold`
 
   return (
-    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] ${textClass}`}>
-      <span className="inline-flex items-center gap-1.5 font-medium">
+    <div className={`grid grid-cols-[auto_1fr] items-start gap-x-1.5 text-[11px] ${textClass}`}>
+      <span className="pt-0.5">
         <LegendCircle className={circleClass} />
-        {prefix}
       </span>
-      {items.map((item) => (
-        <span key={`${item.symbol}-${item.label}`} className="inline-flex items-center gap-1.5">
-          <span className={symbolClass}>{item.symbol}</span>
-          <span>{item.label}</span>
-        </span>
-      ))}
+      <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="whitespace-nowrap font-medium">{prefix}</span>
+        {items.map((item) => (
+          <span key={`${item.symbol}-${item.label}`} className="whitespace-nowrap">
+            <span className={symbolClass}>{item.symbol}</span>
+            {'\u00A0'}
+            <span>{item.label}</span>
+          </span>
+        ))}
+      </span>
     </div>
   )
 }

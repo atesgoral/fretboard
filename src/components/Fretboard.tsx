@@ -656,6 +656,7 @@ export default function Fretboard({
   )
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
+  const instrumentLoadingRef = useRef<Promise<ReturnType<typeof Soundfont>> | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const audioResumePromiseRef = useRef<Promise<void | undefined> | null>(null)
@@ -765,46 +766,61 @@ export default function Fretboard({
     if (instrumentRef.current) {
       return instrumentRef.current
     }
-
-    const reverbMix = reverbEnabledRef.current ? getStoredReverbLevel() : 0
-    const highpassFilter = context.createBiquadFilter()
-    highpassFilter.type = 'highpass'
-    highpassFilter.frequency.value = 80
-    const lowpassFilter = context.createBiquadFilter()
-    lowpassFilter.type = 'lowpass'
-    lowpassFilter.frequency.value = 7200
-    const dryGain = context.createGain()
-    const wetGain = context.createGain()
-    dryGain.gain.value = 1 - reverbMix
-    wetGain.gain.value = reverbMix
-    const reverb = Reverb(context)
-
-    highpassFilter.connect(lowpassFilter)
-    lowpassFilter.connect(dryGain)
-    dryGain.connect(context.destination)
-    lowpassFilter.connect(wetGain)
-    wetGain.connect(reverb.input)
-    reverb.connect(context.destination)
-    dryGainRef.current = dryGain
-    wetGainRef.current = wetGain
-
-    let instrument = Soundfont(context, {
-      instrument: GUITAR_SOUNDFONT,
-      destination: highpassFilter,
-    })
-
-    try {
-      await instrument.ready
-    } catch {
-      instrument = Soundfont(context, {
-        instrument: FALLBACK_SOUNDFONT,
-        destination: highpassFilter,
-      })
-      await instrument.ready
+    if (instrumentLoadingRef.current) {
+      return instrumentLoadingRef.current
     }
 
-    instrumentRef.current = instrument
-    return instrument
+    const loading = (async () => {
+      const reverbMix = reverbEnabledRef.current ? getStoredReverbLevel() : 0
+      const highpassFilter = context.createBiquadFilter()
+      highpassFilter.type = 'highpass'
+      highpassFilter.frequency.value = 80
+      const lowpassFilter = context.createBiquadFilter()
+      lowpassFilter.type = 'lowpass'
+      lowpassFilter.frequency.value = 7200
+      const dryGain = context.createGain()
+      const wetGain = context.createGain()
+      dryGain.gain.value = 1 - reverbMix
+      wetGain.gain.value = reverbMix
+      const reverb = Reverb(context)
+
+      highpassFilter.connect(lowpassFilter)
+      lowpassFilter.connect(dryGain)
+      dryGain.connect(context.destination)
+      lowpassFilter.connect(wetGain)
+      wetGain.connect(reverb.input)
+      reverb.connect(context.destination)
+      dryGainRef.current = dryGain
+      wetGainRef.current = wetGain
+
+      let instrument = Soundfont(context, {
+        instrument: GUITAR_SOUNDFONT,
+        destination: highpassFilter,
+      })
+
+      try {
+        await instrument.ready
+      } catch {
+        instrument = Soundfont(context, {
+          instrument: FALLBACK_SOUNDFONT,
+          destination: highpassFilter,
+        })
+        await instrument.ready
+      }
+
+      instrumentRef.current = instrument
+      return instrument
+    })()
+
+    instrumentLoadingRef.current = loading
+
+    try {
+      return await loading
+    } finally {
+      if (instrumentLoadingRef.current === loading) {
+        instrumentLoadingRef.current = null
+      }
+    }
   }, [])
 
   const unlockAudioContext = useCallback(() => {

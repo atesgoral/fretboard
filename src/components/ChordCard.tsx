@@ -117,7 +117,8 @@ function ChordCardContent({
   )
 }
 
-const cardLayoutClass = 'relative h-full w-full rounded-md border p-2 text-center transition'
+const cardLayoutClass =
+  'relative h-full w-full select-none rounded-md border p-2 text-center transition'
 
 export default function ChordCard({
   chord,

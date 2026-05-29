@@ -54,6 +54,19 @@ describe('buildScaleRoles', () => {
     expect(roles.get(pitchClass('E'))).toBe('3')
     expect(roles.get(pitchClass('F#'))).toBe('b5')
   })
+
+  it('maps C bebop dominant with both dominant and major seventh colors', () => {
+    const roles = buildScaleRoles('C', 'bebop-dominant')
+
+    expect(roles.get(pitchClass('C'))).toBe('1')
+    expect(roles.get(pitchClass('D'))).toBe('2')
+    expect(roles.get(pitchClass('E'))).toBe('3')
+    expect(roles.get(pitchClass('F'))).toBe('4')
+    expect(roles.get(pitchClass('G'))).toBe('5')
+    expect(roles.get(pitchClass('A'))).toBe('6')
+    expect(roles.get(pitchClass('A#'))).toBe('b7')
+    expect(roles.get(pitchClass('B'))).toBe('7')
+  })
 })
 
 describe('SCALE_OPTIONS integrity', () => {
@@ -71,7 +84,12 @@ describe('SCALE_OPTIONS integrity', () => {
     })
   })
 
-  it('includes Spanish, diminished, whole tone, and related scale formulas', () => {
+  it('includes bebop, Spanish, diminished, whole tone, and related scale formulas', () => {
+    expect(getScale('bebop-dominant')).toMatchObject({
+      label: 'Bebop Dominant',
+      intervals: [0, 2, 4, 5, 7, 9, 10, 11],
+      roles: ['1', '2', '3', '4', '5', '6', 'b7', '7'],
+    })
     expect(getScale('phrygian-dominant')).toMatchObject({
       label: 'Phrygian Dominant (Spanish Gypsy)',
       intervals: [0, 1, 4, 5, 7, 8, 10],

@@ -1,8 +1,6 @@
 const AUDIO_CACHE_NAME = 'fretboard-audio-v1'
 const FONT_CACHE_NAME = 'fretboard-fonts-v1'
-const FONT_ASSET_URLS = [
-  'https://fonts.gstatic.com/s/varelaround/v21/w8gdH283Tvk__Lua32TysjIfp8uPLdshZg.woff2',
-]
+const FONT_ASSET_URLS = ['/fonts/varela-round-latin.woff2']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -28,7 +26,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  if (url.hostname === 'fonts.gstatic.com') {
+  if (url.origin === self.location.origin && FONT_ASSET_URLS.includes(url.pathname)) {
     event.respondWith(cacheFirst(event.request, FONT_CACHE_NAME))
   }
 })

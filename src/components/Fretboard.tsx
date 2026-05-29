@@ -659,7 +659,7 @@ export default function Fretboard({
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const audioResumePromiseRef = useRef<Promise<void | undefined> | null>(null)
-  const fretboardRef = useRef<HTMLElement>(null)
+  const fretboardSurfaceRef = useRef<HTMLDivElement>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
   const [heldPositions, setHeldPositions] = useState<ActivePosition[]>([])
   const reverbEnabledRef = useRef(reverbEnabled)
@@ -986,9 +986,9 @@ export default function Fretboard({
 
   useEffect(() => {
     const handleDocumentPointerDown = (event: PointerEvent) => {
-      const fretboard = fretboardRef.current
+      const fretboardSurface = fretboardSurfaceRef.current
       const target = event.target
-      if (!fretboard || !(target instanceof Node) || fretboard.contains(target)) {
+      if (!fretboardSurface || !(target instanceof Node) || fretboardSurface.contains(target)) {
         return
       }
 
@@ -1024,13 +1024,11 @@ export default function Fretboard({
   )
 
   return (
-    <section
-      ref={fretboardRef}
-      className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
-      onPointerLeave={handleFretboardPointerLeave}
-    >
+    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div
+        ref={fretboardSurfaceRef}
         className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
+        onPointerLeave={handleFretboardPointerLeave}
         style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
       >
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />

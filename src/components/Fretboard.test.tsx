@@ -210,16 +210,32 @@ function renderMutedFretboardWithOutsideControl() {
   )
 }
 
+function playAndReleaseOpenLowE() {
+  fireEvent.pointerDown(screen.getByTitle('Play string 1, open string'), { pointerId: 1 })
+  fireEvent.pointerUp(window, { pointerId: 1 })
+}
+
 describe('Fretboard interaction state', () => {
   it('clears the last played note when pressing outside the fretboard', () => {
     renderMutedFretboardWithOutsideControl()
 
-    fireEvent.pointerDown(screen.getByTitle('Play string 1, open string'), { pointerId: 1 })
-    fireEvent.pointerUp(window, { pointerId: 1 })
+    playAndReleaseOpenLowE()
 
     expect(screen.getAllByText('E').length).toBeGreaterThan(0)
 
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside control' }), { pointerId: 2 })
+
+    expect(screen.queryByText('E')).not.toBeInTheDocument()
+  })
+
+  it('clears the last played note when pressing the legend outside the fretboard rectangle', () => {
+    renderMutedFretboardWithOutsideControl()
+
+    playAndReleaseOpenLowE()
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+
+    fireEvent.pointerDown(screen.getByText('Last played'), { pointerId: 2 })
 
     expect(screen.queryByText('E')).not.toBeInTheDocument()
   })

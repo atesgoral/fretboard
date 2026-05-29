@@ -215,6 +215,33 @@ function playAndReleaseOpenLowE() {
   fireEvent.pointerUp(window, { pointerId: 1 })
 }
 
+function fireTouchPointerEvent(
+  target: Element,
+  eventName: 'pointerDown' | 'pointerUp',
+  pointerId: number,
+) {
+  const event = createPointerEvent(eventName, { pointerId, pointerType: 'touch' })
+  fireEvent(target, event)
+}
+
+function createPointerEvent(
+  eventName: 'pointerDown' | 'pointerUp',
+  options: { pointerId: number; pointerType: string },
+) {
+  const event = new Event(eventName.toLowerCase(), { bubbles: true, cancelable: true })
+  Object.defineProperties(event, {
+    pointerId: { value: options.pointerId },
+    pointerType: { value: options.pointerType },
+  })
+  return event
+}
+
+function playTouchOpenStrings() {
+  fireTouchPointerEvent(screen.getByTitle('Play string 1, open string'), 'pointerDown', 1)
+  fireTouchPointerEvent(screen.getByTitle('Play string 2, open string'), 'pointerDown', 2)
+  fireTouchPointerEvent(screen.getByTitle('Play string 1, open string'), 'pointerUp', 1)
+}
+
 describe('Fretboard interaction state', () => {
   it('clears the last played note when pressing outside the fretboard', () => {
     renderMutedFretboardWithOutsideControl()
@@ -249,5 +276,13 @@ describe('Fretboard interaction state', () => {
 
     expect(horizontalScroller).not.toBeNull()
     expect(horizontalScroller).not.toContainElement(legend)
+  })
+
+  it('keeps all simultaneous touch taps highlighted as last played', () => {
+    renderMutedFretboardWithOutsideControl()
+
+    playTouchOpenStrings()
+
+    expect(screen.getByText('E · A')).toBeInTheDocument()
   })
 })

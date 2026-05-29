@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { appReducer, createInitialAppState, getCurrentTimelineState } from './appState'
+import {
+  appReducer,
+  createInitialAppState,
+  getCurrentTimelineState,
+  toStoredPreferences,
+} from './appState'
 
 describe('appReducer timeline history', () => {
   it('tracks chord and swatch changes with undo and redo', () => {
@@ -84,5 +89,32 @@ describe('appReducer timeline history', () => {
 
     expect(getCurrentTimelineState(state).qualityId).toBe('maj')
     expect(state.preferences.muted).toBe(true)
+  })
+
+  it('initializes and stores the selected scale', () => {
+    let state = createInitialAppState({ scaleRoot: 'D', scaleId: 'dorian' })
+
+    expect(state.preferences.scaleRoot).toBe('D')
+    expect(state.preferences.scaleId).toBe('dorian')
+
+    state = appReducer(state, { type: 'setScaleRoot', scaleRoot: 'F#' })
+    state = appReducer(state, { type: 'setScaleId', scaleId: 'lydian' })
+
+    expect(toStoredPreferences(state)).toMatchObject({
+      scaleRoot: 'F#',
+      scaleId: 'lydian',
+    })
+  })
+
+  it('keeps scale selection changes out of undo timeline', () => {
+    let state = createInitialAppState({})
+    state = appReducer(state, { type: 'setQuality', qualityId: 'min' })
+    state = appReducer(state, { type: 'setScaleRoot', scaleRoot: 'A' })
+    state = appReducer(state, { type: 'setScaleId', scaleId: 'minor-pentatonic' })
+    state = appReducer(state, { type: 'undo' })
+
+    expect(getCurrentTimelineState(state).qualityId).toBe('maj')
+    expect(state.preferences.scaleRoot).toBe('A')
+    expect(state.preferences.scaleId).toBe('minor-pentatonic')
   })
 })

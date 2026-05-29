@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useReducer, useState } from 'react'
 import Fretboard from './components/Fretboard'
-import ChordBrowser, { type ScaleRootSelection } from './components/ChordBrowser'
+import ChordBrowser from './components/ChordBrowser'
 import DiatonicChordList from './components/DiatonicChordList'
 import PinnedChordList from './components/PinnedChordList'
 import { buildChordRoles } from './components/chords'
-import { buildScaleRoles, type ScaleId } from './components/scales'
+import { buildScaleRoles } from './components/scales'
 import AppHeader from './components/AppHeader'
 import type { ChordSelection } from './components/chordSearch'
 import { buildCommonVoicing, getChordPitchClasses } from './components/voicing'
@@ -23,9 +23,8 @@ const initialPreferences = getInitialPreferences()
 export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
-  const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted } = appState.preferences
-  const [scaleRoot, setScaleRoot] = useState<ScaleRootSelection>(null)
-  const [scaleId, setScaleId] = useState<ScaleId>('major')
+  const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted, scaleRoot, scaleId } =
+    appState.preferences
   const [showScaleNotes, setShowScaleNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
@@ -93,8 +92,8 @@ export default function App() {
           scaleRoot={scaleRoot}
           scaleId={scaleId}
           showScaleNotes={showScaleNotes}
-          onScaleRootChange={setScaleRoot}
-          onScaleIdChange={setScaleId}
+          onScaleRootChange={(next) => dispatch({ type: 'setScaleRoot', scaleRoot: next })}
+          onScaleIdChange={(next) => dispatch({ type: 'setScaleId', scaleId: next })}
           onToggleScaleNotes={() => setShowScaleNotes((current) => !current)}
         />
 

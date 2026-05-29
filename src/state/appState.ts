@@ -1,4 +1,5 @@
 import type { NoteName } from '../components/chords'
+import type { ScaleId } from '../components/scales'
 
 export const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
@@ -18,6 +19,8 @@ export type UserPreferences = {
   naturalDecay: boolean
   reverbEnabled: boolean
   muted: boolean
+  scaleRoot: NoteName | null
+  scaleId: ScaleId
 }
 
 type TimelineHistory = {
@@ -46,6 +49,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   naturalDecay: true,
   reverbEnabled: true,
   muted: false,
+  scaleRoot: null,
+  scaleId: 'major',
 }
 
 function cloneChordSelection(chord: ChordSelection): ChordSelection {
@@ -90,6 +95,8 @@ export function createInitialAppState(stored: StoredPreferences): AppState {
       naturalDecay: stored.naturalDecay ?? DEFAULT_PREFERENCES.naturalDecay,
       reverbEnabled: stored.reverbEnabled ?? DEFAULT_PREFERENCES.reverbEnabled,
       muted: stored.muted ?? DEFAULT_PREFERENCES.muted,
+      scaleRoot: stored.scaleRoot ?? DEFAULT_PREFERENCES.scaleRoot,
+      scaleId: stored.scaleId ?? DEFAULT_PREFERENCES.scaleId,
     },
     timeline: {
       snapshots: [cloneTimelineState(getInitialTimelineState(stored))],
@@ -134,6 +141,8 @@ export type AppAction =
   | { type: 'toggleNaturalDecay' }
   | { type: 'toggleReverb' }
   | { type: 'toggleMuted' }
+  | { type: 'setScaleRoot'; scaleRoot: NoteName | null }
+  | { type: 'setScaleId'; scaleId: ScaleId }
   | { type: 'setRoot'; root: NoteName }
   | { type: 'setQuality'; qualityId: string }
   | { type: 'setExtensions'; extensionIds: string[] }
@@ -179,6 +188,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     } as const
     const key = keyMap[action.type]
     return { ...state, preferences: { ...state.preferences, [key]: !state.preferences[key] } }
+  }
+  if (action.type === 'setScaleRoot') {
+    return { ...state, preferences: { ...state.preferences, scaleRoot: action.scaleRoot } }
+  }
+  if (action.type === 'setScaleId') {
+    return { ...state, preferences: { ...state.preferences, scaleId: action.scaleId } }
   }
 
   const current = currentTimelineState(state.timeline)

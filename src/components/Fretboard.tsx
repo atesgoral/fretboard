@@ -642,6 +642,7 @@ export default function Fretboard({
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
+  const fretboardRef = useRef<HTMLElement>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
   const [heldPositions, setHeldPositions] = useState<ActivePosition[]>([])
   const reverbEnabledRef = useRef(reverbEnabled)
@@ -779,6 +780,12 @@ export default function Fretboard({
     })
   }, [])
 
+  const clearLastPlayedState = useCallback(() => {
+    setHoveredPosition(null)
+    setRecentlyPlayedPositions([])
+    setAnimatedPositionBursts({})
+  }, [])
+
   const syncHeldPositions = useCallback(() => {
     const positions = getActivePositionsFromPointers(activePointersRef.current)
     setHeldPositions(positions)
@@ -910,6 +917,23 @@ export default function Fretboard({
   }, [handlePressEnd])
 
   useEffect(() => {
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const fretboard = fretboardRef.current
+      const target = event.target
+      if (!fretboard || !(target instanceof Node) || fretboard.contains(target)) {
+        return
+      }
+
+      clearLastPlayedState()
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
+    return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
+    }
+  }, [clearLastPlayedState])
+
+  useEffect(() => {
     if (playSequence === 0 || playedPositions.length === 0) {
       return
     }
@@ -933,6 +957,7 @@ export default function Fretboard({
 
   return (
     <section
+      ref={fretboardRef}
       className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
       onPointerLeave={handleFretboardPointerLeave}
     >

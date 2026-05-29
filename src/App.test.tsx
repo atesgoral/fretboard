@@ -16,24 +16,51 @@ vi.mock('smplr', () => ({
   }),
 }))
 
-vi.mock('./components/Fretboard', () => ({
-  default: ({
-    highlightedPitchClasses = [],
-    highlightedPositions = [],
-    highlightedChordRoles = new Map(),
-    playedPositions = [],
-  }: MockFretboardProps) => (
-    <div
-      data-testid="fretboard"
-      data-highlighted-pitch-classes={highlightedPitchClasses.length}
-      data-highlighted-positions={highlightedPositions.length}
-      data-highlighted-chord-roles={highlightedChordRoles.size}
-      data-played-positions={playedPositions.length}
-    >
-      Fretboard
-    </div>
-  ),
-}))
+vi.mock('./components/Fretboard', async () => {
+  const React = await vi.importActual<typeof import('react')>('react')
+
+  return {
+    default: ({
+      highlightedPitchClasses = [],
+      highlightedPositions = [],
+      highlightedChordRoles = new Map(),
+      playedPositions = [],
+    }: MockFretboardProps) => {
+      const [settingsOpen, setSettingsOpen] = React.useState(false)
+
+      return (
+        <div
+          data-testid="fretboard"
+          data-highlighted-pitch-classes={highlightedPitchClasses.length}
+          data-highlighted-positions={highlightedPositions.length}
+          data-highlighted-chord-roles={highlightedChordRoles.size}
+          data-played-positions={playedPositions.length}
+        >
+          Fretboard
+          <button
+            type="button"
+            aria-label="Open fretboard settings menu"
+            title="Open fretboard settings menu"
+            onClick={() => setSettingsOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                setSettingsOpen(true)
+              }
+            }}
+          >
+            Fretboard settings
+          </button>
+          {settingsOpen ? (
+            <div>
+              <span>Fret spacing</span>
+              <span>Show low E on top</span>
+            </div>
+          ) : null}
+        </div>
+      )
+    },
+  }
+})
 
 function getFretboardCounts() {
   const fretboard = screen.getByTestId('fretboard')

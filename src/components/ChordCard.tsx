@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Pin, Play, X } from 'lucide-react'
 import type { ChordPlaybackSettingsOverride } from './chordPlayback'
 import type { ChordSelection } from './chordSearch'
@@ -44,6 +44,19 @@ const cardSurfaceClass = (active: boolean) =>
 
 const cornerButtonClass =
   'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-zinc-500 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:text-zinc-100'
+const TOUCH_PLAY_HIT_SIZE_PX = 40
+
+function isTouchPlayCorner(event: React.PointerEvent<HTMLElement>) {
+  if (event.pointerType !== 'touch') {
+    return false
+  }
+
+  const rect = event.currentTarget.getBoundingClientRect()
+  return (
+    event.clientX >= rect.right - TOUCH_PLAY_HIT_SIZE_PX &&
+    event.clientY >= rect.bottom - TOUCH_PLAY_HIT_SIZE_PX
+  )
+}
 
 function ChordCornerButton({
   title,
@@ -66,6 +79,7 @@ function ChordCornerButton({
     <span title={title} className={`absolute hidden group-hover:inline-flex ${positionClassName}`}>
       <button
         type="button"
+        data-chord-card-control=""
         title={title}
         aria-label={title}
         onPointerDown={(event) => {
@@ -163,10 +177,38 @@ export default function ChordCard({
   const qualityLine = getChordQualityLine(chord)
   const cardTitle = getChordCardTitle(degreeLabel, label)
   const playTitle = `Play chord ${label}`
+  const suppressNextClickRef = useRef(false)
+
+  const handleCardPointerDownCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target
+    if (target instanceof Element && target.closest('[data-chord-card-control]')) {
+      return
+    }
+    if (!isTouchPlayCorner(event)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    suppressNextClickRef.current = true
+    onPlay()
+  }
+
+  const handleCardClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressNextClickRef.current) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    suppressNextClickRef.current = false
+  }
 
   return (
     <div
       className="group relative h-24 w-24 shrink-0"
+      onPointerDownCapture={handleCardPointerDownCapture}
+      onClickCapture={handleCardClickCapture}
       onPointerEnter={onHoverStart}
       onPointerLeave={onHoverEnd}
     >

@@ -656,10 +656,11 @@ export default function Fretboard({
   )
   const audioContextRef = useRef<AudioContext | null>(null)
   const instrumentRef = useRef<ReturnType<typeof Soundfont> | null>(null)
+  const instrumentLoadingRef = useRef<Promise<ReturnType<typeof Soundfont>> | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const audioResumePromiseRef = useRef<Promise<void | undefined> | null>(null)
-  const fretboardRef = useRef<HTMLElement>(null)
+  const fretboardSurfaceRef = useRef<HTMLDivElement>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
   const [heldPositions, setHeldPositions] = useState<ActivePosition[]>([])
   const reverbEnabledRef = useRef(reverbEnabled)
@@ -765,46 +766,61 @@ export default function Fretboard({
     if (instrumentRef.current) {
       return instrumentRef.current
     }
-
-    const reverbMix = reverbEnabledRef.current ? getStoredReverbLevel() : 0
-    const highpassFilter = context.createBiquadFilter()
-    highpassFilter.type = 'highpass'
-    highpassFilter.frequency.value = 80
-    const lowpassFilter = context.createBiquadFilter()
-    lowpassFilter.type = 'lowpass'
-    lowpassFilter.frequency.value = 7200
-    const dryGain = context.createGain()
-    const wetGain = context.createGain()
-    dryGain.gain.value = 1 - reverbMix
-    wetGain.gain.value = reverbMix
-    const reverb = Reverb(context)
-
-    highpassFilter.connect(lowpassFilter)
-    lowpassFilter.connect(dryGain)
-    dryGain.connect(context.destination)
-    lowpassFilter.connect(wetGain)
-    wetGain.connect(reverb.input)
-    reverb.connect(context.destination)
-    dryGainRef.current = dryGain
-    wetGainRef.current = wetGain
-
-    let instrument = Soundfont(context, {
-      instrument: GUITAR_SOUNDFONT,
-      destination: highpassFilter,
-    })
-
-    try {
-      await instrument.ready
-    } catch {
-      instrument = Soundfont(context, {
-        instrument: FALLBACK_SOUNDFONT,
-        destination: highpassFilter,
-      })
-      await instrument.ready
+    if (instrumentLoadingRef.current) {
+      return instrumentLoadingRef.current
     }
 
-    instrumentRef.current = instrument
-    return instrument
+    const loading = (async () => {
+      const reverbMix = reverbEnabledRef.current ? getStoredReverbLevel() : 0
+      const highpassFilter = context.createBiquadFilter()
+      highpassFilter.type = 'highpass'
+      highpassFilter.frequency.value = 80
+      const lowpassFilter = context.createBiquadFilter()
+      lowpassFilter.type = 'lowpass'
+      lowpassFilter.frequency.value = 7200
+      const dryGain = context.createGain()
+      const wetGain = context.createGain()
+      dryGain.gain.value = 1 - reverbMix
+      wetGain.gain.value = reverbMix
+      const reverb = Reverb(context)
+
+      highpassFilter.connect(lowpassFilter)
+      lowpassFilter.connect(dryGain)
+      dryGain.connect(context.destination)
+      lowpassFilter.connect(wetGain)
+      wetGain.connect(reverb.input)
+      reverb.connect(context.destination)
+      dryGainRef.current = dryGain
+      wetGainRef.current = wetGain
+
+      let instrument = Soundfont(context, {
+        instrument: GUITAR_SOUNDFONT,
+        destination: highpassFilter,
+      })
+
+      try {
+        await instrument.ready
+      } catch {
+        instrument = Soundfont(context, {
+          instrument: FALLBACK_SOUNDFONT,
+          destination: highpassFilter,
+        })
+        await instrument.ready
+      }
+
+      instrumentRef.current = instrument
+      return instrument
+    })()
+
+    instrumentLoadingRef.current = loading
+
+    try {
+      return await loading
+    } finally {
+      if (instrumentLoadingRef.current === loading) {
+        instrumentLoadingRef.current = null
+      }
+    }
   }, [])
 
   const unlockAudioContext = useCallback(() => {
@@ -986,9 +1002,9 @@ export default function Fretboard({
 
   useEffect(() => {
     const handleDocumentPointerDown = (event: PointerEvent) => {
-      const fretboard = fretboardRef.current
+      const fretboardSurface = fretboardSurfaceRef.current
       const target = event.target
-      if (!fretboard || !(target instanceof Node) || fretboard.contains(target)) {
+      if (!fretboardSurface || !(target instanceof Node) || fretboardSurface.contains(target)) {
         return
       }
 
@@ -1024,13 +1040,11 @@ export default function Fretboard({
   )
 
   return (
-    <section
-      ref={fretboardRef}
-      className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
-      onPointerLeave={handleFretboardPointerLeave}
-    >
+    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div
+        ref={fretboardSurfaceRef}
         className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
+        onPointerLeave={handleFretboardPointerLeave}
         style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
       >
         <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />

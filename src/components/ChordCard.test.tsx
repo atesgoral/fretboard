@@ -8,7 +8,7 @@ describe('ChordCard', () => {
 
     render(<ChordCard chord={{ root: 'C', qualityId: 'maj', extensionIds: [] }} onPlay={onPlay} />)
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Play chord C' }))
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Play chord Cmaj' }))
 
     expect(onPlay).toHaveBeenCalledTimes(1)
   })

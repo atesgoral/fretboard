@@ -27,6 +27,10 @@ function createAudioContext() {
   return AudioContextClass ? new AudioContextClass() : null
 }
 
+function isAudioContextRunning(context: AudioContext) {
+  return context.state === 'running'
+}
+
 function getStringYPositions() {
   return Array.from({ length: STRINGS }, (_, index) => ((index + 0.5) / STRINGS) * 100)
 }
@@ -437,13 +441,13 @@ function NoteGrid({
     fret: number,
   ) => {
     event.preventDefault()
-    gridRef.current?.setPointerCapture(event.pointerId)
+    gridRef.current?.setPointerCapture?.(event.pointerId)
     onPressStart(event.pointerId, stringIndex, fret)
   }
 
   const handleGridPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (gridRef.current?.hasPointerCapture(event.pointerId)) {
-      gridRef.current.releasePointerCapture(event.pointerId)
+    if (gridRef.current?.hasPointerCapture?.(event.pointerId)) {
+      gridRef.current.releasePointerCapture?.(event.pointerId)
     }
     onPressEnd(event.pointerId)
   }
@@ -740,7 +744,7 @@ export default function Fretboard({
   }, [])
 
   const resumeAudioContext = useCallback((context: AudioContext) => {
-    if (context.state === 'running') {
+    if (isAudioContextRunning(context)) {
       return Promise.resolve()
     }
 
@@ -853,9 +857,9 @@ export default function Fretboard({
       const instrument = await getInstrument(context)
 
       await resumePromise
-      if (context.state !== 'running') {
+      if (!isAudioContextRunning(context)) {
         await resumeAudioContext(context)
-        if (context.state !== 'running') {
+        if (!isAudioContextRunning(context)) {
           return
         }
       }

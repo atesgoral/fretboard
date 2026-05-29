@@ -14,6 +14,8 @@ const GUITAR_SOUNDFONT = 'acoustic_guitar_nylon'
 const FALLBACK_SOUNDFONT = 'acoustic_guitar_steel'
 const REVERB_STORAGE_KEY = 'cadence_reverb'
 const DEFAULT_REVERB_LEVEL = 0.15
+const TOUCH_SCROLL_THRESHOLD_PX = 8
+const TOUCH_LONG_PRESS_MS = 300
 
 type AudioContextConstructor = new () => AudioContext
 type WindowWithWebKitAudioContext = Window & {
@@ -314,6 +316,7 @@ function getCircleToneClass({
 type NoteGridProps = {
   fretPositions: number[]
   frets: number
+  scrollContainerRef: React.RefObject<HTMLElement>
   stringOrder: number[]
   stringYPositions: number[]
   hoveredPosition: HoveredPosition
@@ -356,6 +359,18 @@ function OpenStringPulseOverlay({ top, bottom, stringThickness }: OpenStringHigh
 type FretCellPosition = {
   stringIndex: number
   fret: number
+}
+
+type TouchGestureState = {
+  stringIndex: number
+  fret: number
+  startX: number
+  startY: number
+  currentX: number
+  currentY: number
+  startScrollLeft: number
+  mode: 'pending' | 'scrolling' | 'playing'
+  longPressTimeoutId: number
 }
 
 function getFretCellFromPointer(
@@ -405,6 +420,7 @@ function getStringBandBounds(stringYPositions: number[]) {
 function NoteGrid({
   fretPositions,
   frets,
+  scrollContainerRef,
   stringOrder,
   stringYPositions,
   hoveredPosition,
@@ -421,6 +437,7 @@ function NoteGrid({
   stringThicknesses,
 }: NoteGridProps) {
   const gridRef = useRef<HTMLDivElement>(null)
+  const touchGesturesRef = useRef(new Map<number, TouchGestureState>())
   const stringBandBounds = getStringBandBounds(stringYPositions)
 
   const updatePositionFromPointer = (
@@ -431,7 +448,151 @@ function NoteGrid({
     onPointerMove(pointerId, position)
   }
 
+  const releasePointerCapture = (pointerId: number) => {
+    if (gridRef.current?.hasPointerCapture?.(pointerId)) {
+      gridRef.current.releasePointerCapture?.(pointerId)
+    }
+  }
+
+  const clearTouchGestureTimeout = (gesture: TouchGestureState) => {
+    window.clearTimeout(gesture.longPressTimeoutId)
+  }
+
+  const getCurrentTouchPosition = (gesture: TouchGestureState) =>
+    getFretCellFromPointer(
+      { clientX: gesture.currentX, clientY: gesture.currentY },
+      gridRef.current,
+    ) ?? { stringIndex: gesture.stringIndex, fret: gesture.fret }
+
+  const startTouchPlayback = (pointerId: number) => {
+    const gesture = touchGesturesRef.current.get(pointerId)
+    if (!gesture || gesture.mode !== 'pending') {
+      return
+    }
+
+    const position = getCurrentTouchPosition(gesture)
+    gesture.stringIndex = position.stringIndex
+    gesture.fret = position.fret
+    gesture.mode = 'playing'
+    onPressStart(pointerId, position.stringIndex, position.fret)
+  }
+
+  const hasScrollingTouchGesture = (pointerId: number) => {
+    for (const [gesturePointerId, gesture] of touchGesturesRef.current) {
+      if (gesturePointerId !== pointerId && gesture.mode === 'scrolling') {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  const handleTouchPointerDown = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    stringIndex: number,
+    fret: number,
+  ) => {
+    gridRef.current?.setPointerCapture?.(event.pointerId)
+    const longPressTimeoutId = window.setTimeout(() => {
+      startTouchPlayback(event.pointerId)
+    }, TOUCH_LONG_PRESS_MS)
+
+    touchGesturesRef.current.set(event.pointerId, {
+      stringIndex,
+      fret,
+      startX: event.clientX,
+      startY: event.clientY,
+      currentX: event.clientX,
+      currentY: event.clientY,
+      startScrollLeft: scrollContainerRef.current?.scrollLeft ?? 0,
+      mode: 'pending',
+      longPressTimeoutId,
+    })
+  }
+
+  const handleTouchPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const gesture = touchGesturesRef.current.get(event.pointerId)
+    if (!gesture) {
+      return false
+    }
+
+    gesture.currentX = event.clientX
+    gesture.currentY = event.clientY
+
+    if (gesture.mode === 'pending') {
+      const distanceX = event.clientX - gesture.startX
+      const distanceY = event.clientY - gesture.startY
+      const absX = Math.abs(distanceX)
+      const absY = Math.abs(distanceY)
+
+      if (absX < TOUCH_SCROLL_THRESHOLD_PX && absY < TOUCH_SCROLL_THRESHOLD_PX) {
+        return true
+      }
+
+      clearTouchGestureTimeout(gesture)
+
+      if (absY > absX) {
+        touchGesturesRef.current.delete(event.pointerId)
+        releasePointerCapture(event.pointerId)
+        onPointerMove(event.pointerId, null)
+        return true
+      }
+
+      gesture.mode = 'scrolling'
+      onPointerMove(event.pointerId, null)
+    }
+
+    if (gesture.mode === 'scrolling') {
+      event.preventDefault()
+      const distanceX = event.clientX - gesture.startX
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft = gesture.startScrollLeft - distanceX
+      }
+      return true
+    }
+
+    updatePositionFromPointer(event.pointerId, event)
+    return true
+  }
+
+  const finishTouchGesture = (pointerId: number, playPendingTap: boolean) => {
+    const gesture = touchGesturesRef.current.get(pointerId)
+    if (!gesture) {
+      return false
+    }
+
+    clearTouchGestureTimeout(gesture)
+    touchGesturesRef.current.delete(pointerId)
+    releasePointerCapture(pointerId)
+
+    if (gesture.mode === 'playing') {
+      onPressEnd(pointerId)
+      return true
+    }
+
+    if (gesture.mode === 'pending' && playPendingTap && !hasScrollingTouchGesture(pointerId)) {
+      const position = getCurrentTouchPosition(gesture)
+      onPressStart(pointerId, position.stringIndex, position.fret)
+      onPressEnd(pointerId)
+    }
+
+    return true
+  }
+
+  useEffect(() => {
+    return () => {
+      for (const gesture of touchGesturesRef.current.values()) {
+        clearTouchGestureTimeout(gesture)
+      }
+      touchGesturesRef.current.clear()
+    }
+  }, [])
+
   const handleGridPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch' && handleTouchPointerMove(event)) {
+      return
+    }
+
     updatePositionFromPointer(event.pointerId, event)
   }
 
@@ -440,15 +601,31 @@ function NoteGrid({
     stringIndex: number,
     fret: number,
   ) => {
+    if (event.pointerType === 'touch') {
+      handleTouchPointerDown(event, stringIndex, fret)
+      return
+    }
+
     event.preventDefault()
     gridRef.current?.setPointerCapture?.(event.pointerId)
     onPressStart(event.pointerId, stringIndex, fret)
   }
 
-  const handleGridPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (gridRef.current?.hasPointerCapture?.(event.pointerId)) {
-      gridRef.current.releasePointerCapture?.(event.pointerId)
+  const handleGridPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch' && finishTouchGesture(event.pointerId, true)) {
+      return
     }
+
+    releasePointerCapture(event.pointerId)
+    onPressEnd(event.pointerId)
+  }
+
+  const handleGridPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch' && finishTouchGesture(event.pointerId, false)) {
+      return
+    }
+
+    releasePointerCapture(event.pointerId)
     onPressEnd(event.pointerId)
   }
 
@@ -487,11 +664,11 @@ function NoteGrid({
   return (
     <div
       ref={gridRef}
-      className="absolute inset-0 touch-none"
+      className="absolute inset-0 touch-pan-y"
       onPointerMove={handleGridPointerMove}
       onPointerLeave={handleGridPointerLeave}
-      onPointerUp={handleGridPointerEnd}
-      onPointerCancel={handleGridPointerEnd}
+      onPointerUp={handleGridPointerUp}
+      onPointerCancel={handleGridPointerCancel}
     >
       {stringOrder.map((stringIndex, visualIndex) => {
         const band = stringBandBounds[visualIndex]
@@ -659,6 +836,7 @@ export default function Fretboard({
   const instrumentLoadingRef = useRef<Promise<ReturnType<typeof Soundfont>> | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
+  const scrollContainerRef = useRef<HTMLElement | null>(null)
   const audioResumePromiseRef = useRef<Promise<void | undefined> | null>(null)
   const fretboardSurfaceRef = useRef<HTMLDivElement>(null)
   const [hoveredPosition, setHoveredPosition] = useState<HoveredPosition>(null)
@@ -1040,7 +1218,10 @@ export default function Fretboard({
   )
 
   return (
-    <section className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <section
+      ref={scrollContainerRef}
+      className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
+    >
       <div
         ref={fretboardSurfaceRef}
         className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
@@ -1065,6 +1246,7 @@ export default function Fretboard({
         <NoteGrid
           fretPositions={fretPositions}
           frets={frets}
+          scrollContainerRef={scrollContainerRef}
           stringOrder={stringOrder}
           stringYPositions={stringYPositions}
           hoveredPosition={hoveredPosition}

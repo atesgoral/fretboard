@@ -14,3 +14,4 @@
 - Prefer the smallest correct fix that matches the actual problem. Avoid over-engineering or sweeping rewrites unless complexity is explicitly requested or technically necessary.
 - For fast audio response, playback should always be on mouse down, not click.
 - Prioritize strict music-theory accuracy in labels and explanations; avoid simplified wording that could be technically wrong.
+- When the user says a PR has been merged, switch back to `main` and pull the latest `origin/main`.

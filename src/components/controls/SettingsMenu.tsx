@@ -1,25 +1,11 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import {
-  Activity,
-  AudioLines,
-  Check,
-  Menu,
-  Monitor,
-  Rows3,
-  Sun,
-  ArrowUpDown,
-  Moon,
-} from 'lucide-react'
+import { Activity, AudioLines, Check, Menu, Monitor, Sun, Moon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ThemePreference } from '../../hooks/useThemePreference'
 
 type SettingsMenuProps = {
   preference: ThemePreference
   onCycleTheme: () => void
-  linear: boolean
-  onToggleLinear: () => void
-  lowEAtBottom: boolean
-  onToggleLowEPosition: () => void
   naturalDecay: boolean
   onToggleNaturalDecay: () => void
   reverbEnabled: boolean
@@ -50,10 +36,6 @@ function MenuItem({ children }: { children: ReactNode }) {
 export default function SettingsMenu({
   preference,
   onCycleTheme,
-  linear,
-  onToggleLinear,
-  lowEAtBottom,
-  onToggleLowEPosition,
   naturalDecay,
   onToggleNaturalDecay,
   reverbEnabled,
@@ -85,26 +67,6 @@ export default function SettingsMenu({
             <span>{getThemeLabel(preference)}</span>
           </MenuItem>
         </DropdownMenu.Item>
-
-        <DropdownMenu.Item onSelect={onToggleLinear}>
-          <MenuItem>
-            <span className="inline-flex items-center gap-2">
-              <Rows3 className="h-4 w-4" aria-hidden="true" /> Fret spacing
-            </span>
-            <span>{linear ? 'Linear' : 'Realistic'}</span>
-          </MenuItem>
-        </DropdownMenu.Item>
-
-        <DropdownMenu.CheckboxItem checked={!lowEAtBottom} onCheckedChange={onToggleLowEPosition}>
-          <MenuItem>
-            <span className="inline-flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4" aria-hidden="true" /> Show low E on top
-            </span>
-            <DropdownMenu.ItemIndicator>
-              <Check className="h-4 w-4" aria-hidden="true" />
-            </DropdownMenu.ItemIndicator>
-          </MenuItem>
-        </DropdownMenu.CheckboxItem>
 
         <DropdownMenu.CheckboxItem checked={naturalDecay} onCheckedChange={onToggleNaturalDecay}>
           <MenuItem>

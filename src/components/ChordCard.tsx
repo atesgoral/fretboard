@@ -42,13 +42,13 @@ const cornerButtonClass =
 function ChordCornerButton({
   title,
   positionClassName,
-  onMouseDown,
+  onPointerDown,
   onClick,
   children,
 }: {
   title: string
   positionClassName: string
-  onMouseDown?: () => void
+  onPointerDown?: () => void
   onClick?: () => void
   children: ReactNode
 }) {
@@ -58,13 +58,13 @@ function ChordCornerButton({
         type="button"
         title={title}
         aria-label={title}
-        onMouseDown={(event) => {
-          if (!onMouseDown) {
+        onPointerDown={(event) => {
+          if (!onPointerDown) {
             return
           }
           event.preventDefault()
           event.stopPropagation()
-          onMouseDown()
+          onPointerDown()
         }}
         onClick={(event) => {
           if (!onClick) {
@@ -187,7 +187,7 @@ export default function ChordCard({
       <ChordCornerButton
         title={playTitle}
         positionClassName="bottom-1 right-1"
-        onMouseDown={onPlay}
+        onPointerDown={onPlay}
       >
         <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
       </ChordCornerButton>

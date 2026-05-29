@@ -10,6 +10,12 @@ vi.mock('smplr', () => ({
 }))
 
 describe('App', () => {
+  function openMenu(name: string) {
+    const trigger = screen.getByRole('button', { name })
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' })
+  }
+
   it('renders a fretboard and separate settings menu triggers', () => {
     render(<App />)
 
@@ -18,17 +24,21 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Open fretboard settings menu' })).toBeInTheDocument()
   })
 
-  it('keeps fretboard settings in the fretboard menu', () => {
+  it('keeps fretboard settings out of the app settings menu', async () => {
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }))
+    openMenu('Open settings menu')
 
-    expect(screen.getByText('Natural decay')).toBeInTheDocument()
+    expect(await screen.findByText('Natural decay')).toBeInTheDocument()
     expect(screen.queryByText('Fret spacing')).not.toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open fretboard settings menu' }))
+  it('shows fretboard settings in the panel menu', async () => {
+    render(<App />)
 
-    expect(screen.getByText('Fret spacing')).toBeInTheDocument()
+    openMenu('Open fretboard settings menu')
+
+    expect(await screen.findByText('Fret spacing')).toBeInTheDocument()
     expect(screen.getByText('Show low E on top')).toBeInTheDocument()
   })
 })

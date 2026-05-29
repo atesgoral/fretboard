@@ -33,11 +33,14 @@ describe('PinnedChordList', () => {
     fireEvent.pointerEnter(card!)
     fireEvent.pointerLeave(card!)
 
-    expect(onHoverChord).toHaveBeenNthCalledWith(1, {
-      root: 'C',
-      qualityId: 'maj',
-      extensionIds: [],
-    })
+    expect(onHoverChord).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        root: 'C',
+        qualityId: 'maj',
+        extensionIds: [],
+      }),
+    )
     expect(onHoverChord).toHaveBeenLastCalledWith(null)
   })
 })

@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:no-inline-svg": "sh -c 'if rg \"<svg\" src --glob \"*.tsx\"; then echo \"Inline SVG found. Use lucide-react icons.\"; exit 1; fi'",
+    "import:oolimo-chords": "node scripts/import-oolimo-chords.mjs",
     "prepare": "simple-git-hooks"
   },
   "dependencies": {

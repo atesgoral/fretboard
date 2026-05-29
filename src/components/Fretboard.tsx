@@ -167,7 +167,10 @@ type FretLabelsProps = {
 
 function FretLabels({ fretPositions, frets }: FretLabelsProps) {
   return (
-    <div className="relative mx-auto mt-2 h-5" style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}>
+    <div
+      className="relative mx-auto mt-2 h-5 select-none"
+      style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
+    >
       <span
         className="absolute -translate-x-1/2 text-xs font-medium tracking-wide text-zinc-600 dark:text-zinc-300"
         style={{ left: `${((fretPositions[0] + fretPositions[1]) / 2) * 100}%` }}

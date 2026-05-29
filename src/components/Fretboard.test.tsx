@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import Fretboard from './Fretboard'
 
 const audioMocks = vi.hoisted(() => ({
@@ -15,6 +15,10 @@ vi.mock('smplr', () => ({
   Reverb: audioMocks.reverb,
   Soundfont: audioMocks.soundfont,
 }))
+
+const originalSetPointerCapture = HTMLElement.prototype.setPointerCapture
+const originalHasPointerCapture = HTMLElement.prototype.hasPointerCapture
+const originalReleasePointerCapture = HTMLElement.prototype.releasePointerCapture
 
 type WindowWithWebKitAudioContext = Window & {
   webkitAudioContext?: new () => AudioContext
@@ -52,6 +56,36 @@ class MockAudioContext {
     return Promise.resolve()
   }
 }
+
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+    configurable: true,
+    value: vi.fn(),
+  })
+  Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+    configurable: true,
+    value: vi.fn(() => false),
+  })
+  Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+    configurable: true,
+    value: vi.fn(),
+  })
+})
+
+afterAll(() => {
+  Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+    configurable: true,
+    value: originalSetPointerCapture,
+  })
+  Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+    configurable: true,
+    value: originalHasPointerCapture,
+  })
+  Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+    configurable: true,
+    value: originalReleasePointerCapture,
+  })
+})
 
 describe('Fretboard audio playback', () => {
   const originalAudioContext = window.AudioContext
@@ -155,5 +189,38 @@ describe('Fretboard audio playback', () => {
     await waitFor(() => {
       expect(audioMocks.start).toHaveBeenCalledWith({ duration: 1, note: 40, velocity: 110 })
     })
+  })
+})
+
+function renderMutedFretboardWithOutsideControl() {
+  render(
+    <div>
+      <Fretboard
+        linear
+        lowEAtBottom={false}
+        naturalDecay={false}
+        reverbEnabled={false}
+        muted
+        markedNotes={new Map()}
+        playedPositions={[]}
+        playSequence={0}
+      />
+      <button type="button">Outside control</button>
+    </div>,
+  )
+}
+
+describe('Fretboard interaction state', () => {
+  it('clears the last played note when pressing outside the fretboard', () => {
+    renderMutedFretboardWithOutsideControl()
+
+    fireEvent.pointerDown(screen.getByTitle('Play string 1, open string'), { pointerId: 1 })
+    fireEvent.pointerUp(window, { pointerId: 1 })
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside control' }), { pointerId: 2 })
+
+    expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
 })

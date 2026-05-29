@@ -1,5 +1,6 @@
 import { NOTE_NAMES, type NoteName } from './chords'
-import { Eye, EyeOff } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
+import { useState } from 'react'
 import { SCALE_OPTIONS, type ScaleId } from './scales'
 
 export type ScaleRootSelection = NoteName | null
@@ -10,6 +11,9 @@ const KEY_OPTIONS = [
   { value: KEY_NONE_VALUE, label: 'None' },
   ...NOTE_NAMES.map((note) => ({ value: note, label: note })),
 ]
+
+const cornerButtonClass =
+  'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 enabled:dark:hover:border-zinc-400 enabled:dark:hover:text-zinc-100'
 
 type ChordBrowserProps = {
   scaleRoot: ScaleRootSelection
@@ -64,39 +68,65 @@ export default function ChordBrowser({
   onToggleScaleNotes,
 }: ChordBrowserProps) {
   const scaleToggleTitle = showScaleNotes ? 'Hide scale notes' : 'Show scale notes'
+  const [collapsed, setCollapsed] = useState(false)
+  const collapseTitle = collapsed ? 'Expand scale panel' : 'Collapse scale panel'
 
   return (
     <section className="relative rounded-lg border border-amber-200/80 p-3 shadow-sm dark:border-amber-800/50">
-      <div className="flex flex-wrap items-end gap-3 pr-8">
-        <SelectField
-          label="Key"
-          value={scaleRoot ?? KEY_NONE_VALUE}
-          options={KEY_OPTIONS}
-          onChange={(value) =>
-            onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
-          }
-        />
-        <SelectField
-          label="Scale"
-          value={scaleId}
-          options={SCALE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
-          onChange={(value) => onScaleIdChange(value as ScaleId)}
-          disabled={scaleRoot === null}
-        />
-      </div>
       <button
         type="button"
-        title={scaleToggleTitle}
-        aria-label={scaleToggleTitle}
-        onClick={onToggleScaleNotes}
-        className="absolute right-2 top-2 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 enabled:dark:hover:border-zinc-400 enabled:dark:hover:text-zinc-100"
+        title={collapseTitle}
+        aria-label={collapseTitle}
+        onClick={() => setCollapsed((current) => !current)}
+        className={`absolute right-2 top-2 ${cornerButtonClass}`}
       >
-        {showScaleNotes ? (
-          <Eye className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        {collapsed ? (
+          <ChevronDown className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         ) : (
-          <EyeOff className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+          <ChevronUp className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         )}
       </button>
+      {collapsed ? (
+        <h2 className="pr-8 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300">
+          Scale
+        </h2>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-end gap-3 pr-8">
+            <SelectField
+              label="Key"
+              value={scaleRoot ?? KEY_NONE_VALUE}
+              options={KEY_OPTIONS}
+              onChange={(value) =>
+                onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
+              }
+            />
+            <SelectField
+              label="Scale"
+              value={scaleId}
+              options={SCALE_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              onChange={(value) => onScaleIdChange(value as ScaleId)}
+              disabled={scaleRoot === null}
+            />
+          </div>
+          <button
+            type="button"
+            title={scaleToggleTitle}
+            aria-label={scaleToggleTitle}
+            onClick={onToggleScaleNotes}
+            className={`absolute bottom-2 right-2 ${cornerButtonClass}`}
+          >
+            {showScaleNotes ? (
+              <Eye className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <EyeOff className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+            )}
+          </button>
+        </>
+      )}
     </section>
   )
 }

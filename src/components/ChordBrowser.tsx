@@ -66,8 +66,8 @@ export default function ChordBrowser({
   const scaleToggleTitle = showScaleNotes ? 'Hide scale notes' : 'Show scale notes'
 
   return (
-    <section className="rounded-lg border border-amber-200/80 p-3 shadow-sm dark:border-amber-800/50">
-      <div className="flex flex-wrap items-end gap-3">
+    <section className="relative rounded-lg border border-amber-200/80 p-3 shadow-sm dark:border-amber-800/50">
+      <div className="flex flex-wrap items-end gap-3 pr-8">
         <SelectField
           label="Key"
           value={scaleRoot ?? KEY_NONE_VALUE}
@@ -83,20 +83,20 @@ export default function ChordBrowser({
           onChange={(value) => onScaleIdChange(value as ScaleId)}
           disabled={scaleRoot === null}
         />
-        <button
-          type="button"
-          title={scaleToggleTitle}
-          aria-label={scaleToggleTitle}
-          onClick={onToggleScaleNotes}
-          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500 enabled:dark:hover:text-zinc-100"
-        >
-          {showScaleNotes ? (
-            <Eye className="pointer-events-none h-5 w-5" aria-hidden="true" />
-          ) : (
-            <EyeOff className="pointer-events-none h-5 w-5" aria-hidden="true" />
-          )}
-        </button>
       </div>
+      <button
+        type="button"
+        title={scaleToggleTitle}
+        aria-label={scaleToggleTitle}
+        onClick={onToggleScaleNotes}
+        className="absolute right-2 top-2 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 enabled:dark:hover:border-zinc-400 enabled:dark:hover:text-zinc-100"
+      >
+        {showScaleNotes ? (
+          <Eye className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <EyeOff className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
+        )}
+      </button>
     </section>
   )
 }

@@ -1,15 +1,23 @@
 import type { NoteName } from '../components/chords'
+import {
+  DEFAULT_CHORD_PLAYBACK_SETTINGS,
+  type ChordPlaybackSettings,
+  type ChordPlaybackSettingsOverride,
+} from '../components/chordPlayback'
 import type { ScaleId } from '../components/scales'
 
 export const APP_PREFERENCES_STORAGE_KEY = 'fretboard-app-preferences'
 
 export type ChordSelection = { root: NoteName; qualityId: string; extensionIds: string[] }
+export type PinnedChord = ChordSelection & {
+  playbackSettings: ChordPlaybackSettings | ChordPlaybackSettingsOverride
+}
 
 export type TimelineState = {
   root: NoteName
   qualityId: string
   extensionIds: string[]
-  swatches: ChordSelection[]
+  swatches: PinnedChord[]
   activeSwatchIndex: number | null
 }
 
@@ -57,11 +65,26 @@ function cloneChordSelection(chord: ChordSelection): ChordSelection {
   return { ...chord, extensionIds: [...chord.extensionIds] }
 }
 
+function clonePlaybackSettings<T extends ChordPlaybackSettings | ChordPlaybackSettingsOverride>(
+  settings: T,
+): T {
+  return { ...settings }
+}
+
+function normalizePinnedChord(chord: ChordSelection | PinnedChord): PinnedChord {
+  return {
+    ...cloneChordSelection(chord),
+    playbackSettings: clonePlaybackSettings(
+      'playbackSettings' in chord ? chord.playbackSettings : DEFAULT_CHORD_PLAYBACK_SETTINGS,
+    ),
+  }
+}
+
 function cloneTimelineState(state: TimelineState): TimelineState {
   return {
     ...state,
     extensionIds: [...state.extensionIds],
-    swatches: state.swatches.map(cloneChordSelection),
+    swatches: state.swatches.map(normalizePinnedChord),
   }
 }
 
@@ -70,7 +93,7 @@ function getInitialTimelineState(stored: StoredPreferences): TimelineState {
     root: stored.root ?? DEFAULT_TIMELINE_STATE.root,
     qualityId: stored.qualityId ?? DEFAULT_TIMELINE_STATE.qualityId,
     extensionIds: stored.extensionIds ?? DEFAULT_TIMELINE_STATE.extensionIds,
-    swatches: stored.swatches ?? DEFAULT_TIMELINE_STATE.swatches,
+    swatches: (stored.swatches ?? DEFAULT_TIMELINE_STATE.swatches).map(normalizePinnedChord),
     activeSwatchIndex: stored.activeSwatchIndex ?? DEFAULT_TIMELINE_STATE.activeSwatchIndex,
   }
 }
@@ -110,7 +133,9 @@ function updateActiveSwatch(state: TimelineState, update: Partial<ChordSelection
   return {
     ...state,
     swatches: state.swatches.map((swatch, index) =>
-      index === state.activeSwatchIndex ? { ...swatch, ...update } : swatch,
+      index === state.activeSwatchIndex
+        ? { ...swatch, ...update, extensionIds: update.extensionIds ?? swatch.extensionIds }
+        : swatch,
     ),
   }
 }
@@ -148,8 +173,13 @@ export type AppAction =
   | { type: 'setExtensions'; extensionIds: string[] }
   | { type: 'toggleExtension'; extensionId: string }
   | { type: 'addSwatch' }
-  | { type: 'addSwatchChord'; chord: ChordSelection }
-  | { type: 'pinChord'; chord: ChordSelection }
+  | { type: 'addSwatchChord'; chord: ChordSelection; playbackSettings: ChordPlaybackSettings }
+  | { type: 'pinChord'; chord: ChordSelection; playbackSettings: ChordPlaybackSettings }
+  | {
+      type: 'setPinnedChordPlaybackSettings'
+      index: number
+      playbackSettings: ChordPlaybackSettings | ChordPlaybackSettingsOverride
+    }
   | { type: 'selectCurrentChord' }
   | { type: 'selectSwatch'; index: number }
   | { type: 'removeSwatch'; index: number }
@@ -235,6 +265,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       root: current.root,
       qualityId: current.qualityId,
       extensionIds: [...current.extensionIds],
+      playbackSettings: clonePlaybackSettings(DEFAULT_CHORD_PLAYBACK_SETTINGS),
     }
     next = {
       ...current,
@@ -246,6 +277,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       root: action.chord.root,
       qualityId: action.chord.qualityId,
       extensionIds: [...action.chord.extensionIds],
+      playbackSettings: clonePlaybackSettings(action.playbackSettings),
     }
     next = {
       ...current,
@@ -257,10 +289,21 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       root: action.chord.root,
       qualityId: action.chord.qualityId,
       extensionIds: [...action.chord.extensionIds],
+      playbackSettings: clonePlaybackSettings(action.playbackSettings),
     }
     next = {
       ...current,
       swatches: [...current.swatches, chord],
+    }
+  } else if (action.type === 'setPinnedChordPlaybackSettings') {
+    if (!current.swatches[action.index]) return state
+    next = {
+      ...current,
+      swatches: current.swatches.map((swatch, index) =>
+        index === action.index
+          ? { ...swatch, playbackSettings: clonePlaybackSettings(action.playbackSettings) }
+          : swatch,
+      ),
     }
   } else if (action.type === 'selectCurrentChord') {
     return {

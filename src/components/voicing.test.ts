@@ -1,0 +1,92 @@
+import { describe, expect, it } from 'vitest'
+import { NOTE_NAMES } from './chords'
+import { buildDiatonicTriads } from './diatonicChords'
+import { SCALE_OPTIONS } from './scales'
+import { buildCommonVoicing, getImportedVoicing } from './voicing'
+
+const OPEN_STRING_MIDI = [40, 45, 50, 55, 59, 64]
+
+function getLowestPitchClass(positions: Array<{ stringIndex: number; fret: number }>) {
+  const lowest = positions[0]
+  return lowest ? (OPEN_STRING_MIDI[lowest.stringIndex] + lowest.fret) % 12 : null
+}
+
+describe('buildCommonVoicing', () => {
+  it('uses imported chord shapes before falling back to pitch-class search', () => {
+    expect(buildCommonVoicing({ root: 'C', qualityId: 'maj', extensionIds: [] })).toEqual([
+      { stringIndex: 1, fret: 3 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+      { stringIndex: 5, fret: 0 },
+    ])
+  })
+
+  it('can prefer open position and inversion shapes from the imported database', () => {
+    const chord = { root: 'C' as const, qualityId: 'maj', extensionIds: [] }
+
+    expect(buildCommonVoicing(chord, { positionPreference: 'open' })).toEqual([
+      { stringIndex: 1, fret: 3 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+      { stringIndex: 5, fret: 3 },
+    ])
+    expect(buildCommonVoicing(chord, { inversionPreference: 'first' })).toEqual([
+      { stringIndex: 0, fret: 0 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+    ])
+    expect(buildCommonVoicing(chord, { inversionPreference: 'second' })).toEqual([
+      { stringIndex: 0, fret: 3 },
+      { stringIndex: 2, fret: 2 },
+      { stringIndex: 3, fret: 0 },
+      { stringIndex: 4, fret: 1 },
+    ])
+  })
+
+  it('maps current half-diminished selections to Oolimo m7(b5) voicings', () => {
+    expect(buildCommonVoicing({ root: 'C', qualityId: 'dim', extensionIds: ['b7'] })).toEqual([
+      { stringIndex: 1, fret: 3 },
+      { stringIndex: 3, fret: 3 },
+      { stringIndex: 4, fret: 4 },
+      { stringIndex: 5, fret: 2 },
+    ])
+  })
+
+  it('uses chords-db supplements for diminished triads missing from Oolimo', () => {
+    expect(buildCommonVoicing({ root: 'C', qualityId: 'dim', extensionIds: [] })).toEqual([
+      { stringIndex: 1, fret: 3 },
+      { stringIndex: 2, fret: 1 },
+      { stringIndex: 4, fret: 1 },
+      { stringIndex: 5, fret: 2 },
+    ])
+  })
+
+  it('builds requested inversions when imported diminished shapes only provide root position', () => {
+    const chord = { root: 'E' as const, qualityId: 'dim', extensionIds: [] }
+
+    const rootPosition = buildCommonVoicing(chord, { inversionPreference: 'root' })
+    const firstInversion = buildCommonVoicing(chord, { inversionPreference: 'first' })
+    const secondInversion = buildCommonVoicing(chord, { inversionPreference: 'second' })
+
+    expect(getLowestPitchClass(rootPosition)).toBe(4)
+    expect(getLowestPitchClass(firstInversion)).toBe(7)
+    expect(getLowestPitchClass(secondInversion)).toBe(10)
+  })
+
+  it('has imported voicing coverage for every listed diatonic triad', () => {
+    const missing = NOTE_NAMES.flatMap((scaleRoot) =>
+      SCALE_OPTIONS.flatMap((scale) =>
+        buildDiatonicTriads(scaleRoot, scale.value)
+          .filter(({ chord }) => getImportedVoicing(chord) === null)
+          .map(
+            ({ degreeLabel, chord }) => `${scaleRoot} ${scale.label} ${degreeLabel} ${chord.root}`,
+          ),
+      ),
+    )
+
+    expect(missing).toEqual([])
+  })
+})

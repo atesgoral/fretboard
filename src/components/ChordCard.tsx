@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { Pin, Play, X } from 'lucide-react'
+import type { ChordPlaybackSettingsOverride } from './chordPlayback'
 import type { ChordSelection } from './chordSearch'
 import { getChordQueryForSelection } from './chordSearch'
+import ChordPlaybackSettingsMenu from './ChordPlaybackSettingsMenu'
 
 export type ChordCardProps = {
   chord: ChordSelection
@@ -11,8 +13,12 @@ export type ChordCardProps = {
   onPlay: () => void
   onHoverStart?: () => void
   onHoverEnd?: () => void
+  onPlayHoverStart?: () => void
+  onPlayHoverEnd?: () => void
   onPin?: () => void
   onRemove?: () => void
+  playbackSettings?: ChordPlaybackSettingsOverride
+  onPlaybackSettingsChange?: (settings: ChordPlaybackSettingsOverride) => void
 }
 
 function getChordLabel(chord: ChordSelection) {
@@ -43,12 +49,16 @@ function ChordCornerButton({
   title,
   positionClassName,
   onPointerDown,
+  onPointerEnter,
+  onPointerLeave,
   onClick,
   children,
 }: {
   title: string
   positionClassName: string
   onPointerDown?: () => void
+  onPointerEnter?: () => void
+  onPointerLeave?: () => void
   onClick?: () => void
   children: ReactNode
 }) {
@@ -65,6 +75,20 @@ function ChordCornerButton({
           event.preventDefault()
           event.stopPropagation()
           onPointerDown()
+        }}
+        onPointerEnter={(event) => {
+          if (!onPointerEnter) {
+            return
+          }
+          event.stopPropagation()
+          onPointerEnter()
+        }}
+        onPointerLeave={(event) => {
+          if (!onPointerLeave) {
+            return
+          }
+          event.stopPropagation()
+          onPointerLeave()
         }}
         onClick={(event) => {
           if (!onClick) {
@@ -128,8 +152,12 @@ export default function ChordCard({
   onPlay,
   onHoverStart,
   onHoverEnd,
+  onPlayHoverStart,
+  onPlayHoverEnd,
   onPin,
   onRemove,
+  playbackSettings,
+  onPlaybackSettingsChange,
 }: ChordCardProps) {
   const label = getChordLabel(chord)
   const qualityLine = getChordQualityLine(chord)
@@ -185,10 +213,23 @@ export default function ChordCard({
           <X className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         </ChordCornerButton>
       ) : null}
+      {playbackSettings && onPlaybackSettingsChange ? (
+        <ChordPlaybackSettingsMenu
+          settings={playbackSettings}
+          onSettingsChange={(settings) =>
+            onPlaybackSettingsChange(settings as ChordPlaybackSettingsOverride)
+          }
+          includeInheritOption
+          title={`Open chord settings for ${label}`}
+          className="absolute bottom-1 left-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto"
+        />
+      ) : null}
       <ChordCornerButton
         title={playTitle}
         positionClassName="bottom-1 right-1"
         onPointerDown={onPlay}
+        onPointerEnter={onPlayHoverStart}
+        onPointerLeave={onPlayHoverEnd}
       >
         <Play className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
       </ChordCornerButton>

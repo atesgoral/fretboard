@@ -2,13 +2,26 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import type { ChordSelection } from './chordSearch'
 import ChordCard from './ChordCard'
+import ChordPlaybackSettingsMenu from './ChordPlaybackSettingsMenu'
 import { getChordSelectionKey } from './chordSelection'
+import type { ChordPlaybackSettings, ChordPlaybackSettingsOverride } from './chordPlayback'
+
+export type PinnedChord = ChordSelection & {
+  playbackSettings: ChordPlaybackSettings | ChordPlaybackSettingsOverride
+}
 
 type PinnedChordListProps = {
-  pinnedChords: ChordSelection[]
-  onPlayChord: (chord: ChordSelection) => void
+  pinnedChords: PinnedChord[]
+  onPlayChord: (chord: PinnedChord) => void
   onHoverChord: (chord: ChordSelection | null) => void
+  onPreviewChordVoicing: (chord: PinnedChord) => void
   onRemoveChord: (index: number) => void
+  onPlaybackSettingsChange: (
+    index: number,
+    settings: ChordPlaybackSettings | ChordPlaybackSettingsOverride,
+  ) => void
+  auditionSettings: ChordPlaybackSettings
+  onAuditionSettingsChange: (settings: ChordPlaybackSettings) => void
 }
 
 const cornerButtonClass =
@@ -18,7 +31,11 @@ export default function PinnedChordList({
   pinnedChords,
   onPlayChord,
   onHoverChord,
+  onPreviewChordVoicing,
   onRemoveChord,
+  onPlaybackSettingsChange,
+  auditionSettings,
+  onAuditionSettingsChange,
 }: PinnedChordListProps) {
   const [collapsed, setCollapsed] = useState(false)
   const collapseTitle = collapsed ? 'Expand pinned chords panel' : 'Collapse pinned chords panel'
@@ -53,8 +70,13 @@ export default function PinnedChordList({
           <ChevronUp className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         )}
       </button>
+      <ChordPlaybackSettingsMenu
+        settings={auditionSettings}
+        onSettingsChange={(settings) => onAuditionSettingsChange(settings as ChordPlaybackSettings)}
+        className="absolute right-10 top-2"
+      />
       <h2
-        className={`${collapsed ? '' : 'mb-3'} pr-8 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400`}
+        className={`${collapsed ? '' : 'mb-3'} pr-16 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400`}
       >
         Pinned chords
       </h2>
@@ -66,7 +88,11 @@ export default function PinnedChordList({
               chord={chord}
               onPlay={() => onPlayChord(chord)}
               onHoverStart={() => onHoverChord(chord)}
+              onPlayHoverStart={() => onPreviewChordVoicing(chord)}
+              onPlayHoverEnd={() => onHoverChord(chord)}
               onRemove={() => onRemoveChord(index)}
+              playbackSettings={chord.playbackSettings}
+              onPlaybackSettingsChange={(settings) => onPlaybackSettingsChange(index, settings)}
             />
           ))}
         </div>

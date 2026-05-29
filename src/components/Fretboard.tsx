@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Reverb, Soundfont } from 'smplr'
 import FretboardLegend from './FretboardLegend'
+import type { ChordPlaybackMode } from './chordPlayback'
 
 const STRINGS = 6
 const DEFAULT_FRETS = 18
@@ -14,6 +15,7 @@ const GUITAR_SOUNDFONT = 'acoustic_guitar_nylon'
 const FALLBACK_SOUNDFONT = 'acoustic_guitar_steel'
 const REVERB_STORAGE_KEY = 'cadence_reverb'
 const DEFAULT_REVERB_LEVEL = 0.15
+const STRUM_DELAY_MS = 28
 const TOUCH_SCROLL_THRESHOLD_PX = 8
 const TOUCH_LONG_PRESS_MS = 300
 
@@ -61,9 +63,11 @@ type FretboardProps = {
   frets?: number
   markedNotes: Map<number, string>
   highlightedPitchClasses?: number[]
+  highlightedPositions?: ActivePosition[]
   highlightedChordRoles?: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
+  playbackMode?: ChordPlaybackMode
 }
 
 function getStoredReverbLevel() {
@@ -329,6 +333,7 @@ type NoteGridProps = {
   onPressEnd: (pointerId: number) => void
   markedNotes: Map<number, string>
   highlightedPitchClasses: Set<number>
+  highlightedPositionKeys: Set<string>
   highlightedChordRoles: Map<number, string>
   activePositions: ActivePosition[]
   burstActivePositions: ActivePosition[]
@@ -433,6 +438,7 @@ function NoteGrid({
   onPressEnd,
   markedNotes,
   highlightedPitchClasses,
+  highlightedPositionKeys,
   highlightedChordRoles,
   activePositions,
   burstActivePositions,
@@ -684,10 +690,12 @@ function NoteGrid({
           const isDirectlyHovered =
             hoveredPosition?.stringIndex === stringIndex && hoveredPosition?.fret === fret
           const noteClass = (OPEN_STRING_MIDI[stringIndex] + fret) % 12
-          const isHighlighted = isDirectlyHovered || highlightedPitchClasses.has(noteClass)
+          const positionKey = `${stringIndex}:${fret}`
+          const isPositionHighlighted = highlightedPositionKeys.has(positionKey)
+          const isChordToneHighlighted = highlightedPitchClasses.has(noteClass)
+          const isHighlighted = isDirectlyHovered || isChordToneHighlighted || isPositionHighlighted
           const role = markedNotes.get(noteClass)
           const chordRole = highlightedChordRoles.get(noteClass)
-          const positionKey = `${stringIndex}:${fret}`
           const isActive = activePositionSet.has(positionKey)
           const showChordRoleLabel = Boolean(chordRole && isHighlighted && !isActive)
           const shouldShowCircle = Boolean(role) || isActive || isHighlighted
@@ -697,7 +705,7 @@ function NoteGrid({
             burstActivePositionSet.has(positionKey) && burstKey > 0 && fret > 0
           const circleToneClass = getCircleToneClass({
             isDirectlyHovered,
-            isChordHighlighted: highlightedPitchClasses.has(noteClass),
+            isChordHighlighted: isChordToneHighlighted || isPositionHighlighted,
             isChordRoot: chordRole === 'R',
             isActive,
             scaleRole: role,
@@ -813,14 +821,21 @@ export default function Fretboard({
   frets = DEFAULT_FRETS,
   markedNotes,
   highlightedPitchClasses = [],
+  highlightedPositions = [],
   highlightedChordRoles = new Map(),
   playedPositions,
   playSequence,
+  playbackMode = 'pluck',
 }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
   const highlightedPitchClassSet = useMemo(
     () => new Set(highlightedPitchClasses),
     [highlightedPitchClasses],
+  )
+  const highlightedPositionKeySet = useMemo(
+    () =>
+      new Set(highlightedPositions.map((position) => `${position.stringIndex}:${position.fret}`)),
+    [highlightedPositions],
   )
   const stringYPositions = useMemo(() => getStringYPositions(), [])
   const stringThicknesses = useMemo(
@@ -872,11 +887,14 @@ export default function Fretboard({
     return new Set(
       stringOrder
         .map((stringIndex, visualIndex) =>
-          highlightedPitchClassSet.has(OPEN_STRING_MIDI[stringIndex] % 12) ? visualIndex : -1,
+          highlightedPitchClassSet.has(OPEN_STRING_MIDI[stringIndex] % 12) ||
+          highlightedPositionKeySet.has(`${stringIndex}:0`)
+            ? visualIndex
+            : -1,
         )
         .filter((visualIndex) => visualIndex >= 0),
     )
-  }, [highlightedPitchClassSet, stringOrder])
+  }, [highlightedPitchClassSet, highlightedPositionKeySet, stringOrder])
   const activeStringVisualIndexes = useMemo(() => {
     const activeStringIndexes = new Set(
       recentlyPlayedPositions
@@ -1204,10 +1222,25 @@ export default function Fretboard({
     }
 
     markRecentlyPlayed(playedPositions)
-    playedPositions.forEach((position) => {
-      void playNote(position.stringIndex, position.fret, 'pick')
-    })
-  }, [markRecentlyPlayed, playNote, playSequence, playedPositions])
+    if (playbackMode === 'pluck') {
+      playedPositions.forEach((position) => {
+        void playNote(position.stringIndex, position.fret, 'pick')
+      })
+      return
+    }
+
+    const timeoutIds = [...playedPositions]
+      .sort((left, right) => left.stringIndex - right.stringIndex)
+      .map((position, index) =>
+        window.setTimeout(() => {
+          void playNote(position.stringIndex, position.fret, 'pick')
+        }, index * STRUM_DELAY_MS),
+      )
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+  }, [markRecentlyPlayed, playNote, playSequence, playedPositions, playbackMode])
 
   const handleFretboardPointerLeave = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
@@ -1257,6 +1290,7 @@ export default function Fretboard({
             onPressEnd={handlePressEnd}
             markedNotes={markedNotes}
             highlightedPitchClasses={highlightedPitchClassSet}
+            highlightedPositionKeys={highlightedPositionKeySet}
             highlightedChordRoles={highlightedChordRoles}
             activePositions={activePositions}
             burstActivePositions={burstActivePositions}

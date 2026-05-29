@@ -1218,52 +1218,51 @@ export default function Fretboard({
   )
 
   return (
-    <section
-      ref={scrollContainerRef}
-      className="w-full overflow-x-auto border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
-    >
-      <div
-        ref={fretboardSurfaceRef}
-        className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
-        onPointerLeave={handleFretboardPointerLeave}
-        style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
-      >
-        <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
-        <FretLines fretPositions={fretPositions} frets={frets} />
-        <StringLines
-          stringYPositions={stringYPositions}
-          stringThicknesses={stringThicknesses}
-          hoveredOpenStringVisualIndex={hoveredOpenStringVisualIndex}
-          highlightedOpenStringVisualIndexes={highlightedOpenStringVisualIndexes}
-          activeStringVisualIndexes={activeStringVisualIndexes}
-          scaleOpenStringVisualIndexes={scaleOpenStringVisualIndexes}
-        />
-        <FretMarkers
-          fretPositions={fretPositions}
-          frets={frets}
-          stringYPositions={stringYPositions}
-        />
-        <NoteGrid
-          fretPositions={fretPositions}
-          frets={frets}
-          scrollContainerRef={scrollContainerRef}
-          stringOrder={stringOrder}
-          stringYPositions={stringYPositions}
-          hoveredPosition={hoveredPosition}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={clearHoverPosition}
-          onPressStart={handlePressStart}
-          onPressEnd={handlePressEnd}
-          markedNotes={markedNotes}
-          highlightedPitchClasses={highlightedPitchClassSet}
-          highlightedChordRoles={highlightedChordRoles}
-          activePositions={activePositions}
-          burstActivePositions={burstActivePositions}
-          animatedPositionBursts={animatedPositionBursts}
-          stringThicknesses={stringThicknesses}
-        />
+    <section className="w-full border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+      <div ref={scrollContainerRef} className="w-full overflow-x-auto">
+        <div
+          ref={fretboardSurfaceRef}
+          className="relative mx-auto h-[260px] bg-zinc-50 dark:bg-zinc-800"
+          onPointerLeave={handleFretboardPointerLeave}
+          style={{ minWidth: FRETBOARD_MIN_WIDTH_PX }}
+        >
+          <div className="absolute inset-0 border border-zinc-200 dark:border-zinc-700" />
+          <FretLines fretPositions={fretPositions} frets={frets} />
+          <StringLines
+            stringYPositions={stringYPositions}
+            stringThicknesses={stringThicknesses}
+            hoveredOpenStringVisualIndex={hoveredOpenStringVisualIndex}
+            highlightedOpenStringVisualIndexes={highlightedOpenStringVisualIndexes}
+            activeStringVisualIndexes={activeStringVisualIndexes}
+            scaleOpenStringVisualIndexes={scaleOpenStringVisualIndexes}
+          />
+          <FretMarkers
+            fretPositions={fretPositions}
+            frets={frets}
+            stringYPositions={stringYPositions}
+          />
+          <NoteGrid
+            fretPositions={fretPositions}
+            frets={frets}
+            scrollContainerRef={scrollContainerRef}
+            stringOrder={stringOrder}
+            stringYPositions={stringYPositions}
+            hoveredPosition={hoveredPosition}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={clearHoverPosition}
+            onPressStart={handlePressStart}
+            onPressEnd={handlePressEnd}
+            markedNotes={markedNotes}
+            highlightedPitchClasses={highlightedPitchClassSet}
+            highlightedChordRoles={highlightedChordRoles}
+            activePositions={activePositions}
+            burstActivePositions={burstActivePositions}
+            animatedPositionBursts={animatedPositionBursts}
+            stringThicknesses={stringThicknesses}
+          />
+        </div>
+        <FretLabels fretPositions={fretPositions} frets={frets} />
       </div>
-      <FretLabels fretPositions={fretPositions} frets={frets} />
       <NoteReadout activeNotes={activeNotes} />
       <FretboardLegend />
     </section>

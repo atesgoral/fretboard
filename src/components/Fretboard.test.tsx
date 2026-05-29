@@ -239,4 +239,15 @@ describe('Fretboard interaction state', () => {
 
     expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
+
+  it('keeps the legend outside the horizontal fretboard scroller', () => {
+    renderMutedFretboardWithOutsideControl()
+
+    const legend = screen.getByText('Last played')
+    const section = legend.closest('section')
+    const horizontalScroller = section?.querySelector('.overflow-x-auto')
+
+    expect(horizontalScroller).not.toBeNull()
+    expect(horizontalScroller).not.toContainElement(legend)
+  })
 })

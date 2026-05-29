@@ -38,6 +38,12 @@ export const SCALE_OPTIONS = [
     roles: ['1', '2', '3', '4', '5', '6', 'b7'],
   },
   {
+    value: 'bebop-dominant',
+    label: 'Bebop Dominant',
+    intervals: [0, 2, 4, 5, 7, 9, 10, 11],
+    roles: ['1', '2', '3', '4', '5', '6', 'b7', '7'],
+  },
+  {
     value: 'locrian',
     label: 'Locrian',
     intervals: [0, 1, 3, 5, 6, 8, 10],

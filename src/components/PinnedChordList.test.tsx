@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_CHORD_PLAYBACK_SETTINGS } from './chordPlayback'
+import type { ChordSelection } from './chordSearch'
 import PinnedChordList, { type PinnedChord } from './PinnedChordList'
 
 const pinnedChords: PinnedChord[] = [
@@ -12,14 +13,20 @@ const pinnedChords: PinnedChord[] = [
   },
 ]
 
-function renderPinnedChordList(showChordNotes = true) {
+function renderPinnedChordList({
+  onHoverChord = vi.fn(),
+  showChordNotes = true,
+}: {
+  onHoverChord?: (chord: ChordSelection | null) => void
+  showChordNotes?: boolean
+} = {}) {
   const onToggleChordNotes = vi.fn()
 
   render(
     <PinnedChordList
       pinnedChords={pinnedChords}
       onPlayChord={vi.fn()}
-      onHoverChord={vi.fn()}
+      onHoverChord={onHoverChord}
       onPreviewChordVoicing={vi.fn()}
       onRemoveChord={vi.fn()}
       onPlaybackSettingsChange={vi.fn()}
@@ -30,7 +37,7 @@ function renderPinnedChordList(showChordNotes = true) {
     />,
   )
 
-  return { onToggleChordNotes }
+  return { onHoverChord, onToggleChordNotes }
 }
 
 describe('PinnedChordList', () => {
@@ -43,7 +50,7 @@ describe('PinnedChordList', () => {
   })
 
   it('labels the eye button for showing hidden chord notes', () => {
-    renderPinnedChordList(false)
+    renderPinnedChordList({ showChordNotes: false })
 
     expect(screen.getByRole('button', { name: 'Show chord notes' })).toBeInTheDocument()
   })
@@ -54,5 +61,27 @@ describe('PinnedChordList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Collapse pinned chords panel' }))
 
     expect(screen.queryByRole('button', { name: 'Hide chord notes' })).not.toBeInTheDocument()
+  })
+
+  it('clears chord hover when the pointer leaves a pinned chord card', () => {
+    const onHoverChord = vi.fn()
+
+    renderPinnedChordList({ onHoverChord })
+
+    const card = screen.getByTitle('Cmaj').parentElement
+    expect(card).not.toBeNull()
+
+    fireEvent.pointerEnter(card!)
+    fireEvent.pointerLeave(card!)
+
+    expect(onHoverChord).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        root: 'C',
+        qualityId: 'maj',
+        extensionIds: [],
+      }),
+    )
+    expect(onHoverChord).toHaveBeenLastCalledWith(null)
   })
 })

@@ -131,6 +131,8 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
         naturalDecay={false}
         reverbEnabled={false}
         muted={false}
@@ -158,6 +160,8 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
         naturalDecay={false}
         reverbEnabled={false}
         muted={false}
@@ -176,6 +180,8 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
         naturalDecay={false}
         reverbEnabled={false}
         muted={false}
@@ -198,6 +204,8 @@ function renderMutedFretboardWithOutsideControl() {
       <Fretboard
         linear
         lowEAtBottom={false}
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
         naturalDecay={false}
         reverbEnabled={false}
         muted

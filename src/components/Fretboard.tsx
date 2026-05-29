@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Reverb, Soundfont } from 'smplr'
 import FretboardLegend from './FretboardLegend'
 import type { ChordPlaybackMode } from './chordPlayback'
+import FretboardSettingsMenu from './controls/FretboardSettingsMenu'
 
 const STRINGS = 6
 const DEFAULT_FRETS = 18
@@ -57,6 +58,8 @@ function getFretPositions(linear: boolean, frets: number) {
 type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
+  onToggleLinear: () => void
+  onToggleLowEPosition: () => void
   naturalDecay: boolean
   reverbEnabled: boolean
   muted: boolean
@@ -818,21 +821,19 @@ function NoteReadout({ activeNotes }: NoteReadoutProps) {
   const noteNames = activeNotes.map((note) => note.name)
 
   return (
-    <div className="relative my-3 flex min-h-10 items-center">
-      <div className="absolute left-1/2 -translate-x-1/2">
-        <span
-          className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 px-3 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 ${noteNames.length > 0 ? 'visible' : 'invisible'}`}
-        >
-          {noteNames.join(' · ')}
-        </span>
-      </div>
-    </div>
+    <span
+      className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 px-3 text-sm font-semibold text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 ${noteNames.length > 0 ? 'visible' : 'invisible'}`}
+    >
+      {noteNames.join(' · ')}
+    </span>
   )
 }
 
 export default function Fretboard({
   linear,
   lowEAtBottom,
+  onToggleLinear,
+  onToggleLowEPosition,
   naturalDecay,
   reverbEnabled,
   muted,
@@ -1330,7 +1331,17 @@ export default function Fretboard({
         </div>
         <FretLabels fretPositions={fretPositions} frets={frets} />
       </div>
-      <NoteReadout activeNotes={activeNotes} />
+      <div className="relative my-3 flex min-h-10 items-center justify-end">
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <NoteReadout activeNotes={activeNotes} />
+        </div>
+        <FretboardSettingsMenu
+          linear={linear}
+          lowEAtBottom={lowEAtBottom}
+          onToggleLinear={onToggleLinear}
+          onToggleLowEPosition={onToggleLowEPosition}
+        />
+      </div>
       <FretboardLegend />
     </section>
   )

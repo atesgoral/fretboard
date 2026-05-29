@@ -44,6 +44,8 @@ function ThemePane({ dark }: { dark: boolean }) {
         <Fretboard
           linear
           lowEAtBottom
+          onToggleLinear={() => undefined}
+          onToggleLowEPosition={() => undefined}
           naturalDecay
           reverbEnabled
           muted

@@ -7,16 +7,12 @@ type AppHeaderProps = {
   canRedo: boolean
   muted: boolean
   preference: ThemePreference
-  linear: boolean
-  lowEAtBottom: boolean
   naturalDecay: boolean
   reverbEnabled: boolean
   onUndo: () => void
   onRedo: () => void
   onToggleMuted: () => void
   onCycleTheme: () => void
-  onToggleLinear: () => void
-  onToggleLowEPosition: () => void
   onToggleNaturalDecay: () => void
   onToggleReverb: () => void
 }
@@ -31,16 +27,12 @@ export default function AppHeader({
   canRedo,
   muted,
   preference,
-  linear,
-  lowEAtBottom,
   naturalDecay,
   reverbEnabled,
   onUndo,
   onRedo,
   onToggleMuted,
   onCycleTheme,
-  onToggleLinear,
-  onToggleLowEPosition,
   onToggleNaturalDecay,
   onToggleReverb,
 }: AppHeaderProps) {
@@ -90,10 +82,6 @@ export default function AppHeader({
         <SettingsMenu
           preference={preference}
           onCycleTheme={onCycleTheme}
-          linear={linear}
-          onToggleLinear={onToggleLinear}
-          lowEAtBottom={lowEAtBottom}
-          onToggleLowEPosition={onToggleLowEPosition}
           naturalDecay={naturalDecay}
           onToggleNaturalDecay={onToggleNaturalDecay}
           reverbEnabled={reverbEnabled}

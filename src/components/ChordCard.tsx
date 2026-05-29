@@ -101,7 +101,6 @@ function ChordCornerButton({
           if (!onPointerLeave) {
             return
           }
-          event.stopPropagation()
           onPointerLeave()
         }}
         onClick={(event) => {

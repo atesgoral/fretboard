@@ -110,6 +110,7 @@ export default function DiatonicChordList({
                   degreeLabel={degreeLabel}
                   onPlay={() => onPlayChord(chord, resolvedSettings)}
                   onHoverStart={() => onHoverChord(chord)}
+                  onHoverEnd={() => onHoverChord(null)}
                   onPin={() => onPinChord(chord, resolvedSettings)}
                   onPlayHoverStart={() => onPreviewChordVoicing(chord, resolvedSettings)}
                   onPlayHoverEnd={() => onHoverChord(chord)}

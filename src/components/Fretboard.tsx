@@ -648,11 +648,11 @@ function NoteGrid({
   return (
     <div
       ref={gridRef}
-      className="absolute inset-0 touch-none"
+      className="absolute inset-0 touch-pan-y"
       onPointerMove={handleGridPointerMove}
       onPointerLeave={handleGridPointerLeave}
-      onPointerUp={handleGridPointerEnd}
-      onPointerCancel={handleGridPointerEnd}
+      onPointerUp={handleGridPointerUp}
+      onPointerCancel={handleGridPointerCancel}
     >
       {stringOrder.map((stringIndex, visualIndex) => {
         const band = stringBandBounds[visualIndex]

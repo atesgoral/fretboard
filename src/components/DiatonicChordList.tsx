@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { NoteName } from './chords'
 import ChordCard from './ChordCard'
+import ChordNotesVisibilityButton from './ChordNotesVisibilityButton'
 import ChordPlaybackSettingsMenu from './ChordPlaybackSettingsMenu'
 import {
   INHERITED_CHORD_PLAYBACK_SETTINGS,
@@ -22,6 +23,8 @@ type DiatonicChordListProps = {
   onPinChord: (chord: ChordSelection, playbackSettings: ChordPlaybackSettings) => void
   auditionSettings: ChordPlaybackSettings
   onAuditionSettingsChange: (settings: ChordPlaybackSettings) => void
+  showChordNotes: boolean
+  onToggleChordNotes: () => void
 }
 
 const cornerButtonClass =
@@ -39,6 +42,8 @@ export default function DiatonicChordList({
   onPinChord,
   auditionSettings,
   onAuditionSettingsChange,
+  showChordNotes,
+  onToggleChordNotes,
 }: DiatonicChordListProps) {
   const diatonicChords = useMemo(
     () => buildDiatonicTriads(scaleRoot, scaleId),
@@ -92,30 +97,37 @@ export default function DiatonicChordList({
         {collapsed ? 'Chords' : `Diatonic triads in ${scaleRoot} ${scaleLabel}`}
       </h2>
       {collapsed ? null : (
-        <div className="flex items-center gap-3 overflow-x-auto pb-1">
-          {diatonicChords.map(({ degreeLabel, chord }) => {
-            const chordKey = getDiatonicChordKey(degreeLabel, chord)
-            const settings = chordSettings[chordKey] ?? INHERITED_CHORD_PLAYBACK_SETTINGS
-            const resolvedSettings = resolveChordPlaybackSettings(settings, auditionSettings)
-            return (
-              <ChordCard
-                key={chordKey}
-                chord={chord}
-                degreeLabel={degreeLabel}
-                onPlay={() => onPlayChord(chord, resolvedSettings)}
-                onHoverStart={() => onHoverChord(chord)}
-                onHoverEnd={() => onHoverChord(null)}
-                onPin={() => onPinChord(chord, resolvedSettings)}
-                onPlayHoverStart={() => onPreviewChordVoicing(chord, resolvedSettings)}
-                onPlayHoverEnd={() => onHoverChord(chord)}
-                playbackSettings={settings}
-                onPlaybackSettingsChange={(nextSettings) =>
-                  setChordSettings((current) => ({ ...current, [chordKey]: nextSettings }))
-                }
-              />
-            )
-          })}
-        </div>
+        <>
+          <div className="flex items-center gap-3 overflow-x-auto pb-1">
+            {diatonicChords.map(({ degreeLabel, chord }) => {
+              const chordKey = getDiatonicChordKey(degreeLabel, chord)
+              const settings = chordSettings[chordKey] ?? INHERITED_CHORD_PLAYBACK_SETTINGS
+              const resolvedSettings = resolveChordPlaybackSettings(settings, auditionSettings)
+              return (
+                <ChordCard
+                  key={chordKey}
+                  chord={chord}
+                  degreeLabel={degreeLabel}
+                  onPlay={() => onPlayChord(chord, resolvedSettings)}
+                  onHoverStart={() => onHoverChord(chord)}
+                  onHoverEnd={() => onHoverChord(null)}
+                  onPin={() => onPinChord(chord, resolvedSettings)}
+                  onPlayHoverStart={() => onPreviewChordVoicing(chord, resolvedSettings)}
+                  onPlayHoverEnd={() => onHoverChord(chord)}
+                  playbackSettings={settings}
+                  onPlaybackSettingsChange={(nextSettings) =>
+                    setChordSettings((current) => ({ ...current, [chordKey]: nextSettings }))
+                  }
+                />
+              )
+            })}
+          </div>
+          <ChordNotesVisibilityButton
+            showChordNotes={showChordNotes}
+            onToggleChordNotes={onToggleChordNotes}
+            className={`absolute bottom-2 right-2 ${cornerButtonClass}`}
+          />
+        </>
       )}
     </section>
   )

@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import type { ChordSelection } from './chordSearch'
 import ChordCard from './ChordCard'
+import ChordNotesVisibilityButton from './ChordNotesVisibilityButton'
 import ChordPlaybackSettingsMenu from './ChordPlaybackSettingsMenu'
 import { getChordSelectionKey } from './chordSelection'
 import type { ChordPlaybackSettings, ChordPlaybackSettingsOverride } from './chordPlayback'
@@ -22,6 +23,8 @@ type PinnedChordListProps = {
   ) => void
   auditionSettings: ChordPlaybackSettings
   onAuditionSettingsChange: (settings: ChordPlaybackSettings) => void
+  showChordNotes: boolean
+  onToggleChordNotes: () => void
 }
 
 const cornerButtonClass =
@@ -36,6 +39,8 @@ export default function PinnedChordList({
   onPlaybackSettingsChange,
   auditionSettings,
   onAuditionSettingsChange,
+  showChordNotes,
+  onToggleChordNotes,
 }: PinnedChordListProps) {
   const [collapsed, setCollapsed] = useState(false)
   const collapseTitle = collapsed ? 'Expand pinned chords panel' : 'Collapse pinned chords panel'
@@ -81,22 +86,29 @@ export default function PinnedChordList({
         Pinned chords
       </h2>
       {collapsed ? null : (
-        <div className="flex items-center gap-3 overflow-x-auto pb-1">
-          {pinnedChords.map((chord, index) => (
-            <ChordCard
-              key={getChordSelectionKey(chord, index)}
-              chord={chord}
-              onPlay={() => onPlayChord(chord)}
-              onHoverStart={() => onHoverChord(chord)}
-              onHoverEnd={() => onHoverChord(null)}
-              onPlayHoverStart={() => onPreviewChordVoicing(chord)}
-              onPlayHoverEnd={() => onHoverChord(chord)}
-              onRemove={() => onRemoveChord(index)}
-              playbackSettings={chord.playbackSettings}
-              onPlaybackSettingsChange={(settings) => onPlaybackSettingsChange(index, settings)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center gap-3 overflow-x-auto pb-1">
+            {pinnedChords.map((chord, index) => (
+              <ChordCard
+                key={getChordSelectionKey(chord, index)}
+                chord={chord}
+                onPlay={() => onPlayChord(chord)}
+                onHoverStart={() => onHoverChord(chord)}
+                onHoverEnd={() => onHoverChord(null)}
+                onPlayHoverStart={() => onPreviewChordVoicing(chord)}
+                onPlayHoverEnd={() => onHoverChord(chord)}
+                onRemove={() => onRemoveChord(index)}
+                playbackSettings={chord.playbackSettings}
+                onPlaybackSettingsChange={(settings) => onPlaybackSettingsChange(index, settings)}
+              />
+            ))}
+          </div>
+          <ChordNotesVisibilityButton
+            showChordNotes={showChordNotes}
+            onToggleChordNotes={onToggleChordNotes}
+            className={`absolute bottom-2 right-2 ${cornerButtonClass}`}
+          />
+        </>
       )}
     </section>
   )

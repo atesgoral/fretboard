@@ -1,24 +1,63 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import DiatonicChordList from './DiatonicChordList'
 import { DEFAULT_CHORD_PLAYBACK_SETTINGS } from './chordPlayback'
+import type { ChordSelection } from './chordSearch'
+import DiatonicChordList from './DiatonicChordList'
+
+function renderDiatonicChordList({
+  onHoverChord = vi.fn(),
+  showChordNotes = true,
+}: {
+  onHoverChord?: (chord: ChordSelection | null) => void
+  showChordNotes?: boolean
+} = {}) {
+  const onToggleChordNotes = vi.fn()
+
+  render(
+    <DiatonicChordList
+      scaleRoot="C"
+      scaleId="major"
+      onPlayChord={vi.fn()}
+      onHoverChord={onHoverChord}
+      onPreviewChordVoicing={vi.fn()}
+      onPinChord={vi.fn()}
+      auditionSettings={DEFAULT_CHORD_PLAYBACK_SETTINGS}
+      onAuditionSettingsChange={vi.fn()}
+      showChordNotes={showChordNotes}
+      onToggleChordNotes={onToggleChordNotes}
+    />,
+  )
+
+  return { onHoverChord, onToggleChordNotes }
+}
 
 describe('DiatonicChordList', () => {
+  it('calls the chord note toggle handler from the eye button', () => {
+    const { onToggleChordNotes } = renderDiatonicChordList()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide chord notes' }))
+
+    expect(onToggleChordNotes).toHaveBeenCalledTimes(1)
+  })
+
+  it('labels the eye button for showing hidden chord notes', () => {
+    renderDiatonicChordList({ showChordNotes: false })
+
+    expect(screen.getByRole('button', { name: 'Show chord notes' })).toBeInTheDocument()
+  })
+
+  it('hides the eye button when collapsed', () => {
+    renderDiatonicChordList()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse chords panel' }))
+
+    expect(screen.queryByRole('button', { name: 'Hide chord notes' })).not.toBeInTheDocument()
+  })
+
   it('clears chord hover when the pointer leaves a chord card', () => {
     const onHoverChord = vi.fn()
 
-    render(
-      <DiatonicChordList
-        scaleRoot="C"
-        scaleId="major"
-        onPlayChord={vi.fn()}
-        onHoverChord={onHoverChord}
-        onPreviewChordVoicing={vi.fn()}
-        onPinChord={vi.fn()}
-        auditionSettings={DEFAULT_CHORD_PLAYBACK_SETTINGS}
-        onAuditionSettingsChange={vi.fn()}
-      />,
-    )
+    renderDiatonicChordList({ onHoverChord })
 
     const card = screen.getByTitle('I: Cmaj').parentElement
     expect(card).not.toBeNull()

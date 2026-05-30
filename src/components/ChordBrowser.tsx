@@ -55,17 +55,19 @@ function SelectField({
   value,
   options,
   onChange,
+  fieldClassName = 'min-w-[150px]',
   disabled = false,
 }: {
   label: string
   value: string
   options: { value: string; label: string }[]
   onChange: (value: string) => void
+  fieldClassName?: string
   disabled?: boolean
 }) {
   return (
     <label
-      className={`flex min-w-[150px] flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300${disabled ? ' opacity-40' : ''}`}
+      className={`flex ${fieldClassName} flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300${disabled ? ' opacity-40' : ''}`}
     >
       {label}
       <select
@@ -131,6 +133,7 @@ export default function ChordBrowser({
             onChange={(value) =>
               onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
             }
+            fieldClassName="w-16"
           />
           <SelectField
             label="Scale"

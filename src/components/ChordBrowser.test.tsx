@@ -106,11 +106,14 @@ describe('ChordBrowser scale selector', () => {
     fireEvent.click(screen.getByTitle('Select key'))
 
     const popover = screen.getByRole('dialog', { name: 'Select key' })
-    for (const note of ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C#', 'D#', 'F#', 'G#', 'A#']) {
+    for (const note of ['C', 'D', 'E', 'F', 'G', 'A', 'B']) {
       expect(within(popover).getByRole('button', { name: note })).toBeInTheDocument()
     }
+    for (const note of ['C#', 'D#', 'F#', 'G#', 'A#']) {
+      expect(within(popover).getByTitle(`Select ${note} key`)).toHaveTextContent('#')
+    }
 
-    fireEvent.click(within(popover).getByRole('button', { name: 'F#' }))
+    fireEvent.click(within(popover).getByTitle('Select F# key'))
     expect(onScaleRootChange).toHaveBeenCalledWith('F#')
   })
 
@@ -128,7 +131,7 @@ describe('ChordBrowser scale selector', () => {
     )
 
     fireEvent.click(screen.getByTitle('Select key'))
-    const sharpKey = screen.getByRole('button', { name: 'F#' })
+    const sharpKey = screen.getByTitle('Select F# key')
     fireEvent.focus(sharpKey)
 
     fireEvent.keyDown(sharpKey, { key: 'ArrowRight', code: 'ArrowRight' })

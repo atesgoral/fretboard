@@ -36,7 +36,7 @@ function NaturalKeyButton({
       title={`Select ${note} key`}
       aria-pressed={selected}
       onClick={() => onSelect(note)}
-      className={`flex h-16 flex-1 cursor-pointer items-end justify-center rounded-b-lg border border-zinc-300 pb-2 text-sm font-medium transition enabled:hover:border-amber-400 enabled:hover:bg-amber-50 dark:border-zinc-600 dark:enabled:hover:border-amber-500 dark:enabled:hover:bg-amber-950/40 ${
+      className={`flex h-16 flex-1 cursor-pointer items-end justify-center rounded-sm border border-zinc-300 pb-2 text-sm font-medium transition enabled:hover:border-amber-400 enabled:hover:bg-amber-50 dark:border-zinc-600 dark:enabled:hover:border-amber-500 dark:enabled:hover:bg-amber-950/40 ${
         selected
           ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100'
           : 'bg-white text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100'
@@ -62,15 +62,16 @@ function SharpKeyButton({
     <button
       type="button"
       title={`Select ${note} key`}
+      aria-label={`Select ${note} key`}
       aria-pressed={selected}
       onClick={() => onSelect(note)}
-      className={`absolute top-0 z-10 flex h-9 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition enabled:hover:border-amber-300 enabled:hover:bg-zinc-700 enabled:hover:text-amber-100 ${leftClassName} ${
+      className={`absolute top-2 z-10 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-sm border text-xs font-semibold shadow-sm transition enabled:hover:border-amber-300 enabled:hover:bg-zinc-700 enabled:hover:text-amber-100 ${leftClassName} ${
         selected
-          ? 'border-amber-300 bg-amber-500 text-zinc-950'
-          : 'border-zinc-950 bg-zinc-900 text-white dark:border-zinc-500 dark:bg-zinc-950'
+          ? 'border-amber-200 bg-amber-500 text-zinc-950'
+          : 'border-zinc-600 bg-zinc-950 text-white dark:border-zinc-300 dark:bg-black'
       }`}
     >
-      {note}
+      <span aria-hidden="true">#</span>
     </button>
   )
 }
@@ -204,8 +205,8 @@ export default function KeySelector({ value, onChange }: KeySelectorProps) {
           >
             None
           </button>
-          <div className="relative pt-5" aria-label="Piano key layout">
-            <div className="flex overflow-hidden rounded-lg">
+          <div className="relative pt-9" aria-label="Piano key layout">
+            <div className="flex gap-1">
               {NATURAL_NOTES.map((note) => (
                 <NaturalKeyButton
                   key={note}

@@ -299,6 +299,30 @@ describe('Fretboard interaction state', () => {
     expect(screen.getAllByText('E').length).toBeGreaterThan(0)
   })
 
+  it('shows the last played tone above chord-position highlights', async () => {
+    render(
+      <Fretboard
+        linear
+        lowEAtBottom={false}
+        showLastPlayedNotes
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
+        reverbEnabled={false}
+        muted
+        markedNotes={new Map()}
+        highlightedPositions={[{ stringIndex: 0, fret: 0 }]}
+        highlightedChordRoles={new Map([[4, 'R']])}
+        playedPositions={[{ stringIndex: 0, fret: 0 }]}
+        playSequence={1}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.bg-purple-500')).not.toBeNull()
+    })
+  })
+
   it('keeps the legend outside the horizontal fretboard scroller', () => {
     renderMutedFretboardWithOutsideControl()
 

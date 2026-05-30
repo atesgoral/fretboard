@@ -149,15 +149,21 @@ describe('appReducer timeline history', () => {
     expect(state.preferences.muted).toBe(true)
   })
 
-  it('initializes and stores the last played note visibility preference', () => {
-    let state = createInitialAppState({ showLastPlayedNotes: false })
+  it('initializes and stores last played note preferences', () => {
+    let state = createInitialAppState({
+      showLastPlayedNotes: false,
+      autoHideLastPlayedNotes: true,
+    })
 
     expect(state.preferences.showLastPlayedNotes).toBe(false)
+    expect(state.preferences.autoHideLastPlayedNotes).toBe(true)
 
     state = appReducer(state, { type: 'toggleShowLastPlayedNotes' })
+    state = appReducer(state, { type: 'toggleAutoHideLastPlayedNotes' })
 
     expect(toStoredPreferences(state)).toMatchObject({
       showLastPlayedNotes: true,
+      autoHideLastPlayedNotes: false,
     })
   })
 

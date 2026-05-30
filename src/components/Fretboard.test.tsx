@@ -266,7 +266,7 @@ describe('Fretboard interaction state', () => {
     vi.useRealTimers()
   })
 
-  it('keeps the last played note visible briefly after release', () => {
+  it('keeps the last played note visible after release when auto-hide is off', () => {
     vi.useFakeTimers()
     renderMutedFretboardWithOutsideControl()
 
@@ -275,19 +275,44 @@ describe('Fretboard interaction state', () => {
     expect(screen.getAllByText('E').length).toBeGreaterThan(0)
 
     act(() => {
-      vi.advanceTimersByTime(1099)
+      vi.advanceTimersByTime(5000)
     })
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+  })
+
+  it('clears the last played note after release when auto-hide is on', () => {
+    vi.useFakeTimers()
+    render(
+      <Fretboard
+        linear
+        lowEAtBottom={false}
+        showLastPlayedNotes
+        autoHideLastPlayedNotes
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
+        reverbEnabled={false}
+        muted
+        markedNotes={new Map()}
+        playedPositions={[]}
+        playSequence={0}
+      />,
+    )
+
+    playAndReleaseOpenLowE()
 
     expect(screen.getAllByText('E').length).toBeGreaterThan(0)
 
     act(() => {
-      vi.advanceTimersByTime(1)
+      vi.advanceTimersByTime(1100)
     })
 
     expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
 
-  it('does not clear the last played note immediately when pressing outside the fretboard', () => {
+  it('clears the last played note immediately when pressing outside the fretboard', () => {
+    vi.useFakeTimers()
     renderMutedFretboardWithOutsideControl()
 
     playAndReleaseOpenLowE()
@@ -296,7 +321,7 @@ describe('Fretboard interaction state', () => {
 
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside control' }), { pointerId: 2 })
 
-    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+    expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
 
   it('shows the last played tone above chord-position highlights', async () => {

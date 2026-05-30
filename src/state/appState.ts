@@ -25,6 +25,7 @@ export type UserPreferences = {
   linear: boolean
   lowEAtBottom: boolean
   showLastPlayedNotes: boolean
+  autoHideLastPlayedNotes: boolean
   reverbEnabled: boolean
   muted: boolean
   scaleRoot: NoteName | null
@@ -55,6 +56,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   linear: true,
   lowEAtBottom: true,
   showLastPlayedNotes: true,
+  autoHideLastPlayedNotes: false,
   reverbEnabled: true,
   muted: false,
   scaleRoot: null,
@@ -116,6 +118,8 @@ export function createInitialAppState(stored: StoredPreferences): AppState {
       linear: stored.linear ?? DEFAULT_PREFERENCES.linear,
       lowEAtBottom: stored.lowEAtBottom ?? DEFAULT_PREFERENCES.lowEAtBottom,
       showLastPlayedNotes: stored.showLastPlayedNotes ?? DEFAULT_PREFERENCES.showLastPlayedNotes,
+      autoHideLastPlayedNotes:
+        stored.autoHideLastPlayedNotes ?? DEFAULT_PREFERENCES.autoHideLastPlayedNotes,
       reverbEnabled: stored.reverbEnabled ?? DEFAULT_PREFERENCES.reverbEnabled,
       muted: stored.muted ?? DEFAULT_PREFERENCES.muted,
       scaleRoot: stored.scaleRoot ?? DEFAULT_PREFERENCES.scaleRoot,
@@ -164,6 +168,7 @@ export type AppAction =
   | { type: 'toggleLinear' }
   | { type: 'toggleLowEAtBottom' }
   | { type: 'toggleShowLastPlayedNotes' }
+  | { type: 'toggleAutoHideLastPlayedNotes' }
   | { type: 'toggleReverb' }
   | { type: 'toggleMuted' }
   | { type: 'setScaleRoot'; scaleRoot: NoteName | null }
@@ -206,6 +211,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     action.type === 'toggleLinear' ||
     action.type === 'toggleLowEAtBottom' ||
     action.type === 'toggleShowLastPlayedNotes' ||
+    action.type === 'toggleAutoHideLastPlayedNotes' ||
     action.type === 'toggleReverb' ||
     action.type === 'toggleMuted'
   ) {
@@ -213,6 +219,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       toggleLinear: 'linear',
       toggleLowEAtBottom: 'lowEAtBottom',
       toggleShowLastPlayedNotes: 'showLastPlayedNotes',
+      toggleAutoHideLastPlayedNotes: 'autoHideLastPlayedNotes',
       toggleReverb: 'reverbEnabled',
       toggleMuted: 'muted',
     } as const

@@ -60,9 +60,11 @@ type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
   showLastPlayedNotes: boolean
+  autoHideLastPlayedNotes?: boolean
   onToggleLinear: () => void
   onToggleLowEPosition: () => void
   onToggleShowLastPlayedNotes: () => void
+  onToggleAutoHideLastPlayedNotes?: () => void
   reverbEnabled: boolean
   muted: boolean
   frets?: number
@@ -798,9 +800,11 @@ export default function Fretboard({
   linear,
   lowEAtBottom,
   showLastPlayedNotes,
+  autoHideLastPlayedNotes = false,
   onToggleLinear,
   onToggleLowEPosition,
   onToggleShowLastPlayedNotes,
+  onToggleAutoHideLastPlayedNotes = () => undefined,
   reverbEnabled,
   muted,
   frets = DEFAULT_FRETS,
@@ -1047,12 +1051,23 @@ export default function Fretboard({
   }, [])
 
   const scheduleLastPlayedClear = useCallback(() => {
+    if (!autoHideLastPlayedNotes) {
+      return
+    }
+
     cancelLastPlayedClear()
     lastPlayedClearTimeoutRef.current = window.setTimeout(() => {
       setRecentlyPlayedPositions([])
       setAnimatedPositionBursts({})
       lastPlayedClearTimeoutRef.current = null
     }, LAST_PLAYED_CLEAR_DELAY_MS)
+  }, [autoHideLastPlayedNotes, cancelLastPlayedClear])
+
+  const clearLastPlayedState = useCallback(() => {
+    cancelLastPlayedClear()
+    setHoveredPosition(null)
+    setRecentlyPlayedPositions([])
+    setAnimatedPositionBursts({})
   }, [cancelLastPlayedClear])
 
   const markRecentlyPlayed = useCallback(
@@ -1227,6 +1242,12 @@ export default function Fretboard({
   )
 
   useEffect(() => {
+    if (!autoHideLastPlayedNotes) {
+      cancelLastPlayedClear()
+    }
+  }, [autoHideLastPlayedNotes, cancelLastPlayedClear])
+
+  useEffect(() => {
     const handleWindowPointerEnd = (event: PointerEvent) => {
       if (!activePointersRef.current.has(event.pointerId)) {
         return
@@ -1241,6 +1262,23 @@ export default function Fretboard({
       window.removeEventListener('pointercancel', handleWindowPointerEnd)
     }
   }, [handlePressEnd])
+
+  useEffect(() => {
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const fretboardSurface = fretboardSurfaceRef.current
+      const target = event.target
+      if (!fretboardSurface || !(target instanceof Node) || fretboardSurface.contains(target)) {
+        return
+      }
+
+      clearLastPlayedState()
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
+    return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
+    }
+  }, [clearLastPlayedState])
 
   useEffect(() => {
     if (playSequence === 0 || playedPositions.length === 0) {
@@ -1374,9 +1412,11 @@ export default function Fretboard({
           linear={linear}
           lowEAtBottom={lowEAtBottom}
           showLastPlayedNotes={showLastPlayedNotes}
+          autoHideLastPlayedNotes={autoHideLastPlayedNotes}
           onToggleLinear={onToggleLinear}
           onToggleLowEPosition={onToggleLowEPosition}
           onToggleShowLastPlayedNotes={onToggleShowLastPlayedNotes}
+          onToggleAutoHideLastPlayedNotes={onToggleAutoHideLastPlayedNotes}
         />
       </div>
       <FretboardLegend />

@@ -86,18 +86,24 @@ export default function DiatonicChordList({
           <ChevronUp className="pointer-events-none h-3.5 w-3.5" aria-hidden="true" />
         )}
       </button>
-      <ChordPlaybackSettingsMenu
-        settings={auditionSettings}
-        onSettingsChange={(settings) => onAuditionSettingsChange(settings as ChordPlaybackSettings)}
-        className="absolute right-10 top-2"
-      />
-      <ChordNotesVisibilityButton
-        showChordNotes={showChordNotes}
-        onToggleChordNotes={onToggleChordNotes}
-        className={`absolute right-[4.5rem] top-2 ${cornerButtonClass}`}
-      />
+      {collapsed ? null : (
+        <>
+          <ChordPlaybackSettingsMenu
+            settings={auditionSettings}
+            onSettingsChange={(settings) =>
+              onAuditionSettingsChange(settings as ChordPlaybackSettings)
+            }
+            className="absolute right-10 top-2"
+          />
+          <ChordNotesVisibilityButton
+            showChordNotes={showChordNotes}
+            onToggleChordNotes={onToggleChordNotes}
+            className={`absolute right-[4.5rem] top-2 ${cornerButtonClass}`}
+          />
+        </>
+      )}
       <h2
-        className={`${collapsed ? '' : 'mb-3'} pr-24 text-xs font-medium uppercase tracking-[0.08em] text-blue-800 dark:text-blue-300`}
+        className={`${collapsed ? 'pr-8' : 'mb-3 pr-24'} text-xs font-medium uppercase tracking-[0.08em] text-blue-800 dark:text-blue-300`}
       >
         {collapsed ? 'Chords' : `Diatonic triads in ${scaleRoot} ${scaleLabel}`}
       </h2>

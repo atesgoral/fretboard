@@ -64,14 +64,15 @@ describe('PinnedChordList', () => {
     )
   })
 
-  it('keeps the chord note toggle available when collapsed', () => {
-    const { onToggleChordNotes } = renderPinnedChordList()
+  it('hides chord controls when collapsed', () => {
+    renderPinnedChordList()
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse pinned chords panel' }))
     expect(screen.queryByTitle('Cmaj')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hide chord notes' }))
-    expect(onToggleChordNotes).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Hide chord notes' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Open chord audition settings' }),
+    ).not.toBeInTheDocument()
   })
 
   it('clears chord hover when the pointer leaves a pinned chord card', () => {

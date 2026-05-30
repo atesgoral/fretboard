@@ -113,7 +113,8 @@ describe('App', () => {
   it('toggles chord note previews without blocking chord playback', () => {
     render(<App />)
 
-    fireEvent.change(screen.getByLabelText('Key'), { target: { value: 'C' } })
+    fireEvent.click(screen.getByTitle('Select key'))
+    fireEvent.click(screen.getByRole('button', { name: 'C' }))
     const cMajorCard = screen.getByTitle('I: Cmaj').parentElement
     expect(cMajorCard).not.toBeNull()
 

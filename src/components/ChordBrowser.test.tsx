@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ChordBrowser from './ChordBrowser'
 import { SCALE_OPTIONS } from './scales'
@@ -24,7 +24,7 @@ describe('ChordBrowser scale selector', () => {
     expect(renderedOptions.map((option) => option.textContent)).toEqual(expectedLabels)
   })
 
-  it('renders a None key option', () => {
+  it('renders None as the empty key selection', () => {
     render(
       <ChordBrowser
         scaleRoot={null}
@@ -36,9 +36,10 @@ describe('ChordBrowser scale selector', () => {
       />,
     )
 
-    const keySelect = screen.getByTitle('Select key') as HTMLSelectElement
-    expect(keySelect.value).toBe('')
-    expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
+    expect(screen.getByTitle('Select key')).toHaveTextContent('None')
+
+    fireEvent.click(screen.getByTitle('Select key'))
+    expect(screen.getByRole('button', { name: 'None' })).toBeInTheDocument()
   })
 
   it('renders the key selector at a compact width', () => {
@@ -53,7 +54,88 @@ describe('ChordBrowser scale selector', () => {
       />,
     )
 
-    expect(screen.getByLabelText('Key').closest('label')).toHaveClass('w-16')
+    expect(screen.getByText('Key').parentElement).toHaveClass('w-16')
+  })
+
+  it('rotates the focused key selector with arrow keys and wraps around', () => {
+    const onScaleRootChange = vi.fn()
+    const { rerender } = render(
+      <ChordBrowser
+        scaleRoot="B"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={onScaleRootChange}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    const keySelector = screen.getByTitle('Select key')
+    fireEvent.focus(keySelector)
+    fireEvent.keyDown(keySelector, { key: 'ArrowRight', code: 'ArrowRight' })
+    expect(onScaleRootChange).toHaveBeenLastCalledWith('C')
+
+    rerender(
+      <ChordBrowser
+        scaleRoot="C"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={onScaleRootChange}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    fireEvent.keyDown(screen.getByTitle('Select key'), { key: 'ArrowLeft', code: 'ArrowLeft' })
+    expect(onScaleRootChange).toHaveBeenLastCalledWith('B')
+  })
+
+  it('opens a piano-style popover and selects sharp keys', () => {
+    const onScaleRootChange = vi.fn()
+    render(
+      <ChordBrowser
+        scaleRoot="C"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={onScaleRootChange}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTitle('Select key'))
+
+    const popover = screen.getByRole('dialog', { name: 'Select key' })
+    for (const note of ['C', 'D', 'E', 'F', 'G', 'A', 'B']) {
+      expect(within(popover).getByRole('button', { name: note })).toBeInTheDocument()
+    }
+    for (const note of ['C#', 'D#', 'F#', 'G#', 'A#']) {
+      expect(within(popover).getByTitle(`Select ${note} key`)).toHaveTextContent('#')
+    }
+
+    fireEvent.click(within(popover).getByTitle('Select F# key'))
+    expect(onScaleRootChange).toHaveBeenCalledWith('F#')
+  })
+
+  it('rotates keys when focus is inside the open selector popover', () => {
+    const onScaleRootChange = vi.fn()
+    render(
+      <ChordBrowser
+        scaleRoot="F#"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={onScaleRootChange}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTitle('Select key'))
+    const sharpKey = screen.getByTitle('Select F# key')
+    fireEvent.focus(sharpKey)
+
+    fireEvent.keyDown(sharpKey, { key: 'ArrowRight', code: 'ArrowRight' })
+    expect(onScaleRootChange).toHaveBeenLastCalledWith('G')
   })
 
   it('disables the scale selector when no key is selected', () => {

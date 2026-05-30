@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import Fretboard from './Fretboard'
 
@@ -9,6 +9,7 @@ const audioMocks = vi.hoisted(() => ({
   resume: vi.fn(),
   soundfont: vi.fn(),
   start: vi.fn(),
+  stop: vi.fn(),
 }))
 
 vi.mock('smplr', () => ({
@@ -101,6 +102,8 @@ describe('Fretboard audio playback', () => {
     audioMocks.resume.mockClear()
     audioMocks.soundfont.mockReset()
     audioMocks.start.mockClear()
+    audioMocks.stop.mockClear()
+    audioMocks.start.mockReturnValue(audioMocks.stop)
 
     audioMocks.reverb.mockReturnValue({ connect: vi.fn(), input: createAudioNode() })
     audioMocks.soundfont.mockReturnValue({ ready, start: audioMocks.start })
@@ -152,8 +155,12 @@ describe('Fretboard audio playback', () => {
     audioMocks.resolveReady?.()
 
     await waitFor(() => {
-      expect(audioMocks.start).toHaveBeenCalledWith({ duration: 1, note: 40, velocity: 110 })
+      expect(audioMocks.start).toHaveBeenCalledWith({ duration: null, note: 40, velocity: 110 })
     })
+
+    fireEvent.pointerUp(window, { pointerId: 1 })
+
+    expect(audioMocks.stop).toHaveBeenCalledTimes(1)
   })
 
   it('unlocks audio from the captured user gesture before sequenced playback', async () => {
@@ -196,7 +203,7 @@ describe('Fretboard audio playback', () => {
     audioMocks.resolveReady?.()
 
     await waitFor(() => {
-      expect(audioMocks.start).toHaveBeenCalledWith({ duration: 1, note: 40, velocity: 110 })
+      expect(audioMocks.start).toHaveBeenCalledWith({ duration: null, note: 40, velocity: 110 })
     })
   })
 })
@@ -255,7 +262,57 @@ function playTouchOpenStrings() {
 }
 
 describe('Fretboard interaction state', () => {
-  it('clears the last played note when pressing outside the fretboard', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('keeps the last played note visible after release when auto-hide is off', () => {
+    vi.useFakeTimers()
+    renderMutedFretboardWithOutsideControl()
+
+    playAndReleaseOpenLowE()
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+  })
+
+  it('clears the last played note after release when auto-hide is on', () => {
+    vi.useFakeTimers()
+    render(
+      <Fretboard
+        linear
+        lowEAtBottom={false}
+        showLastPlayedNotes
+        autoHideLastPlayedNotes
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
+        reverbEnabled={false}
+        muted
+        markedNotes={new Map()}
+        playedPositions={[]}
+        playSequence={0}
+      />,
+    )
+
+    playAndReleaseOpenLowE()
+
+    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
+
+    act(() => {
+      vi.advanceTimersByTime(1100)
+    })
+
+    expect(screen.queryByText('E')).not.toBeInTheDocument()
+  })
+
+  it('clears the last played note immediately when pressing outside the fretboard', () => {
+    vi.useFakeTimers()
     renderMutedFretboardWithOutsideControl()
 
     playAndReleaseOpenLowE()
@@ -267,16 +324,28 @@ describe('Fretboard interaction state', () => {
     expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
 
-  it('clears the last played note when pressing the legend outside the fretboard rectangle', () => {
-    renderMutedFretboardWithOutsideControl()
+  it('shows the last played tone above chord-position highlights', async () => {
+    render(
+      <Fretboard
+        linear
+        lowEAtBottom={false}
+        showLastPlayedNotes
+        onToggleLinear={vi.fn()}
+        onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
+        reverbEnabled={false}
+        muted
+        markedNotes={new Map()}
+        highlightedPositions={[{ stringIndex: 0, fret: 0 }]}
+        highlightedChordRoles={new Map([[4, 'R']])}
+        playedPositions={[{ stringIndex: 0, fret: 0 }]}
+        playSequence={1}
+      />,
+    )
 
-    playAndReleaseOpenLowE()
-
-    expect(screen.getAllByText('E').length).toBeGreaterThan(0)
-
-    fireEvent.pointerDown(screen.getByText('Last played'), { pointerId: 2 })
-
-    expect(screen.queryByText('E')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(document.querySelector('.bg-purple-500')).not.toBeNull()
+    })
   })
 
   it('keeps the legend outside the horizontal fretboard scroller', () => {

@@ -31,12 +31,21 @@ const initialPreferences = getInitialPreferences()
 export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
-  const { linear, lowEAtBottom, showLastPlayedNotes, reverbEnabled, muted, scaleRoot, scaleId } =
-    appState.preferences
+  const {
+    linear,
+    lowEAtBottom,
+    showLastPlayedNotes,
+    autoHideLastPlayedNotes,
+    reverbEnabled,
+    muted,
+    scaleRoot,
+    scaleId,
+  } = appState.preferences
   const [showScaleNotes, setShowScaleNotes] = useState(true)
   const [showChordNotes, setShowChordNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
   const [playSequence, setPlaySequence] = useState(0)
+  const [stopPlaybackSequence, setStopPlaybackSequence] = useState(0)
   const [activeChordPlaybackMode, setActiveChordPlaybackMode] = useState<ChordPlaybackMode>('pluck')
   const [auditionSettings, setAuditionSettings] = useState<ChordPlaybackSettings>(
     DEFAULT_CHORD_PLAYBACK_SETTINGS,
@@ -75,6 +84,10 @@ export default function App() {
     },
     [auditionSettings],
   )
+
+  const handleStopChordPlayback = useCallback(() => {
+    setStopPlaybackSequence((current) => current + 1)
+  }, [])
 
   const getVoicingForPlaybackSettings = (
     chord: ChordSelection,
@@ -190,6 +203,7 @@ export default function App() {
             scaleRoot={scaleRoot}
             scaleId={scaleId}
             onPlayChord={handlePlayChord}
+            onStopChordPlayback={handleStopChordPlayback}
             onHoverChord={handleHoverChord}
             onPreviewChordVoicing={handlePreviewChordVoicing}
             onPinChord={handlePinChord}
@@ -203,6 +217,7 @@ export default function App() {
         <PinnedChordList
           pinnedChords={pinnedChords}
           onPlayChord={handlePlayPinnedChord}
+          onStopChordPlayback={handleStopChordPlayback}
           onHoverChord={handleHoverChord}
           onPreviewChordVoicing={handlePreviewPinnedChordVoicing}
           onRemoveChord={handleRemovePinnedChord}
@@ -217,9 +232,13 @@ export default function App() {
           linear={linear}
           lowEAtBottom={lowEAtBottom}
           showLastPlayedNotes={showLastPlayedNotes}
+          autoHideLastPlayedNotes={autoHideLastPlayedNotes}
           onToggleLinear={() => dispatch({ type: 'toggleLinear' })}
           onToggleLowEPosition={() => dispatch({ type: 'toggleLowEAtBottom' })}
           onToggleShowLastPlayedNotes={() => dispatch({ type: 'toggleShowLastPlayedNotes' })}
+          onToggleAutoHideLastPlayedNotes={() =>
+            dispatch({ type: 'toggleAutoHideLastPlayedNotes' })
+          }
           reverbEnabled={reverbEnabled}
           muted={muted}
           markedNotes={markedNotes}
@@ -228,6 +247,7 @@ export default function App() {
           highlightedChordRoles={highlightedChordRoles}
           playedPositions={playedPositions}
           playSequence={playSequence}
+          stopPlaybackSequence={stopPlaybackSequence}
           playbackMode={activeChordPlaybackMode}
         />
       </section>

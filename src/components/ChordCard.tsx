@@ -11,6 +11,7 @@ export type ChordCardProps = {
   active?: boolean
   onSelect?: () => void
   onPlay: () => void
+  onPlayEnd?: () => void
   onHoverStart?: () => void
   onHoverEnd?: () => void
   onPlayHoverStart?: () => void
@@ -62,6 +63,7 @@ function ChordCornerButton({
   title,
   positionClassName,
   onPointerDown,
+  onPointerEnd,
   onPointerEnter,
   onPointerLeave,
   onClick,
@@ -70,11 +72,23 @@ function ChordCornerButton({
   title: string
   positionClassName: string
   onPointerDown?: () => void
+  onPointerEnd?: () => void
   onPointerEnter?: () => void
   onPointerLeave?: () => void
   onClick?: () => void
   children: ReactNode
 }) {
+  const activePointerIdRef = useRef<number | null>(null)
+
+  const finishPointerPlayback = () => {
+    if (activePointerIdRef.current === null) {
+      return
+    }
+
+    activePointerIdRef.current = null
+    onPointerEnd?.()
+  }
+
   return (
     <span title={title} className={`absolute hidden group-hover:inline-flex ${positionClassName}`}>
       <button
@@ -88,7 +102,27 @@ function ChordCornerButton({
           }
           event.preventDefault()
           event.stopPropagation()
+          event.currentTarget.setPointerCapture?.(event.pointerId)
+          activePointerIdRef.current = event.pointerId
           onPointerDown()
+        }}
+        onPointerUp={(event) => {
+          if (activePointerIdRef.current !== event.pointerId) {
+            return
+          }
+          event.preventDefault()
+          event.stopPropagation()
+          finishPointerPlayback()
+        }}
+        onPointerCancel={(event) => {
+          if (activePointerIdRef.current !== event.pointerId) {
+            return
+          }
+          event.stopPropagation()
+          finishPointerPlayback()
+        }}
+        onLostPointerCapture={() => {
+          finishPointerPlayback()
         }}
         onPointerEnter={(event) => {
           if (!onPointerEnter) {
@@ -163,6 +197,7 @@ export default function ChordCard({
   active = false,
   onSelect,
   onPlay,
+  onPlayEnd,
   onHoverStart,
   onHoverEnd,
   onPlayHoverStart,
@@ -177,6 +212,7 @@ export default function ChordCard({
   const cardTitle = getChordCardTitle(degreeLabel, label)
   const playTitle = `Play chord ${label}`
   const suppressNextClickRef = useRef(false)
+  const touchPlayPointerIdsRef = useRef(new Set<number>())
 
   const handleCardPointerDownCapture = (event: React.PointerEvent<HTMLDivElement>) => {
     const target = event.target
@@ -189,8 +225,20 @@ export default function ChordCard({
 
     event.preventDefault()
     event.stopPropagation()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    touchPlayPointerIdsRef.current.add(event.pointerId)
     suppressNextClickRef.current = true
     onPlay()
+  }
+
+  const handleCardPointerEndCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!touchPlayPointerIdsRef.current.delete(event.pointerId)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    onPlayEnd?.()
   }
 
   const handleCardClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -207,6 +255,8 @@ export default function ChordCard({
     <div
       className="group relative h-24 w-24 shrink-0"
       onPointerDownCapture={handleCardPointerDownCapture}
+      onPointerUpCapture={handleCardPointerEndCapture}
+      onPointerCancelCapture={handleCardPointerEndCapture}
       onClickCapture={handleCardClickCapture}
       onPointerEnter={onHoverStart}
       onPointerLeave={onHoverEnd}
@@ -269,6 +319,7 @@ export default function ChordCard({
         title={playTitle}
         positionClassName="bottom-1 right-1"
         onPointerDown={onPlay}
+        onPointerEnd={onPlayEnd}
         onPointerEnter={onPlayHoverStart}
         onPointerLeave={onPlayHoverEnd}
       >

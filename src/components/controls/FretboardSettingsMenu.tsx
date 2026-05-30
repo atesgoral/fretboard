@@ -6,9 +6,11 @@ type FretboardSettingsMenuProps = {
   linear: boolean
   lowEAtBottom: boolean
   showLastPlayedNotes: boolean
+  autoHideLastPlayedNotes: boolean
   onToggleLinear: () => void
   onToggleLowEPosition: () => void
   onToggleShowLastPlayedNotes: () => void
+  onToggleAutoHideLastPlayedNotes: () => void
 }
 
 function MenuItem({ children }: { children: ReactNode }) {
@@ -23,9 +25,11 @@ export default function FretboardSettingsMenu({
   linear,
   lowEAtBottom,
   showLastPlayedNotes,
+  autoHideLastPlayedNotes,
   onToggleLinear,
   onToggleLowEPosition,
   onToggleShowLastPlayedNotes,
+  onToggleAutoHideLastPlayedNotes,
 }: FretboardSettingsMenuProps) {
   const spacingIconClass = 'h-4 w-4'
 
@@ -80,6 +84,20 @@ export default function FretboardSettingsMenu({
           <MenuItem>
             <span className="inline-flex items-center gap-2">
               <Eye className="h-4 w-4" aria-hidden="true" /> Show last played notes
+            </span>
+            <DropdownMenu.ItemIndicator>
+              <Check className="h-4 w-4" aria-hidden="true" />
+            </DropdownMenu.ItemIndicator>
+          </MenuItem>
+        </DropdownMenu.CheckboxItem>
+
+        <DropdownMenu.CheckboxItem
+          checked={autoHideLastPlayedNotes}
+          onCheckedChange={onToggleAutoHideLastPlayedNotes}
+        >
+          <MenuItem>
+            <span className="inline-flex items-center gap-2">
+              <Eye className="h-4 w-4" aria-hidden="true" /> Auto-hide last played notes
             </span>
             <DropdownMenu.ItemIndicator>
               <Check className="h-4 w-4" aria-hidden="true" />

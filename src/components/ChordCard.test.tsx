@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import ChordCard from './ChordCard'
 
 function createTouchPointerEvent(
-  eventName: 'pointerdown' | 'click',
-  options: { clientX?: number; clientY?: number } = {},
+  eventName: 'pointerdown' | 'pointerup' | 'click',
+  options: { clientX?: number; clientY?: number; pointerId?: number } = {},
 ) {
   const event = new Event(eventName, { bubbles: true, cancelable: true })
   Object.defineProperties(event, {
     clientX: { value: options.clientX ?? 0 },
     clientY: { value: options.clientY ?? 0 },
+    pointerId: { value: options.pointerId ?? 1 },
     pointerType: { value: 'touch' },
   })
   return event
@@ -38,6 +39,26 @@ describe('ChordCard', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Play chord Cmaj' }))
 
     expect(onPlay).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends chord playback on pointer up', () => {
+    const onPlay = vi.fn()
+    const onPlayEnd = vi.fn()
+
+    render(
+      <ChordCard
+        chord={{ root: 'C', qualityId: 'maj', extensionIds: [] }}
+        onPlay={onPlay}
+        onPlayEnd={onPlayEnd}
+      />,
+    )
+
+    const playButton = screen.getByRole('button', { name: 'Play chord Cmaj' })
+    fireEvent.pointerDown(playButton, { pointerId: 1 })
+    fireEvent.pointerUp(playButton, { pointerId: 1 })
+
+    expect(onPlay).toHaveBeenCalledTimes(1)
+    expect(onPlayEnd).toHaveBeenCalledTimes(1)
   })
 
   it('reports play-button hover separately from card hover', () => {
@@ -95,6 +116,29 @@ describe('ChordCard', () => {
     fireEvent(cardSurface, createTouchPointerEvent('pointerdown', { clientX: 88, clientY: 88 }))
 
     expect(onPlay).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends hidden touch play-button playback on pointer up', () => {
+    const onPlay = vi.fn()
+    const onPlayEnd = vi.fn()
+
+    render(
+      <ChordCard
+        chord={{ root: 'C', qualityId: 'maj', extensionIds: [] }}
+        onPlay={onPlay}
+        onPlayEnd={onPlayEnd}
+      />,
+    )
+
+    const cardSurface = screen.getByTitle('Cmaj')
+    const card = cardSurface.parentElement
+    expect(card).not.toBeNull()
+    mockCardRect(card!)
+
+    fireEvent(cardSurface, createTouchPointerEvent('pointerdown', { clientX: 88, clientY: 88 }))
+    fireEvent(card!, createTouchPointerEvent('pointerup'))
+
+    expect(onPlayEnd).toHaveBeenCalledTimes(1)
   })
 
   it('suppresses card selection after touch-playing from the play-button area', () => {

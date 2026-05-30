@@ -55,6 +55,15 @@ describe('PinnedChordList', () => {
     expect(screen.getByRole('button', { name: 'Show chord notes' })).toBeInTheDocument()
   })
 
+  it('positions the eye button left of the gear and collapse controls', () => {
+    renderPinnedChordList()
+
+    expect(screen.getByRole('button', { name: 'Hide chord notes' })).toHaveClass(
+      'right-[4.5rem]',
+      'top-2',
+    )
+  })
+
   it('hides the eye button when collapsed', () => {
     renderPinnedChordList()
 

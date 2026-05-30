@@ -80,35 +80,35 @@ export default function PinnedChordList({
         onSettingsChange={(settings) => onAuditionSettingsChange(settings as ChordPlaybackSettings)}
         className="absolute right-10 top-2"
       />
+      {collapsed ? null : (
+        <ChordNotesVisibilityButton
+          showChordNotes={showChordNotes}
+          onToggleChordNotes={onToggleChordNotes}
+          className={`absolute right-[4.5rem] top-2 ${cornerButtonClass}`}
+        />
+      )}
       <h2
-        className={`${collapsed ? '' : 'mb-3'} pr-16 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400`}
+        className={`${collapsed ? 'pr-16' : 'mb-3 pr-24'} text-xs font-medium uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-400`}
       >
         Pinned chords
       </h2>
       {collapsed ? null : (
-        <>
-          <div className="flex items-center gap-3 overflow-x-auto pb-1">
-            {pinnedChords.map((chord, index) => (
-              <ChordCard
-                key={getChordSelectionKey(chord, index)}
-                chord={chord}
-                onPlay={() => onPlayChord(chord)}
-                onHoverStart={() => onHoverChord(chord)}
-                onHoverEnd={() => onHoverChord(null)}
-                onPlayHoverStart={() => onPreviewChordVoicing(chord)}
-                onPlayHoverEnd={() => onHoverChord(chord)}
-                onRemove={() => onRemoveChord(index)}
-                playbackSettings={chord.playbackSettings}
-                onPlaybackSettingsChange={(settings) => onPlaybackSettingsChange(index, settings)}
-              />
-            ))}
-          </div>
-          <ChordNotesVisibilityButton
-            showChordNotes={showChordNotes}
-            onToggleChordNotes={onToggleChordNotes}
-            className={`absolute bottom-2 right-2 ${cornerButtonClass}`}
-          />
-        </>
+        <div className="flex items-center gap-3 overflow-x-auto pb-1">
+          {pinnedChords.map((chord, index) => (
+            <ChordCard
+              key={getChordSelectionKey(chord, index)}
+              chord={chord}
+              onPlay={() => onPlayChord(chord)}
+              onHoverStart={() => onHoverChord(chord)}
+              onHoverEnd={() => onHoverChord(null)}
+              onPlayHoverStart={() => onPreviewChordVoicing(chord)}
+              onPlayHoverEnd={() => onHoverChord(chord)}
+              onRemove={() => onRemoveChord(index)}
+              playbackSettings={chord.playbackSettings}
+              onPlaybackSettingsChange={(settings) => onPlaybackSettingsChange(index, settings)}
+            />
+          ))}
+        </div>
       )}
     </section>
   )

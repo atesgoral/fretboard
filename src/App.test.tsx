@@ -54,6 +54,7 @@ vi.mock('./components/Fretboard', async () => {
             <div>
               <span>Fret spacing</span>
               <span>Show low E on top</span>
+              <span>Show last played notes</span>
             </div>
           ) : null}
         </div>
@@ -104,6 +105,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Fret spacing')).toBeInTheDocument()
     expect(screen.getByText('Show low E on top')).toBeInTheDocument()
+    expect(screen.getByText('Show last played notes')).toBeInTheDocument()
   })
 
   it('toggles chord note previews without blocking chord playback', () => {

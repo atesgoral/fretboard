@@ -1,12 +1,14 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { ArrowUpDown, Check, ChartNoAxesColumnIncreasing, Rows3, Settings } from 'lucide-react'
+import { ArrowUpDown, Check, ChartNoAxesColumnIncreasing, Eye, Rows3, Settings } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 type FretboardSettingsMenuProps = {
   linear: boolean
   lowEAtBottom: boolean
+  showLastPlayedNotes: boolean
   onToggleLinear: () => void
   onToggleLowEPosition: () => void
+  onToggleShowLastPlayedNotes: () => void
 }
 
 function MenuItem({ children }: { children: ReactNode }) {
@@ -20,8 +22,10 @@ function MenuItem({ children }: { children: ReactNode }) {
 export default function FretboardSettingsMenu({
   linear,
   lowEAtBottom,
+  showLastPlayedNotes,
   onToggleLinear,
   onToggleLowEPosition,
+  onToggleShowLastPlayedNotes,
 }: FretboardSettingsMenuProps) {
   const spacingIconClass = 'h-4 w-4'
 
@@ -62,6 +66,20 @@ export default function FretboardSettingsMenu({
           <MenuItem>
             <span className="inline-flex items-center gap-2">
               <ArrowUpDown className="h-4 w-4" aria-hidden="true" /> Show low E on top
+            </span>
+            <DropdownMenu.ItemIndicator>
+              <Check className="h-4 w-4" aria-hidden="true" />
+            </DropdownMenu.ItemIndicator>
+          </MenuItem>
+        </DropdownMenu.CheckboxItem>
+
+        <DropdownMenu.CheckboxItem
+          checked={showLastPlayedNotes}
+          onCheckedChange={onToggleShowLastPlayedNotes}
+        >
+          <MenuItem>
+            <span className="inline-flex items-center gap-2">
+              <Eye className="h-4 w-4" aria-hidden="true" /> Show last played notes
             </span>
             <DropdownMenu.ItemIndicator>
               <Check className="h-4 w-4" aria-hidden="true" />

@@ -149,6 +149,18 @@ describe('appReducer timeline history', () => {
     expect(state.preferences.muted).toBe(true)
   })
 
+  it('initializes and stores the last played note visibility preference', () => {
+    let state = createInitialAppState({ showLastPlayedNotes: false })
+
+    expect(state.preferences.showLastPlayedNotes).toBe(false)
+
+    state = appReducer(state, { type: 'toggleShowLastPlayedNotes' })
+
+    expect(toStoredPreferences(state)).toMatchObject({
+      showLastPlayedNotes: true,
+    })
+  })
+
   it('initializes and stores the selected scale', () => {
     let state = createInitialAppState({ scaleRoot: 'D', scaleId: 'dorian' })
 

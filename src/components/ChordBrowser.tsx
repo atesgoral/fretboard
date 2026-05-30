@@ -1,16 +1,10 @@
-import { NOTE_NAMES, type NoteName } from './chords'
+import type { NoteName } from './chords'
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { SCALE_OPTIONS, type ScaleId } from './scales'
+import KeySelector from './KeySelector'
 
 export type ScaleRootSelection = NoteName | null
-
-const KEY_NONE_VALUE = ''
-
-const KEY_OPTIONS = [
-  { value: KEY_NONE_VALUE, label: 'None' },
-  ...NOTE_NAMES.map((note) => ({ value: note, label: note })),
-]
 
 const cornerButtonClass =
   'inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition enabled:hover:border-zinc-500 enabled:hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 enabled:dark:hover:border-zinc-400 enabled:dark:hover:text-zinc-100'
@@ -126,15 +120,7 @@ export default function ChordBrowser({
       </h2>
       {collapsed ? null : (
         <div className="flex flex-wrap items-end gap-3 pr-16">
-          <SelectField
-            label="Key"
-            value={scaleRoot ?? KEY_NONE_VALUE}
-            options={KEY_OPTIONS}
-            onChange={(value) =>
-              onScaleRootChange(value === KEY_NONE_VALUE ? null : (value as NoteName))
-            }
-            fieldClassName="w-16"
-          />
+          <KeySelector value={scaleRoot} onChange={onScaleRootChange} />
           <SelectField
             label="Scale"
             value={scaleId}

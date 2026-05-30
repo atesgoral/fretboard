@@ -65,7 +65,7 @@ function SharpKeyButton({
       aria-label={`Select ${note} key`}
       aria-pressed={selected}
       onClick={() => onSelect(note)}
-      className={`absolute top-2 z-10 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-sm border text-xs font-semibold shadow-sm transition enabled:hover:border-amber-300 enabled:hover:bg-zinc-700 enabled:hover:text-amber-100 ${leftClassName} ${
+      className={`absolute top-1 z-10 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-sm border text-xs font-semibold shadow-sm transition enabled:hover:border-amber-300 enabled:hover:bg-zinc-700 enabled:hover:text-amber-100 ${leftClassName} ${
         selected
           ? 'border-amber-200 bg-amber-500 text-zinc-950'
           : 'border-zinc-600 bg-zinc-950 text-white dark:border-zinc-300 dark:bg-black'
@@ -205,7 +205,7 @@ export default function KeySelector({ value, onChange }: KeySelectorProps) {
           >
             None
           </button>
-          <div className="relative pt-9" aria-label="Piano key layout">
+          <div className="relative pt-4" aria-label="Piano key layout">
             <div className="flex gap-1">
               {NATURAL_NOTES.map((note) => (
                 <NaturalKeyButton

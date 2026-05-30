@@ -24,6 +24,7 @@ export type TimelineState = {
 export type UserPreferences = {
   linear: boolean
   lowEAtBottom: boolean
+  showLastPlayedNotes: boolean
   naturalDecay: boolean
   reverbEnabled: boolean
   muted: boolean
@@ -54,6 +55,7 @@ const DEFAULT_TIMELINE_STATE: TimelineState = {
 const DEFAULT_PREFERENCES: UserPreferences = {
   linear: true,
   lowEAtBottom: true,
+  showLastPlayedNotes: true,
   naturalDecay: true,
   reverbEnabled: true,
   muted: false,
@@ -115,6 +117,7 @@ export function createInitialAppState(stored: StoredPreferences): AppState {
     preferences: {
       linear: stored.linear ?? DEFAULT_PREFERENCES.linear,
       lowEAtBottom: stored.lowEAtBottom ?? DEFAULT_PREFERENCES.lowEAtBottom,
+      showLastPlayedNotes: stored.showLastPlayedNotes ?? DEFAULT_PREFERENCES.showLastPlayedNotes,
       naturalDecay: stored.naturalDecay ?? DEFAULT_PREFERENCES.naturalDecay,
       reverbEnabled: stored.reverbEnabled ?? DEFAULT_PREFERENCES.reverbEnabled,
       muted: stored.muted ?? DEFAULT_PREFERENCES.muted,
@@ -163,6 +166,7 @@ function replaceCurrentTimelineSnapshot(
 export type AppAction =
   | { type: 'toggleLinear' }
   | { type: 'toggleLowEAtBottom' }
+  | { type: 'toggleShowLastPlayedNotes' }
   | { type: 'toggleNaturalDecay' }
   | { type: 'toggleReverb' }
   | { type: 'toggleMuted' }
@@ -205,6 +209,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   if (
     action.type === 'toggleLinear' ||
     action.type === 'toggleLowEAtBottom' ||
+    action.type === 'toggleShowLastPlayedNotes' ||
     action.type === 'toggleNaturalDecay' ||
     action.type === 'toggleReverb' ||
     action.type === 'toggleMuted'
@@ -212,6 +217,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     const keyMap = {
       toggleLinear: 'linear',
       toggleLowEAtBottom: 'lowEAtBottom',
+      toggleShowLastPlayedNotes: 'showLastPlayedNotes',
       toggleNaturalDecay: 'naturalDecay',
       toggleReverb: 'reverbEnabled',
       toggleMuted: 'muted',

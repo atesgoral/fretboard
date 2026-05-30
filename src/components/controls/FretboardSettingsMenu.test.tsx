@@ -17,7 +17,9 @@ describe('FretboardSettingsMenu', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open fretboard settings menu' }))
+    const trigger = screen.getByRole('button', { name: 'Open fretboard settings menu' })
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' })
 
     const item = await screen.findByRole('menuitemcheckbox', {
       name: 'Show last played notes',

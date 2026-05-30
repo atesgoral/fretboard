@@ -94,7 +94,7 @@ describe('App', () => {
 
     openMenu('Open settings menu')
 
-    expect(await screen.findByText('Natural decay')).toBeInTheDocument()
+    expect(await screen.findByText('Reverb')).toBeInTheDocument()
     expect(screen.queryByText('Fret spacing')).not.toBeInTheDocument()
   })
 

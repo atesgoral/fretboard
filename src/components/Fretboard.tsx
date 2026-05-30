@@ -18,7 +18,6 @@ const REVERB_STORAGE_KEY = 'cadence_reverb'
 const DEFAULT_REVERB_LEVEL = 0.15
 const STRUM_DELAY_MS = 28
 const TOUCH_SCROLL_THRESHOLD_PX = 8
-const TOUCH_LONG_PRESS_MS = 300
 
 type AudioContextConstructor = new () => AudioContext
 type WindowWithWebKitAudioContext = Window & {
@@ -62,7 +61,6 @@ type FretboardProps = {
   onToggleLinear: () => void
   onToggleLowEPosition: () => void
   onToggleShowLastPlayedNotes: () => void
-  naturalDecay: boolean
   reverbEnabled: boolean
   muted: boolean
   frets?: number
@@ -262,17 +260,9 @@ type ActivePosition = {
 
 const EMPTY_ACTIVE_POSITIONS: ActivePosition[] = []
 
-type ExcitationState = {
-  level: number
-  timestampMs: number
-}
-
-type TriggerType = 'pick' | 'slide'
-
 type PointerPressState = {
   stringIndex: number
   fret: number
-  lastKey: string
 }
 
 function getActivePositionsFromPointers(
@@ -382,11 +372,8 @@ type TouchGestureState = {
   fret: number
   startX: number
   startY: number
-  currentX: number
-  currentY: number
   startScrollLeft: number
-  mode: 'pending' | 'scrolling' | 'playing'
-  longPressTimeoutId: number
+  mode: 'pending' | 'scrolling'
 }
 
 function getFretCellFromPointer(
@@ -476,28 +463,10 @@ function NoteGrid({
     }
   }
 
-  const clearTouchGestureTimeout = (gesture: TouchGestureState) => {
-    window.clearTimeout(gesture.longPressTimeoutId)
-  }
-
-  const getCurrentTouchPosition = (gesture: TouchGestureState) =>
-    getFretCellFromPointer(
-      { clientX: gesture.currentX, clientY: gesture.currentY },
-      gridRef.current,
-    ) ?? { stringIndex: gesture.stringIndex, fret: gesture.fret }
-
-  const startTouchPlayback = (pointerId: number) => {
-    const gesture = touchGesturesRef.current.get(pointerId)
-    if (!gesture || gesture.mode !== 'pending') {
-      return
-    }
-
-    const position = getCurrentTouchPosition(gesture)
-    gesture.stringIndex = position.stringIndex
-    gesture.fret = position.fret
-    gesture.mode = 'playing'
-    onPressStart(pointerId, position.stringIndex, position.fret)
-  }
+  const getTouchPosition = (gesture: TouchGestureState) => ({
+    stringIndex: gesture.stringIndex,
+    fret: gesture.fret,
+  })
 
   const hasScrollingTouchGesture = (pointerId: number) => {
     for (const [gesturePointerId, gesture] of touchGesturesRef.current) {
@@ -515,20 +484,13 @@ function NoteGrid({
     fret: number,
   ) => {
     gridRef.current?.setPointerCapture?.(event.pointerId)
-    const longPressTimeoutId = window.setTimeout(() => {
-      startTouchPlayback(event.pointerId)
-    }, TOUCH_LONG_PRESS_MS)
-
     touchGesturesRef.current.set(event.pointerId, {
       stringIndex,
       fret,
       startX: event.clientX,
       startY: event.clientY,
-      currentX: event.clientX,
-      currentY: event.clientY,
       startScrollLeft: scrollContainerRef.current?.scrollLeft ?? 0,
       mode: 'pending',
-      longPressTimeoutId,
     })
   }
 
@@ -537,9 +499,6 @@ function NoteGrid({
     if (!gesture) {
       return false
     }
-
-    gesture.currentX = event.clientX
-    gesture.currentY = event.clientY
 
     if (gesture.mode === 'pending') {
       const distanceX = event.clientX - gesture.startX
@@ -550,8 +509,6 @@ function NoteGrid({
       if (absX < TOUCH_SCROLL_THRESHOLD_PX && absY < TOUCH_SCROLL_THRESHOLD_PX) {
         return true
       }
-
-      clearTouchGestureTimeout(gesture)
 
       if (absY > absX) {
         touchGesturesRef.current.delete(event.pointerId)
@@ -588,11 +545,10 @@ function NoteGrid({
         (entry): entry is [number, TouchGestureState] => entry[1].mode === 'pending',
       )
       const positions = pendingTapEntries.map(([, pendingGesture]) =>
-        getCurrentTouchPosition(pendingGesture),
+        getTouchPosition(pendingGesture),
       )
 
       pendingTapEntries.forEach(([pendingPointerId, pendingGesture]) => {
-        clearTouchGestureTimeout(pendingGesture)
         touchGesturesRef.current.delete(pendingPointerId)
         releasePointerCapture(pendingPointerId)
       })
@@ -601,23 +557,14 @@ function NoteGrid({
       return true
     }
 
-    clearTouchGestureTimeout(gesture)
     touchGesturesRef.current.delete(pointerId)
     releasePointerCapture(pointerId)
-
-    if (gesture.mode === 'playing') {
-      onPressEnd(pointerId)
-      return true
-    }
 
     return true
   }
 
   useEffect(() => {
     return () => {
-      for (const gesture of touchGesturesRef.current.values()) {
-        clearTouchGestureTimeout(gesture)
-      }
       touchGesturesRef.current.clear()
     }
   }, [])
@@ -840,7 +787,6 @@ export default function Fretboard({
   onToggleLinear,
   onToggleLowEPosition,
   onToggleShowLastPlayedNotes,
-  naturalDecay,
   reverbEnabled,
   muted,
   frets = DEFAULT_FRETS,
@@ -888,9 +834,6 @@ export default function Fretboard({
   const activePointersRef = useRef(new Map<number, PointerPressState>())
   const [recentlyPlayedPositions, setRecentlyPlayedPositions] = useState<ActivePosition[]>([])
   const [animatedPositionBursts, setAnimatedPositionBursts] = useState<Record<string, number>>({})
-  const excitationByStringRef = useRef<ExcitationState[]>(
-    Array.from({ length: STRINGS }, () => ({ level: 0, timestampMs: 0 })),
-  )
 
   const activePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
   const burstActivePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
@@ -1095,7 +1038,7 @@ export default function Fretboard({
   }, [markRecentlyPlayed])
 
   const playNote = useCallback(
-    async (stringIndex: number, fret: number, triggerType: TriggerType) => {
+    async (stringIndex: number, fret: number) => {
       if (muted) {
         return
       }
@@ -1117,39 +1060,16 @@ export default function Fretboard({
       }
 
       const midiNote = OPEN_STRING_MIDI[stringIndex] + fret
-
-      let attackVelocity = 110
-      let durationSeconds = 1.0
-
-      if (naturalDecay) {
-        const now = performance.now()
-        const previous = excitationByStringRef.current[stringIndex]
-        const elapsedSeconds = (now - previous.timestampMs) / 1000
-        const timeDecay = Math.exp(-elapsedSeconds / 1.9)
-        const residualExcitation = previous.level * timeDecay
-        const pickedExcitation = triggerType === 'pick' ? 1 : residualExcitation * 0.74
-        const clampedExcitation = Math.max(0.08, Math.min(1, pickedExcitation))
-
-        excitationByStringRef.current[stringIndex] = {
-          level: clampedExcitation,
-          timestampMs: now,
-        }
-
-        attackVelocity = Math.round(38 + clampedExcitation * 72)
-        durationSeconds = 0.3 + clampedExcitation * 2.3
-      }
-
-      instrument.start({ note: midiNote, velocity: attackVelocity, duration: durationSeconds })
+      instrument.start({ note: midiNote, velocity: 110, duration: 1 })
     },
-    [getAudioContext, getInstrument, muted, naturalDecay, resumeAudioContext],
+    [getAudioContext, getInstrument, muted, resumeAudioContext],
   )
 
   const handlePressStart = useCallback(
     (pointerId: number, stringIndex: number, fret: number) => {
-      const positionKey = `${stringIndex}:${fret}`
-      activePointersRef.current.set(pointerId, { stringIndex, fret, lastKey: positionKey })
+      activePointersRef.current.set(pointerId, { stringIndex, fret })
       syncHeldPositions()
-      void playNote(stringIndex, fret, 'pick')
+      void playNote(stringIndex, fret)
     },
     [playNote, syncHeldPositions],
   )
@@ -1159,33 +1079,10 @@ export default function Fretboard({
       setHoveredPosition(null)
       markRecentlyPlayed(positions)
       positions.forEach((position) => {
-        void playNote(position.stringIndex, position.fret, 'pick')
+        void playNote(position.stringIndex, position.fret)
       })
     },
     [markRecentlyPlayed, playNote],
-  )
-
-  const handlePressEnter = useCallback(
-    (pointerId: number, stringIndex: number, fret: number) => {
-      const pointerState = activePointersRef.current.get(pointerId)
-      if (!pointerState) {
-        return
-      }
-
-      const positionKey = `${stringIndex}:${fret}`
-      if (pointerState.lastKey === positionKey) {
-        return
-      }
-
-      activePointersRef.current.set(pointerId, {
-        stringIndex,
-        fret,
-        lastKey: positionKey,
-      })
-      syncHeldPositions()
-      void playNote(stringIndex, fret, 'slide')
-    },
-    [playNote, syncHeldPositions],
   )
 
   const handlePressEnd = useCallback(
@@ -1215,13 +1112,12 @@ export default function Fretboard({
       }
 
       if (activePointersRef.current.has(pointerId)) {
-        handlePressEnter(pointerId, position.stringIndex, position.fret)
         return
       }
 
       setHoveredPosition(position)
     },
-    [clearHoverPosition, handlePressEnter],
+    [clearHoverPosition],
   )
 
   useEffect(() => {
@@ -1265,7 +1161,7 @@ export default function Fretboard({
     markRecentlyPlayed(playedPositions)
     if (playbackMode === 'pluck') {
       playedPositions.forEach((position) => {
-        void playNote(position.stringIndex, position.fret, 'pick')
+        void playNote(position.stringIndex, position.fret)
       })
       return
     }
@@ -1274,7 +1170,7 @@ export default function Fretboard({
       .sort((left, right) => left.stringIndex - right.stringIndex)
       .map((position, index) =>
         window.setTimeout(() => {
-          void playNote(position.stringIndex, position.fret, 'pick')
+          void playNote(position.stringIndex, position.fret)
         }, index * STRUM_DELAY_MS),
       )
 

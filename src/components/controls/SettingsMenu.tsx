@@ -1,13 +1,11 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Activity, AudioLines, Check, Menu, Monitor, Sun, Moon } from 'lucide-react'
+import { AudioLines, Check, Menu, Monitor, Sun, Moon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ThemePreference } from '../../hooks/useThemePreference'
 
 type SettingsMenuProps = {
   preference: ThemePreference
   onCycleTheme: () => void
-  naturalDecay: boolean
-  onToggleNaturalDecay: () => void
   reverbEnabled: boolean
   onToggleReverb: () => void
 }
@@ -36,8 +34,6 @@ function MenuItem({ children }: { children: ReactNode }) {
 export default function SettingsMenu({
   preference,
   onCycleTheme,
-  naturalDecay,
-  onToggleNaturalDecay,
   reverbEnabled,
   onToggleReverb,
 }: SettingsMenuProps) {
@@ -67,17 +63,6 @@ export default function SettingsMenu({
             <span>{getThemeLabel(preference)}</span>
           </MenuItem>
         </DropdownMenu.Item>
-
-        <DropdownMenu.CheckboxItem checked={naturalDecay} onCheckedChange={onToggleNaturalDecay}>
-          <MenuItem>
-            <span className="inline-flex items-center gap-2">
-              <Activity className="h-4 w-4" aria-hidden="true" /> Natural decay
-            </span>
-            <DropdownMenu.ItemIndicator>
-              <Check className="h-4 w-4" aria-hidden="true" />
-            </DropdownMenu.ItemIndicator>
-          </MenuItem>
-        </DropdownMenu.CheckboxItem>
 
         <DropdownMenu.CheckboxItem checked={reverbEnabled} onCheckedChange={onToggleReverb}>
           <MenuItem>

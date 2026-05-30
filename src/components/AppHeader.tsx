@@ -7,13 +7,11 @@ type AppHeaderProps = {
   canRedo: boolean
   muted: boolean
   preference: ThemePreference
-  naturalDecay: boolean
   reverbEnabled: boolean
   onUndo: () => void
   onRedo: () => void
   onToggleMuted: () => void
   onCycleTheme: () => void
-  onToggleNaturalDecay: () => void
   onToggleReverb: () => void
 }
 
@@ -27,13 +25,11 @@ export default function AppHeader({
   canRedo,
   muted,
   preference,
-  naturalDecay,
   reverbEnabled,
   onUndo,
   onRedo,
   onToggleMuted,
   onCycleTheme,
-  onToggleNaturalDecay,
   onToggleReverb,
 }: AppHeaderProps) {
   const muteTitle = muted ? 'Unmute playback' : 'Mute playback'
@@ -82,8 +78,6 @@ export default function AppHeader({
         <SettingsMenu
           preference={preference}
           onCycleTheme={onCycleTheme}
-          naturalDecay={naturalDecay}
-          onToggleNaturalDecay={onToggleNaturalDecay}
           reverbEnabled={reverbEnabled}
           onToggleReverb={onToggleReverb}
         />

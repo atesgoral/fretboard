@@ -55,12 +55,14 @@ describe('DiatonicChordList', () => {
     )
   })
 
-  it('hides the eye button when collapsed', () => {
-    renderDiatonicChordList()
+  it('keeps the chord note toggle available when collapsed', () => {
+    const { onToggleChordNotes } = renderDiatonicChordList()
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse chords panel' }))
+    expect(screen.queryByTitle('I: Cmaj')).not.toBeInTheDocument()
 
-    expect(screen.queryByRole('button', { name: 'Hide chord notes' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Hide chord notes' }))
+    expect(onToggleChordNotes).toHaveBeenCalledTimes(1)
   })
 
   it('clears chord hover when the pointer leaves a chord card', () => {

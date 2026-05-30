@@ -91,15 +91,13 @@ export default function DiatonicChordList({
         onSettingsChange={(settings) => onAuditionSettingsChange(settings as ChordPlaybackSettings)}
         className="absolute right-10 top-2"
       />
-      {collapsed ? null : (
-        <ChordNotesVisibilityButton
-          showChordNotes={showChordNotes}
-          onToggleChordNotes={onToggleChordNotes}
-          className={`absolute right-[4.5rem] top-2 ${cornerButtonClass}`}
-        />
-      )}
+      <ChordNotesVisibilityButton
+        showChordNotes={showChordNotes}
+        onToggleChordNotes={onToggleChordNotes}
+        className={`absolute right-[4.5rem] top-2 ${cornerButtonClass}`}
+      />
       <h2
-        className={`${collapsed ? 'pr-16' : 'mb-3 pr-24'} text-xs font-medium uppercase tracking-[0.08em] text-blue-800 dark:text-blue-300`}
+        className={`${collapsed ? '' : 'mb-3'} pr-24 text-xs font-medium uppercase tracking-[0.08em] text-blue-800 dark:text-blue-300`}
       >
         {collapsed ? 'Chords' : `Diatonic triads in ${scaleRoot} ${scaleLabel}`}
       </h2>

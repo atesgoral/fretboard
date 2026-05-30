@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { NOTE_NAMES, type NoteName } from './chords'
 
 const NATURAL_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const
@@ -77,52 +77,89 @@ function SharpKeyButton({
 
 export default function KeySelector({ value, onChange }: KeySelectorProps) {
   const [open, setOpen] = useState(false)
+  const keyboardActiveRef = useRef(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const labelId = useId()
   const valueId = useId()
   const displayValue = value ?? 'None'
 
-  useEffect(() => {
-    if (!open) return
+  const handleKeyboardSelection = useCallback(
+    (key: string) => {
+      if (key === 'ArrowRight' || key === 'ArrowDown' || key === 'Right' || key === 'Down') {
+        onChange(getRotatedKey(value, 1))
+        return true
+      }
 
+      if (key === 'ArrowLeft' || key === 'ArrowUp' || key === 'Left' || key === 'Up') {
+        onChange(getRotatedKey(value, -1))
+        return true
+      }
+
+      if (key === 'Escape') {
+        setOpen(false)
+        return true
+      }
+
+      return false
+    },
+    [onChange, value],
+  )
+
+  useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false)
+        keyboardActiveRef.current = false
       }
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
-  }, [open])
+  }, [])
+
+  useEffect(() => {
+    const handleDocumentKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+      const focusInside = rootRef.current?.contains(document.activeElement)
+
+      if (!keyboardActiveRef.current && !focusInside) return
+
+      if (handleKeyboardSelection(event.key)) {
+        event.preventDefault()
+      }
+    }
+
+    document.addEventListener('keydown', handleDocumentKeyDown)
+    return () => document.removeEventListener('keydown', handleDocumentKeyDown)
+  }, [handleKeyboardSelection])
 
   const selectKey = (note: NoteName) => {
+    keyboardActiveRef.current = true
     onChange(note)
     setOpen(false)
     triggerRef.current?.focus()
   }
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      event.preventDefault()
-      onChange(getRotatedKey(value, 1))
-      return
-    }
-
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      event.preventDefault()
-      onChange(getRotatedKey(value, -1))
-      return
-    }
-
-    if (event.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
   return (
     <div
       ref={rootRef}
+      onBlurCapture={(event) => {
+        if (!rootRef.current?.contains(event.relatedTarget as Node | null)) {
+          keyboardActiveRef.current = false
+        }
+      }}
+      onFocusCapture={() => {
+        keyboardActiveRef.current = true
+      }}
+      onKeyDown={(event) => {
+        if (handleKeyboardSelection(event.key)) {
+          event.preventDefault()
+        }
+      }}
+      onPointerDown={() => {
+        keyboardActiveRef.current = true
+      }}
       className="relative flex w-16 flex-col gap-1 text-xs font-medium uppercase tracking-[0.08em] text-amber-800 dark:text-amber-300"
     >
       <span id={labelId}>Key</span>
@@ -133,8 +170,10 @@ export default function KeySelector({ value, onChange }: KeySelectorProps) {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-labelledby={`${labelId} ${valueId}`}
-        onClick={() => setOpen((current) => !current)}
-        onKeyDown={handleKeyDown}
+        onClick={() => {
+          keyboardActiveRef.current = true
+          setOpen((current) => !current)
+        }}
         className="inline-flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-zinc-300 bg-white px-2 text-sm font-normal tracking-normal text-zinc-800 transition enabled:hover:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 enabled:dark:hover:border-zinc-500"
       >
         <span id={valueId}>{displayValue}</span>
@@ -152,6 +191,7 @@ export default function KeySelector({ value, onChange }: KeySelectorProps) {
             title="Select no key"
             aria-pressed={value === null}
             onClick={() => {
+              keyboardActiveRef.current = true
               onChange(null)
               setOpen(false)
               triggerRef.current?.focus()

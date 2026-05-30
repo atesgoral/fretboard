@@ -71,7 +71,7 @@ describe('ChordBrowser scale selector', () => {
     )
 
     const keySelector = screen.getByTitle('Select key')
-    keySelector.focus()
+    fireEvent.focus(keySelector)
     fireEvent.keyDown(keySelector, { key: 'ArrowRight', code: 'ArrowRight' })
     expect(onScaleRootChange).toHaveBeenLastCalledWith('C')
 
@@ -112,6 +112,27 @@ describe('ChordBrowser scale selector', () => {
 
     fireEvent.click(within(popover).getByRole('button', { name: 'F#' }))
     expect(onScaleRootChange).toHaveBeenCalledWith('F#')
+  })
+
+  it('rotates keys when focus is inside the open selector popover', () => {
+    const onScaleRootChange = vi.fn()
+    render(
+      <ChordBrowser
+        scaleRoot="F#"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={onScaleRootChange}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTitle('Select key'))
+    const sharpKey = screen.getByRole('button', { name: 'F#' })
+    fireEvent.focus(sharpKey)
+
+    fireEvent.keyDown(sharpKey, { key: 'ArrowRight', code: 'ArrowRight' })
+    expect(onScaleRootChange).toHaveBeenLastCalledWith('G')
   })
 
   it('disables the scale selector when no key is selected', () => {

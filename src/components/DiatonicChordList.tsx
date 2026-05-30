@@ -18,6 +18,7 @@ type DiatonicChordListProps = {
   scaleRoot: NoteName
   scaleId: ScaleId
   onPlayChord: (chord: ChordSelection, playbackSettings: ChordPlaybackSettings) => void
+  onStopChordPlayback: () => void
   onHoverChord: (chord: ChordSelection | null) => void
   onPreviewChordVoicing: (chord: ChordSelection, playbackSettings: ChordPlaybackSettings) => void
   onPinChord: (chord: ChordSelection, playbackSettings: ChordPlaybackSettings) => void
@@ -37,6 +38,7 @@ export default function DiatonicChordList({
   scaleRoot,
   scaleId,
   onPlayChord,
+  onStopChordPlayback,
   onHoverChord,
   onPreviewChordVoicing,
   onPinChord,
@@ -119,6 +121,7 @@ export default function DiatonicChordList({
                 chord={chord}
                 degreeLabel={degreeLabel}
                 onPlay={() => onPlayChord(chord, resolvedSettings)}
+                onPlayEnd={onStopChordPlayback}
                 onHoverStart={() => onHoverChord(chord)}
                 onHoverEnd={() => onHoverChord(null)}
                 onPin={() => onPinChord(chord, resolvedSettings)}

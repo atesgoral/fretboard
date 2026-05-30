@@ -26,6 +26,7 @@ function renderPinnedChordList({
     <PinnedChordList
       pinnedChords={pinnedChords}
       onPlayChord={vi.fn()}
+      onStopChordPlayback={vi.fn()}
       onHoverChord={onHoverChord}
       onPreviewChordVoicing={vi.fn()}
       onRemoveChord={vi.fn()}

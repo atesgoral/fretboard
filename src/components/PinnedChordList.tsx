@@ -14,6 +14,7 @@ export type PinnedChord = ChordSelection & {
 type PinnedChordListProps = {
   pinnedChords: PinnedChord[]
   onPlayChord: (chord: PinnedChord) => void
+  onStopChordPlayback: () => void
   onHoverChord: (chord: ChordSelection | null) => void
   onPreviewChordVoicing: (chord: PinnedChord) => void
   onRemoveChord: (index: number) => void
@@ -33,6 +34,7 @@ const cornerButtonClass =
 export default function PinnedChordList({
   pinnedChords,
   onPlayChord,
+  onStopChordPlayback,
   onHoverChord,
   onPreviewChordVoicing,
   onRemoveChord,
@@ -103,6 +105,7 @@ export default function PinnedChordList({
               key={getChordSelectionKey(chord, index)}
               chord={chord}
               onPlay={() => onPlayChord(chord)}
+              onPlayEnd={onStopChordPlayback}
               onHoverStart={() => onHoverChord(chord)}
               onHoverEnd={() => onHoverChord(null)}
               onPlayHoverStart={() => onPreviewChordVoicing(chord)}

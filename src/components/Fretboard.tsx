@@ -16,6 +16,8 @@ const GUITAR_SOUNDFONT = 'acoustic_guitar_nylon'
 const FALLBACK_SOUNDFONT = 'acoustic_guitar_steel'
 const REVERB_STORAGE_KEY = 'cadence_reverb'
 const DEFAULT_REVERB_LEVEL = 0.15
+const TAP_NOTE_DURATION_SECONDS = 0.35
+const LAST_PLAYED_CLEAR_DELAY_MS = 1100
 const STRUM_DELAY_MS = 28
 const TOUCH_SCROLL_THRESHOLD_PX = 8
 
@@ -70,6 +72,7 @@ type FretboardProps = {
   highlightedChordRoles?: Map<number, string>
   playedPositions: ActivePosition[]
   playSequence: number
+  stopPlaybackSequence?: number
   playbackMode?: ChordPlaybackMode
 }
 
@@ -263,6 +266,17 @@ const EMPTY_ACTIVE_POSITIONS: ActivePosition[] = []
 type PointerPressState = {
   stringIndex: number
   fret: number
+}
+
+type Instrument = ReturnType<typeof Soundfont>
+type StopNote = ReturnType<Instrument['start']>
+type SustainedNote = {
+  released: boolean
+  stop?: StopNote
+}
+type ChordPlaybackRequest = {
+  stopNotes: StopNote[]
+  timeoutIds: number[]
 }
 
 function getActivePositionsFromPointers(
@@ -796,6 +810,7 @@ export default function Fretboard({
   highlightedChordRoles = new Map(),
   playedPositions,
   playSequence,
+  stopPlaybackSequence = 0,
   playbackMode = 'pluck',
 }: FretboardProps) {
   const fretPositions = useMemo(() => getFretPositions(linear, frets), [linear, frets])
@@ -832,6 +847,9 @@ export default function Fretboard({
   const [heldPositions, setHeldPositions] = useState<ActivePosition[]>([])
   const reverbEnabledRef = useRef(reverbEnabled)
   const activePointersRef = useRef(new Map<number, PointerPressState>())
+  const sustainedNotesRef = useRef(new Map<number, SustainedNote>())
+  const chordPlaybackRef = useRef<ChordPlaybackRequest | null>(null)
+  const lastPlayedClearTimeoutRef = useRef<number | null>(null)
   const [recentlyPlayedPositions, setRecentlyPlayedPositions] = useState<ActivePosition[]>([])
   const [animatedPositionBursts, setAnimatedPositionBursts] = useState<Record<string, number>>({})
 
@@ -898,6 +916,12 @@ export default function Fretboard({
 
   useEffect(() => {
     return () => {
+      if (lastPlayedClearTimeoutRef.current !== null) {
+        window.clearTimeout(lastPlayedClearTimeoutRef.current)
+      }
+      chordPlaybackRef.current?.timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+      chordPlaybackRef.current?.stopNotes.forEach((stopNote) => stopNote())
+      sustainedNotesRef.current.forEach((note) => note.stop?.())
       void audioContextRef.current?.close()
     }
   }, [])
@@ -1013,22 +1037,69 @@ export default function Fretboard({
     }
   }, [unlockAudioContext])
 
-  const markRecentlyPlayed = useCallback((positions: ActivePosition[]) => {
-    setRecentlyPlayedPositions(positions)
-    setAnimatedPositionBursts((current) => {
-      const next = { ...current }
-      positions.forEach((position) => {
-        const key = `${position.stringIndex}:${position.fret}`
-        next[key] = (next[key] ?? 0) + 1
-      })
-      return next
-    })
+  const cancelLastPlayedClear = useCallback(() => {
+    if (lastPlayedClearTimeoutRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(lastPlayedClearTimeoutRef.current)
+    lastPlayedClearTimeoutRef.current = null
   }, [])
 
-  const clearLastPlayedState = useCallback(() => {
-    setHoveredPosition(null)
-    setRecentlyPlayedPositions([])
-    setAnimatedPositionBursts({})
+  const scheduleLastPlayedClear = useCallback(() => {
+    cancelLastPlayedClear()
+    lastPlayedClearTimeoutRef.current = window.setTimeout(() => {
+      setRecentlyPlayedPositions([])
+      setAnimatedPositionBursts({})
+      lastPlayedClearTimeoutRef.current = null
+    }, LAST_PLAYED_CLEAR_DELAY_MS)
+  }, [cancelLastPlayedClear])
+
+  const markRecentlyPlayed = useCallback(
+    (positions: ActivePosition[]) => {
+      cancelLastPlayedClear()
+      setRecentlyPlayedPositions(positions)
+      setAnimatedPositionBursts((current) => {
+        const next = { ...current }
+        positions.forEach((position) => {
+          const key = `${position.stringIndex}:${position.fret}`
+          next[key] = (next[key] ?? 0) + 1
+        })
+        return next
+      })
+    },
+    [cancelLastPlayedClear],
+  )
+
+  const stopChordPlayback = useCallback(
+    (clearAfterRelease: boolean) => {
+      const request = chordPlaybackRef.current
+      if (!request) {
+        return
+      }
+
+      request.timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+      request.stopNotes.forEach((stopNote) => stopNote())
+      chordPlaybackRef.current = null
+
+      if (clearAfterRelease) {
+        scheduleLastPlayedClear()
+      }
+    },
+    [scheduleLastPlayedClear],
+  )
+
+  const stopSustainedNote = useCallback((pointerId: number) => {
+    const note = sustainedNotesRef.current.get(pointerId)
+    if (!note) {
+      return
+    }
+
+    note.released = true
+    if (note.stop) {
+      note.stop()
+      sustainedNotesRef.current.delete(pointerId)
+    }
   }, [])
 
   const syncHeldPositions = useCallback(() => {
@@ -1037,15 +1108,19 @@ export default function Fretboard({
     markRecentlyPlayed(positions)
   }, [markRecentlyPlayed])
 
-  const playNote = useCallback(
-    async (stringIndex: number, fret: number) => {
+  const startNote = useCallback(
+    async (
+      stringIndex: number,
+      fret: number,
+      duration: number | null = TAP_NOTE_DURATION_SECONDS,
+    ) => {
       if (muted) {
-        return
+        return null
       }
 
       const context = getAudioContext()
       if (!context) {
-        return
+        return null
       }
 
       const resumePromise = resumeAudioContext(context)
@@ -1055,23 +1130,51 @@ export default function Fretboard({
       if (!isAudioContextRunning(context)) {
         await resumeAudioContext(context)
         if (!isAudioContextRunning(context)) {
-          return
+          return null
         }
       }
 
       const midiNote = OPEN_STRING_MIDI[stringIndex] + fret
-      instrument.start({ note: midiNote, velocity: 110, duration: 1 })
+      return instrument.start({ note: midiNote, velocity: 110, duration })
     },
     [getAudioContext, getInstrument, muted, resumeAudioContext],
+  )
+
+  const startSustainedNote = useCallback(
+    (pointerId: number, stringIndex: number, fret: number) => {
+      const note: SustainedNote = { released: false }
+      sustainedNotesRef.current.set(pointerId, note)
+
+      void startNote(stringIndex, fret, null).then((stopNote) => {
+        if (!stopNote) {
+          sustainedNotesRef.current.delete(pointerId)
+          return
+        }
+
+        if (sustainedNotesRef.current.get(pointerId) !== note) {
+          stopNote()
+          return
+        }
+
+        if (note.released) {
+          stopNote()
+          sustainedNotesRef.current.delete(pointerId)
+          return
+        }
+
+        note.stop = stopNote
+      })
+    },
+    [startNote],
   )
 
   const handlePressStart = useCallback(
     (pointerId: number, stringIndex: number, fret: number) => {
       activePointersRef.current.set(pointerId, { stringIndex, fret })
       syncHeldPositions()
-      void playNote(stringIndex, fret)
+      startSustainedNote(pointerId, stringIndex, fret)
     },
-    [playNote, syncHeldPositions],
+    [startSustainedNote, syncHeldPositions],
   )
 
   const handleTapPlay = useCallback(
@@ -1079,23 +1182,26 @@ export default function Fretboard({
       setHoveredPosition(null)
       markRecentlyPlayed(positions)
       positions.forEach((position) => {
-        void playNote(position.stringIndex, position.fret)
+        void startNote(position.stringIndex, position.fret)
       })
+      scheduleLastPlayedClear()
     },
-    [markRecentlyPlayed, playNote],
+    [markRecentlyPlayed, scheduleLastPlayedClear, startNote],
   )
 
   const handlePressEnd = useCallback(
     (pointerId: number) => {
       activePointersRef.current.delete(pointerId)
+      stopSustainedNote(pointerId)
       if (activePointersRef.current.size === 0) {
         setHeldPositions([])
         setHoveredPosition(null)
+        scheduleLastPlayedClear()
         return
       }
       syncHeldPositions()
     },
-    [syncHeldPositions],
+    [scheduleLastPlayedClear, stopSustainedNote, syncHeldPositions],
   )
 
   const clearHoverPosition = useCallback(() => {
@@ -1137,47 +1243,69 @@ export default function Fretboard({
   }, [handlePressEnd])
 
   useEffect(() => {
-    const handleDocumentPointerDown = (event: PointerEvent) => {
-      const fretboardSurface = fretboardSurfaceRef.current
-      const target = event.target
-      if (!fretboardSurface || !(target instanceof Node) || fretboardSurface.contains(target)) {
-        return
-      }
-
-      clearLastPlayedState()
-    }
-
-    document.addEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
-    return () => {
-      document.removeEventListener('pointerdown', handleDocumentPointerDown, { capture: true })
-    }
-  }, [clearLastPlayedState])
-
-  useEffect(() => {
     if (playSequence === 0 || playedPositions.length === 0) {
       return
     }
 
+    stopChordPlayback(false)
     markRecentlyPlayed(playedPositions)
-    if (playbackMode === 'pluck') {
-      playedPositions.forEach((position) => {
-        void playNote(position.stringIndex, position.fret)
+    const request: ChordPlaybackRequest = {
+      stopNotes: [],
+      timeoutIds: [],
+    }
+    chordPlaybackRef.current = request
+
+    const startChordNote = (position: ActivePosition) => {
+      void startNote(position.stringIndex, position.fret, null).then((stopNote) => {
+        if (!stopNote) {
+          return
+        }
+
+        if (chordPlaybackRef.current !== request) {
+          stopNote()
+          return
+        }
+
+        request.stopNotes.push(stopNote)
       })
+    }
+
+    if (playbackMode === 'pluck') {
+      playedPositions.forEach(startChordNote)
       return
     }
 
-    const timeoutIds = [...playedPositions]
+    request.timeoutIds = [...playedPositions]
       .sort((left, right) => left.stringIndex - right.stringIndex)
       .map((position, index) =>
         window.setTimeout(() => {
-          void playNote(position.stringIndex, position.fret)
+          startChordNote(position)
         }, index * STRUM_DELAY_MS),
       )
 
     return () => {
-      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+      if (chordPlaybackRef.current !== request) {
+        return
+      }
+
+      stopChordPlayback(false)
     }
-  }, [markRecentlyPlayed, playNote, playSequence, playedPositions, playbackMode])
+  }, [
+    markRecentlyPlayed,
+    playSequence,
+    playedPositions,
+    playbackMode,
+    startNote,
+    stopChordPlayback,
+  ])
+
+  useEffect(() => {
+    if (stopPlaybackSequence === 0) {
+      return
+    }
+
+    stopChordPlayback(true)
+  }, [stopChordPlayback, stopPlaybackSequence])
 
   const handleFretboardPointerLeave = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {

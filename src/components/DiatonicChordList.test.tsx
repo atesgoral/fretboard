@@ -18,6 +18,7 @@ function renderDiatonicChordList({
       scaleRoot="C"
       scaleId="major"
       onPlayChord={vi.fn()}
+      onStopChordPlayback={vi.fn()}
       onHoverChord={onHoverChord}
       onPreviewChordVoicing={vi.fn()}
       onPinChord={vi.fn()}

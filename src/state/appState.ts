@@ -24,6 +24,7 @@ export type TimelineState = {
 export type UserPreferences = {
   linear: boolean
   lowEAtBottom: boolean
+  showLastPlayedNotes: boolean
   reverbEnabled: boolean
   muted: boolean
   scaleRoot: NoteName | null
@@ -53,6 +54,7 @@ const DEFAULT_TIMELINE_STATE: TimelineState = {
 const DEFAULT_PREFERENCES: UserPreferences = {
   linear: true,
   lowEAtBottom: true,
+  showLastPlayedNotes: true,
   reverbEnabled: true,
   muted: false,
   scaleRoot: null,
@@ -113,6 +115,7 @@ export function createInitialAppState(stored: StoredPreferences): AppState {
     preferences: {
       linear: stored.linear ?? DEFAULT_PREFERENCES.linear,
       lowEAtBottom: stored.lowEAtBottom ?? DEFAULT_PREFERENCES.lowEAtBottom,
+      showLastPlayedNotes: stored.showLastPlayedNotes ?? DEFAULT_PREFERENCES.showLastPlayedNotes,
       reverbEnabled: stored.reverbEnabled ?? DEFAULT_PREFERENCES.reverbEnabled,
       muted: stored.muted ?? DEFAULT_PREFERENCES.muted,
       scaleRoot: stored.scaleRoot ?? DEFAULT_PREFERENCES.scaleRoot,
@@ -160,6 +163,7 @@ function replaceCurrentTimelineSnapshot(
 export type AppAction =
   | { type: 'toggleLinear' }
   | { type: 'toggleLowEAtBottom' }
+  | { type: 'toggleShowLastPlayedNotes' }
   | { type: 'toggleReverb' }
   | { type: 'toggleMuted' }
   | { type: 'setScaleRoot'; scaleRoot: NoteName | null }
@@ -201,12 +205,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   if (
     action.type === 'toggleLinear' ||
     action.type === 'toggleLowEAtBottom' ||
+    action.type === 'toggleShowLastPlayedNotes' ||
     action.type === 'toggleReverb' ||
     action.type === 'toggleMuted'
   ) {
     const keyMap = {
       toggleLinear: 'linear',
       toggleLowEAtBottom: 'lowEAtBottom',
+      toggleShowLastPlayedNotes: 'showLastPlayedNotes',
       toggleReverb: 'reverbEnabled',
       toggleMuted: 'muted',
     } as const

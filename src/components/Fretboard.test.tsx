@@ -131,8 +131,10 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        showLastPlayedNotes
         onToggleLinear={vi.fn()}
         onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
         reverbEnabled={false}
         muted={false}
         markedNotes={new Map()}
@@ -159,8 +161,10 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        showLastPlayedNotes
         onToggleLinear={vi.fn()}
         onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
         reverbEnabled={false}
         muted={false}
         markedNotes={new Map()}
@@ -178,8 +182,10 @@ describe('Fretboard audio playback', () => {
       <Fretboard
         linear={false}
         lowEAtBottom={false}
+        showLastPlayedNotes
         onToggleLinear={vi.fn()}
         onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
         reverbEnabled={false}
         muted={false}
         markedNotes={new Map()}
@@ -195,14 +201,16 @@ describe('Fretboard audio playback', () => {
   })
 })
 
-function renderMutedFretboardWithOutsideControl() {
+function renderMutedFretboardWithOutsideControl(showLastPlayedNotes = true) {
   render(
     <div>
       <Fretboard
         linear
         lowEAtBottom={false}
+        showLastPlayedNotes={showLastPlayedNotes}
         onToggleLinear={vi.fn()}
         onToggleLowEPosition={vi.fn()}
+        onToggleShowLastPlayedNotes={vi.fn()}
         reverbEnabled={false}
         muted
         markedNotes={new Map()}
@@ -288,5 +296,13 @@ describe('Fretboard interaction state', () => {
     playTouchOpenStrings()
 
     expect(screen.getByText('E · A')).toBeInTheDocument()
+  })
+
+  it('hides last played notes when last played note rendering is disabled', () => {
+    renderMutedFretboardWithOutsideControl(false)
+
+    playAndReleaseOpenLowE()
+
+    expect(screen.queryByText('E')).not.toBeInTheDocument()
   })
 })

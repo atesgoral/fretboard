@@ -31,7 +31,8 @@ const initialPreferences = getInitialPreferences()
 export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
-  const { linear, lowEAtBottom, reverbEnabled, muted, scaleRoot, scaleId } = appState.preferences
+  const { linear, lowEAtBottom, showLastPlayedNotes, reverbEnabled, muted, scaleRoot, scaleId } =
+    appState.preferences
   const [showScaleNotes, setShowScaleNotes] = useState(true)
   const [showChordNotes, setShowChordNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
@@ -215,8 +216,10 @@ export default function App() {
         <Fretboard
           linear={linear}
           lowEAtBottom={lowEAtBottom}
+          showLastPlayedNotes={showLastPlayedNotes}
           onToggleLinear={() => dispatch({ type: 'toggleLinear' })}
           onToggleLowEPosition={() => dispatch({ type: 'toggleLowEAtBottom' })}
+          onToggleShowLastPlayedNotes={() => dispatch({ type: 'toggleShowLastPlayedNotes' })}
           reverbEnabled={reverbEnabled}
           muted={muted}
           markedNotes={markedNotes}

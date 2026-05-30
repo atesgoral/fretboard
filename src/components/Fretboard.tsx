@@ -57,8 +57,10 @@ function getFretPositions(linear: boolean, frets: number) {
 type FretboardProps = {
   linear: boolean
   lowEAtBottom: boolean
+  showLastPlayedNotes: boolean
   onToggleLinear: () => void
   onToggleLowEPosition: () => void
+  onToggleShowLastPlayedNotes: () => void
   reverbEnabled: boolean
   muted: boolean
   frets?: number
@@ -255,6 +257,8 @@ type ActivePosition = {
   stringIndex: number
   fret: number
 }
+
+const EMPTY_ACTIVE_POSITIONS: ActivePosition[] = []
 
 type PointerPressState = {
   stringIndex: number
@@ -779,8 +783,10 @@ function NoteReadout({ activeNotes }: NoteReadoutProps) {
 export default function Fretboard({
   linear,
   lowEAtBottom,
+  showLastPlayedNotes,
   onToggleLinear,
   onToggleLowEPosition,
+  onToggleShowLastPlayedNotes,
   reverbEnabled,
   muted,
   frets = DEFAULT_FRETS,
@@ -829,14 +835,19 @@ export default function Fretboard({
   const [recentlyPlayedPositions, setRecentlyPlayedPositions] = useState<ActivePosition[]>([])
   const [animatedPositionBursts, setAnimatedPositionBursts] = useState<Record<string, number>>({})
 
-  const activeNotes =
-    heldPositions.length > 0
+  const activePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
+  const burstActivePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
+  const visiblePlayedPositions = showLastPlayedNotes ? activePositions : EMPTY_ACTIVE_POSITIONS
+  const visibleBurstPositions = showLastPlayedNotes ? burstActivePositions : EMPTY_ACTIVE_POSITIONS
+  const activeNotes = !showLastPlayedNotes
+    ? hoveredPosition
+      ? [getNoteIdentity(hoveredPosition)]
+      : []
+    : heldPositions.length > 0
       ? heldPositions.map(getNoteIdentity)
       : hoveredPosition
         ? [getNoteIdentity(hoveredPosition)]
         : recentlyPlayedPositions.map(getNoteIdentity)
-  const activePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
-  const burstActivePositions = heldPositions.length > 0 ? heldPositions : recentlyPlayedPositions
   const hoveredOpenStringVisualIndex =
     hoveredPosition && hoveredPosition.fret === 0
       ? stringOrder.indexOf(hoveredPosition.stringIndex)
@@ -859,7 +870,7 @@ export default function Fretboard({
   }, [highlightedPitchClassSet, highlightedPositionKeySet, stringOrder])
   const activeStringVisualIndexes = useMemo(() => {
     const activeStringIndexes = new Set(
-      recentlyPlayedPositions
+      visiblePlayedPositions
         .filter((position) => position.fret === 0)
         .map((position) => position.stringIndex),
     )
@@ -870,7 +881,7 @@ export default function Fretboard({
         )
         .filter((visualIndex) => visualIndex >= 0),
     )
-  }, [recentlyPlayedPositions, stringOrder])
+  }, [visiblePlayedPositions, stringOrder])
   const scaleOpenStringVisualIndexes = useMemo(() => {
     if (markedNotes.size === 0) {
       return new Set<number>()
@@ -1219,8 +1230,8 @@ export default function Fretboard({
             highlightedPitchClasses={highlightedPitchClassSet}
             highlightedPositionKeys={highlightedPositionKeySet}
             highlightedChordRoles={highlightedChordRoles}
-            activePositions={activePositions}
-            burstActivePositions={burstActivePositions}
+            activePositions={visiblePlayedPositions}
+            burstActivePositions={visibleBurstPositions}
             animatedPositionBursts={animatedPositionBursts}
             stringThicknesses={stringThicknesses}
           />
@@ -1234,8 +1245,10 @@ export default function Fretboard({
         <FretboardSettingsMenu
           linear={linear}
           lowEAtBottom={lowEAtBottom}
+          showLastPlayedNotes={showLastPlayedNotes}
           onToggleLinear={onToggleLinear}
           onToggleLowEPosition={onToggleLowEPosition}
+          onToggleShowLastPlayedNotes={onToggleShowLastPlayedNotes}
         />
       </div>
       <FretboardLegend />

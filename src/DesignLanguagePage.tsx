@@ -44,8 +44,10 @@ function ThemePane({ dark }: { dark: boolean }) {
         <Fretboard
           linear
           lowEAtBottom
+          showLastPlayedNotes
           onToggleLinear={() => undefined}
           onToggleLowEPosition={() => undefined}
+          onToggleShowLastPlayedNotes={() => undefined}
           reverbEnabled
           muted
           frets={8}

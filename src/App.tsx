@@ -31,8 +31,7 @@ const initialPreferences = getInitialPreferences()
 export default function App() {
   const [appState, dispatch] = useReducer(appReducer, initialPreferences, createInitialAppState)
   const { preference, cyclePreference } = useThemePreference()
-  const { linear, lowEAtBottom, naturalDecay, reverbEnabled, muted, scaleRoot, scaleId } =
-    appState.preferences
+  const { linear, lowEAtBottom, reverbEnabled, muted, scaleRoot, scaleId } = appState.preferences
   const [showScaleNotes, setShowScaleNotes] = useState(true)
   const [showChordNotes, setShowChordNotes] = useState(true)
   const [playedPositions, setPlayedPositions] = useState<PlayedPosition[]>([])
@@ -168,13 +167,11 @@ export default function App() {
           canRedo={canRedo}
           muted={muted}
           preference={preference}
-          naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           onUndo={() => dispatch({ type: 'undo' })}
           onRedo={() => dispatch({ type: 'redo' })}
           onToggleMuted={() => dispatch({ type: 'toggleMuted' })}
           onCycleTheme={cyclePreference}
-          onToggleNaturalDecay={() => dispatch({ type: 'toggleNaturalDecay' })}
           onToggleReverb={() => dispatch({ type: 'toggleReverb' })}
         />
 
@@ -220,7 +217,6 @@ export default function App() {
           lowEAtBottom={lowEAtBottom}
           onToggleLinear={() => dispatch({ type: 'toggleLinear' })}
           onToggleLowEPosition={() => dispatch({ type: 'toggleLowEAtBottom' })}
-          naturalDecay={naturalDecay}
           reverbEnabled={reverbEnabled}
           muted={muted}
           markedNotes={markedNotes}

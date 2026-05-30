@@ -46,7 +46,6 @@ function ThemePane({ dark }: { dark: boolean }) {
           lowEAtBottom
           onToggleLinear={() => undefined}
           onToggleLowEPosition={() => undefined}
-          naturalDecay
           reverbEnabled
           muted
           frets={8}

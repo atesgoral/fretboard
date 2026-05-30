@@ -41,6 +41,21 @@ describe('ChordBrowser scale selector', () => {
     expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
   })
 
+  it('renders the key selector at a compact width', () => {
+    render(
+      <ChordBrowser
+        scaleRoot="C#"
+        scaleId="major"
+        showScaleNotes
+        onScaleRootChange={vi.fn()}
+        onScaleIdChange={vi.fn()}
+        onToggleScaleNotes={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByLabelText('Key').closest('label')).toHaveClass('w-16')
+  })
+
   it('disables the scale selector when no key is selected', () => {
     render(
       <ChordBrowser
